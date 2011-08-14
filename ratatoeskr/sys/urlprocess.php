@@ -9,6 +9,11 @@
  * See "ratatoeskr/licenses/ratatoeskr" for more information.
  */
 
+/*
+ * Class: Redirect
+ * Exception that can be thrown inside an <url_action_simple>.
+ * throw new Redirect(array("..", "foo")); will redirect to "../foo" and won't touch $data.
+ */
 class Redirect extends Exception
 {
 	public $nextpath;
@@ -18,9 +23,22 @@ class Redirect extends Exception
 		parent::__construct();
 	}
 }
-
+/*
+ * Class: NotFoundError
+ * An Exception
+ */
 class NotFoundError extends Exception { }
 
+/*
+ * Function: url_action_simple
+ * Generate an action in a more simple way.
+ * 
+ * Parameters:
+ * 	$function - A callback that gets the $data var as an input and returns the new $data var. Can throw an <Redirect> Exception.
+ * 
+ * Returns:
+ * 	A callback that can be used as an url action.
+ */
 function url_action_simple($function)
 {
 	return function(&$data, $url_now, &$url_next) use ($function)
@@ -37,6 +55,16 @@ function url_action_simple($function)
 	};
 }
 
+/*
+ * Function: url_action_subactions
+ * Generate an action that contains subactions. Subactions can redirect to ".." to go to the level above.
+ * 
+ * Parameters:
+ * 	$actions - Associative array of actions.
+ * 
+ * Returns:
+ * 	A callback that can be used as an url action.
+ */
 function url_action_subactions($actions)
 {
 	return function (&$data, $url_now, &$url_next) use ($actions)
@@ -47,6 +75,22 @@ function url_action_subactions($actions)
 	};
 }
 
+/*
+ * Function: url_process
+ * Choose an appropiate action for the given URL.
+ * 
+ * Parameters:
+ * 	$url - Either an array containing the URL components or the URL (both relative).
+ * 	$actions - Associative array of actions.
+ * 	           Key is the name (anything alphanumeric, should usually not start with '_', reserved for special URL names, see beneath).
+ * 	           Value is a callback of the form: function(&$data, $url_now, &$url_next). $data can be used for shared data between subactions. $url_next can be modified in order to redirect to another action / stop the routing.
+ * 
+ * Special actions:
+ * 	_default - If nothing was found, this is the default.
+ * 	_notfound - If not even _default exists or NotFoundError was thrown.
+ * 	_prelude - If existant, will be executed before everything else.
+ * 	_epilog - If existant, will be executed after evrything else.
+ */
 function url_process($url, $actions, &$data)
 {
 	$epilog_running = 0;
