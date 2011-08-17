@@ -10,26 +10,6 @@
  */
 
 /*
- * Class: Redirect
- * Exception that can be thrown inside an <url_action_simple>.
- * throw new Redirect(array("..", "foo")); will redirect to "../foo" and won't touch $data.
- */
-class Redirect extends Exception
-{
-	public $nextpath;
-	public function __construct($nextpath)
-	{
-		$this->nextpath = $nextpath;
-		parent::__construct();
-	}
-}
-/*
- * Class: NotFoundError
- * An Exception
- */
-class NotFoundError extends Exception { }
-
-/*
  * Function: url_action_simple
  * Generate an action in a more simple way.
  * 
@@ -150,5 +130,25 @@ function url_process($url, $actions, &$data)
 	else
 		return NULL;
 }
+
+/*
+ * Class: Redirect
+ * Exception that can be thrown inside an <url_action_simple>.
+ * throw new Redirect(array("..", "foo")); will redirect to "../foo" and won't touch $data.
+ */
+class Redirect extends Exception
+{
+	public $nextpath;
+	public function __construct($nextpath)
+	{
+		$this->nextpath = $nextpath;
+		parent::__construct();
+	}
+}
+/*
+ * Class: NotFoundError
+ * An Exception
+ */
+class NotFoundError extends Exception { }
 
 ?>

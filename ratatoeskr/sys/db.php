@@ -40,6 +40,7 @@ function sqlesc($str)
 
 /*
  * Class: MySQLException
+ * Will be thrown by qdb*, if the query induced an MySQL error.
  */
 class MySQLException extends Exception { }
 

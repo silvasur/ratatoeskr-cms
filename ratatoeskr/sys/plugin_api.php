@@ -11,6 +11,21 @@
 
 require_once(dirname(__FILE__) . "/models.php");
 
+$url_handlers = array();
+/*
+ * Function: register_url_handler
+ * Register an URL handler. See <urlprocess.php> for more details.
+ * 
+ * Parameters:
+ * 	$name - The name of the new URL
+ * 	$callback - The Function to be called (see <url_process>).
+ */
+function register_url_handler($name, $callback)
+{
+	global $url_handlers;
+	$url_handlers[$name] = $callback;
+}
+
 /*
  * Class: RatatoeskrPlugin
  * An abstract class to be extended in order to write your own Plugin.
@@ -82,21 +97,6 @@ abstract class RatatoeskrPlugin
 	public function init() {}
 	public function install() {}
 	public function uninstall() {}
-}
-
-$url_handlers = array();
-/*
- * Function: register_url_handler
- * Register an URL handler. See <urlprocess.php> for more details.
- * 
- * Parameters:
- * 	$name - The name of the new URL
- * 	$callback - The Function to be called (see <url_process>).
- */
-function register_url_handler($name, $callback)
-{
-	global $url_handlers;
-	$url_handlers[$name] = $callback;
 }
 
 ?>

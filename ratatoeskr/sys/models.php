@@ -14,6 +14,12 @@ require_once(dirname(__FILE__) . "/utils.php");
 db_connect();
 
 /*
+ * Variable: $ratatoeskr_settings
+ * The global <Settings> object. For internal use.
+ */
+$ratatoeskr_settings = new Settings("rw");
+
+/*
  * Class: DoesNotExistError
  * This Exception is thrown by an ::by_*-constructor or any array-like object if the desired object is not present in the database.
  */
@@ -890,12 +896,6 @@ class Settings implements Countable, ArrayAccess, IteratorAggregate
 	/* IteratorAggregate interface implementation */
 	public function getIterator() { return new SettingsIterator($this); }
 }
-
-/*
- * Variable: $ratatoeskr_settings
- * The global <Settings> object. For internal use.
- */
-$ratatoeskr_settings = new Settings("rw");
 
 /*
  * Class: PluginKVStorage
