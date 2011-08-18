@@ -48,11 +48,29 @@ function url_action_simple($function)
  */
 function url_action_subactions($actions)
 {
-	return function (&$data, $url_now, &$url_next) use ($actions)
+	return function(&$data, $url_now, &$url_next) use ($actions)
 	{
 		$result = url_process($url_next, $actions, $data);
 		if($result !== NULL)
 			$url_next = $result;
+	};
+}
+
+/*
+ * Function: url_action_alias
+ * Generate an action that is an alias for another one (i.e. redirects).
+ * 
+ * Parameters:
+ * 	$for - Path (array) of the action this one should be an alias of.
+ *
+ * Returns:
+ * 	A callback that can be used as an url action.
+ */
+function url_action_alias($for)
+{
+	return function(&$data, $url_now, &$url_next) use($for)
+	{
+		$url_next = array_merge($for, $url_next);
 	};
 }
 
