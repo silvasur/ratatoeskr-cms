@@ -14,7 +14,7 @@ require_once(dirname(__FILE__) . "/sys/plugin_api.php");
 require_once(dirname(__FILE__) . "/sys/models.php");
 require_once(dirname(__FILE__) . "/sys/urlprocess.php");
 require_once(dirname(__FILE__) . "/frontend.php");
-require_once(dirname(__FILE__) . "/backend.php");
+require_once(dirname(__FILE__) . "/backend/main.php");
 
 function ratatoeskr()
 {
@@ -39,6 +39,9 @@ function ratatoeskr()
 	register_url_handler("_default", "frontend_url_handler");
 	register_url_handler("backend", $backend_subactions);
 	register_url_handler("_notfound", "e404handler");
+	
+	$urlpath = explode("/", $_GET["action"]);
+	$data    = array("rel_path_to_root")
 }
 
 ?>
