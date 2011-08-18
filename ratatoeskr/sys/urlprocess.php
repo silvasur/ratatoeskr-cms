@@ -1,9 +1,10 @@
 <?php
 /*
- * File: urlprocess.php
+ * File: ratatoeskr/sys/urlprocess.php
  * 
  * Providing functions / classes to handle URLs
- *
+ * 
+ * License:
  * This file is part of Ratatöskr.
  * Ratatöskr is licensed unter the MIT / X11 License.
  * See "ratatoeskr/licenses/ratatoeskr" for more information.

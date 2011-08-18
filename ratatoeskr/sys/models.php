@@ -1,8 +1,9 @@
 <?php
 /*
- * File: models.php
+ * File: ratatoeskr/sys/models.php
  * Data models to make database accesses more comfortable.
- *
+ * 
+ * License:
  * This file is part of Ratatöskr.
  * Ratatöskr is licensed unter the MIT / X11 License.
  * See "ratatoeskr/licenses/ratatoeskr" for more information.

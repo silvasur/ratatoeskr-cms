@@ -1,8 +1,9 @@
 <?php
 /*
- * File: main.php
+ * File: ratatoeskr/main.php
  * Initialize and launch Ratatöskr
- *
+ * 
+ * License:
  * This file is part of Ratatöskr.
  * Ratatöskr is licensed unter the MIT / X11 License.
  * See "ratatoeskr/licenses/ratatoeskr" for more information.

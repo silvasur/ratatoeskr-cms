@@ -1,9 +1,9 @@
 <?php
 /*
- * File: plugin_api.php
- * 
+ * File: ratatoeskr/sys/plugin_api.php
  * Plugin API contains the plugin base class and other interfaces to Ratatöskr.
- *
+ * 
+ * License:
  * This file is part of Ratatöskr.
  * Ratatöskr is licensed unter the MIT / X11 License.
  * See "ratatoeskr/licenses/ratatoeskr" for more information.
@@ -14,7 +14,7 @@ require_once(dirname(__FILE__) . "/models.php");
 $url_handlers = array();
 /*
  * Function: register_url_handler
- * Register an URL handler. See <urlprocess.php> for more details.
+ * Register an URL handler. See <ratatoeskr/sys/urlprocess.php> for more details.
  * 
  * Parameters:
  * 	$name - The name of the new URL

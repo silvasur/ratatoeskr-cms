@@ -1,9 +1,10 @@
 <?php
 /*
- * File: db.php
+ * File: ratatoeskr/sys/db.php
  * 
  * Helper functions for dealing with MySQL.
- *
+ * 
+ * License:
  * This file is part of Ratatöskr.
  * Ratatöskr is licensed unter the MIT / X11 License.
  * See "ratatoeskr/licenses/ratatoeskr" for more information.
@@ -37,12 +38,6 @@ function sqlesc($str)
 {
 	return mysql_real_escape_string($str);
 }
-
-/*
- * Class: MySQLException
- * Will be thrown by qdb*, if the query induced an MySQL error.
- */
-class MySQLException extends Exception { }
 
 /*
  * Function: qdb_vfmt
@@ -100,5 +95,11 @@ function qdb()
 		throw new MySQLException(mysql_errno() . ': ' . mysql_error() . (__DEBUG__ ? ("[[FULL QUERY: " . $query . "]]") : "" ));
 	return $rv;
 }
+
+/*
+ * Class: MySQLException
+ * Will be thrown by qdb*, if the query induced an MySQL error.
+ */
+class MySQLException extends Exception { }
 
 ?>
