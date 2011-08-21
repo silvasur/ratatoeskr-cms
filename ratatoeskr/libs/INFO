@@ -1,0 +1,15 @@
+This directory will hold some libraries Ratatöskr needs.
+
+1. Smarty Template engine
+   
+   Create a directory called "smarty" and place the content of the "libs"
+   directory there.
+   
+   Smarty can be found here: <http://www.smarty.net/download>
+
+2. PHP Markdown
+   
+   Place "markdown.php" from the archive directly into this directory.
+   
+   PHP Markdown can be found here: <http://michelf.com/projects/php-markdown/>
+
