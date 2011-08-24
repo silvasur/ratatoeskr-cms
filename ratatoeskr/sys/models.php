@@ -48,9 +48,9 @@ class User
 	/*
 	 * Variables: Public class properties
 	 * 
-	 * $username - The username
-	 * $pwhash   - SHA1-Hash of the password
-	 * $mail     - E-Mail-address
+	 * $username - The username.
+	 * $pwhash   - <PasswordHash> of the password.
+	 * $mail     - E-Mail-address.
 	 * $fullname - The full name of the user.
 	 * $language - Users language
 	 */
