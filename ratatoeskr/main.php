@@ -12,14 +12,15 @@
 require_once(dirname(__FILE__) . "/sys/db.php");
 require_once(dirname(__FILE__) . "/sys/plugin_api.php");
 require_once(dirname(__FILE__) . "/sys/models.php");
+require_once(dirname(__FILE__) . "/sys/load_smarty.php");
 require_once(dirname(__FILE__) . "/sys/urlprocess.php");
 require_once(dirname(__FILE__) . "/frontend.php");
 require_once(dirname(__FILE__) . "/backend/main.php");
 
 function ratatoeskr()
 {
-	global $backend_subactions;
-	
+	global $backend_subactions, $smarty;
+	session_start();
 	if(!CONFIG_FILLED_OUT)
 		return setup();
 	
@@ -41,7 +42,9 @@ function ratatoeskr()
 	register_url_handler("_notfound", "e404handler");
 	
 	$urlpath = explode("/", $_GET["action"]);
-	$data    = array("rel_path_to_root")
+	$rel_path_to_root = implode("/", array_merge(array("."), array_repeat("..", count($urlpath) - 1)));
+	$data = array("rel_path_to_root" => $rel_path_to_root);
+	$smarty->assign("rel_path_to_root", $rel_path_to_root);
 }
 
 ?>
