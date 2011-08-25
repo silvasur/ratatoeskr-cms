@@ -23,6 +23,8 @@ if(!isset($smarty))
 	$smarty->setCompileDir(dirname(__FILE__) . "/../tmp/smartytemplates_c");
 	$smarty->setCacheDir(dirname(__FILE__) . "/../tmp/smarty/cache");
 	$smarty->setConfigDir(dirname(__FILE__) . "/../smarty_confdir");
+	$smarty->left_delimiter  = "{%";
+	$smarty->right_delimiter = "%}";
 }
 
 ?>
