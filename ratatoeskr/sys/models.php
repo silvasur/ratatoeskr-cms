@@ -15,6 +15,19 @@ require_once(dirname(__FILE__) . "/utils.php");
 db_connect();
 
 /*
+ * Array: $imagetype_file_extensions
+ * Array of default file extensions for most IMAGETYPE_* constants
+ */
+$imagetype_file_extensions = array(
+	IMAGETYPE_GIF     => "gif",
+	IMAGETYPE_JPEG    => "jpg",
+	IMAGETYPE_PNG     => "png",
+	IMAGETYPE_BMP     => "bmp",
+	IMAGETYPE_TIFF_II => "tif",
+	IMAGETYPE_TIFF_MM => "tif",
+);
+
+/*
  * Variable: $ratatoeskr_settings
  * The global <Settings> object. For internal use.
  */
@@ -1661,19 +1674,6 @@ class UnknownFileFormat extends Exception { }
 class IOError extends Exception { }
 
 /*
- * Array: $imagetype_file_extensions
- * Array of default file extensions for most IMAGETYPE_* constants
- */
-$imagetype_file_extensions = array(
-	IMAGETYPE_GIF     => "gif",
-	IMAGETYPE_JPEG    => "jpg",
-	IMAGETYPE_PNG     => "png",
-	IMAGETYPE_BMP     => "bmp",
-	IMAGETYPE_TIFF_II => "tif",
-	IMAGETYPE_TIFF_MM => "tif",
-);
-
-/*
  * Class: Image
  * Representation of an image entry.
  */
@@ -1750,7 +1750,7 @@ class Image
 	
 	/*
 	 * Constructor: by_id
-	 * Get iimage by ID.
+	 * Get image by ID.
 	 * 
 	 * Parameters:
 	 * 	$id - The ID
