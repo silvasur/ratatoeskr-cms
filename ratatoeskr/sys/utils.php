@@ -25,7 +25,7 @@
 function array_repeat($val, $n)
 {
 	$rv = array();
-	for($i = 1; $i < $n; ++$i)
+	for($i = 0; $i < $n; ++$i)
 		array_push($rv, $val);
 	return $rv;
 }
