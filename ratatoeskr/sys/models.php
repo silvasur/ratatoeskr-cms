@@ -439,202 +439,6 @@ class Group
 }
 
 /*
- * Class: ACL
- * Data model for AccessControlLists
- */
-class ACL
-{
-	private $id;
-	
-	/*
-	 * Variables: Public class properties. *_rights are arrays, which can have this elements: "read", "write", "delete".
-	 * 
-	 * $users         - Array of <User> objects
-	 * $user_rights   - User rights
-	 * $groups        - Array of <Group> objects
-	 * $group_rights  - Group rights
-	 * $others_rights - The rights of everyone
-	 */
-	public $users;
-	public $user_rights;
-	public $groups;
-	public $group_rights;
-	public $others_rights;
-	
-	/* Should not be constructed directly. */
-	private function __construct()
-	{
-		$this->users         = array();
-		$this->user_rights   = array();
-		$this->groups        = array();
-		$this->group_rights  = array();
-		$this->others_rights = array();
-	}
-	
-	/*
-	 * Function: get_id
-	 * Returns:
-	 * 	The ACL ID.
-	 */
-	public function get_id()
-	{
-		return $this->id;
-	}
-	
-	private static function filter_invalid_rights($rights)
-	{
-		return array_filter($rights, function($x) { return in_array($x, array("read", "write", "delete")); });
-	}
-	
-	/*
-	 * Constructor: by_json
-	 * Creates an ACL object from an JSON string.
-	 * 
-	 * Parameters:
-	 * 	json - The JSON string
-	 *
-	 * Returns:
-	 * 	An ACL object
-	 */
-	public static function by_json($json)
-	{
-		$obj = new self;
-		$obj->id = 0;
-		
-		$pre = json_decode($json, True);
-		if($pre === NULL)
-			return $obj;
-		
-		$obj->users = array_filter(
-			array_map(
-				function($x){ try{ return User::by_id($x); } catch(DoesNotExistError $e) { return NULL; } },
-				$pre["users"]),
-			function($x) { return $x!==NULL; });
-		$obj->groups = array_filter(
-			array_map(
-				function($x){ try{ return Group::by_id($x); } catch(DoesNotExistError $e) { return NULL; } },
-				$pre["groups"]),
-			function($x) { return $x!==NULL; });
-		$obj->user_rights = self::filter_invalid_rights($pre["rights"]["users"]);
-		$obj->group_rights = self::filter_invalid_rights($pre["rights"]["groups"]);
-		$obj->others_rights = self::filter_invalid_rights($pre["rights"]["others"]);
-		
-		return $obj;
-	}
-	
-	/*
-	 * Constructor: create
-	 * Creates a new ACL object.
-	 *
-	 * Params:
-	 * 	$in_db - Should this ACL be stored in the database? (Defaults to True)
-	 * 
-	 * Returns:
-	 * 	ACL object.
-	 */
-	public static function create($in_db = True)
-	{
-		$obj = new self;
-		
-		if($in_db)
-		{
-			qdb("INSERT INTO `PREFIX_acl` (`acl_json`) VALUES ('%s')", $obj->to_json());
-			$obj->id = mysql_insert_id();
-		}
-		
-		return $obj;
-	}
-	
-	/*
-	 * Constructor: by_id
-	 * Gets ACL object by id.
-	 *
-	 * Parameters:
-	 * 	$id - The ID.
-	 *
-	 * Returns:
-	 * 	An ACL object.
-	 */
-	public static function by_id($id)
-	{
-		$result = qdb("SELECT `acl_json` FROM `PREFIX_acl` WHERE `id` = %d", $id);
-		
-		$sqlrow = mysql_fetch_assoc($result);
-		if($sqlrow == False)
-			throw new DoesNotExistError("ACL with ID = \"$id\" does not exist.");
-		$obj = self::by_json($sqlrow["acl_json"]);
-		$obj->id = $id;
-		
-		return $obj;
-	}
-	
-	/*
-	 * Function: to_json
-	 * Genearets JSON string
-	 *
-	 * Returns:
-	 * 	JSON string.
-	 */
-	public function to_json()
-	{
-		return json_encode(array(
-			"users"  => array_map(function($x) { return $x->get_id(); }, $this->users),
-			"groups" => array_map(function($x) { return $x->get_id(); }, $this->groups),
-			"rights" => array(
-				"users"  => self::filter_invalid_rights($this->user_rights),
-				"groups" => self::filter_invalid_rights($this->group_rights),
-				"others" => self::filter_invalid_rights($this->others_rights)
-			)
-		));
-	}
-	
-	/*
-	 * Function: save
-	 * If ACL comes from database, save it. Do nothing otherwise.
-	 */
-	public function save()
-	{
-		if($this->id > 0)
-			qdb("UPDATE `PREFIX_acl` SET `acl_json` = '%s'", $this->to_json);
-	}
-	
-	/*
-	 * Function: delete
-	 * If ACL comes from database, delete it. Do nothing otherwise.
-	 */
-	public function delete()
-	{
-		if($this->id > 0)
-		{
-			qdb("DELETE FROM `PREFIX_acl` WHERE `id` = %d", $this->id);
-			$this->id = 0;
-		}
-	}
-	
-	/*
-	 * Function: user_rights
-	 * Get the rights of $user.
-	 *
-	 * Parameters:
-	 * 	$user - A <User> object.
-	 *
-	 * Returns:
-	 * 	An Array of rights.
-	 */
-	public function user_rights($user)
-	{
-		$get_id_func = function($x) { return $x->get_id(); };
-		$rights = $this->others_rights;
-		if(in_array($user->get_id(), array_map($get_id_func, $this->users)))
-			$rights = array_merge($rights, $this->user_rights);
-		$temp = array_intersect(array_map($get_id_func, $user->get_groups()), $this->groups);
-		if(!empty($temp))
-			$rights = array_merge($rights, $this->group_rights);
-		return self::filter_invalid_rights(array_unique($rights));
-	}
-}
-
-/*
  * Class: Translation
  * A translation. Can only be stored using an <Multilingual> object.
  */
@@ -1116,11 +920,9 @@ class Style
 	 * 
 	 * $name - The name of the style.
 	 * $code - The CSS code.
-	 * $acl  - An <ACL> object.
 	 */
 	public $name;
 	public $code;
-	public $acl;
 	
 	/* Should not be constructed manually */
 	private function __construct() { }
@@ -1134,7 +936,6 @@ class Style
 		$this->id   = $sqlrow["id"];
 		$this->name = $sqlrow["name"];
 		$this->code = $sqlrow["code"];
-		$this->acl  = ACL::by_id($sqlrow["acl"]);
 	}
 	
 	/*
@@ -1152,12 +953,11 @@ class Style
 	public static function create($name)
 	{
 		$obj = new self;
-		$obj->acl  = ACL::create(True);
 		$obj->name = $name;
 		$obj->code = "";
 		
-		qdb("INSERT INTO `PREFIX_styles` (`name`, `code`, `acl`) VALUES ('%s', '', %d)",
-			$name, $this->acl->get_id());
+		qdb("INSERT INTO `PREFIX_styles` (`name`, `code`) VALUES ('%s', '')",
+			$name);
 		
 		$obj->id = mysql_insert_id();
 		return $obj;
@@ -1173,7 +973,7 @@ class Style
 	public static function by_id($id)
 	{
 		$obj = new seld;
-		$obj->populate_by_sqlresult(qdb("SELECT `id`, `acl`, `name`, `code` FROM `PREFIX_styles` WHERE `id` = %d", $id));
+		$obj->populate_by_sqlresult(qdb("SELECT `id`, `name`, `code` FROM `PREFIX_styles` WHERE `id` = %d", $id));
 		return $obj;
 	}
 	
@@ -1187,7 +987,7 @@ class Style
 	public static function by_name($id)
 	{
 		$obj = new seld;
-		$obj->populate_by_sqlresult(qdb("SELECT `id`, `acl`, `name`, `code` FROM `PREFIX_styles` WHERE `name` = '%s'", $name));
+		$obj->populate_by_sqlresult(qdb("SELECT `id`, `name`, `code` FROM `PREFIX_styles` WHERE `name` = '%s'", $name));
 		return $obj;
 	}
 	
@@ -1197,9 +997,8 @@ class Style
 	 */
 	public function save()
 	{
-		$this->acl->save();
-		qdb("UPDATE `PREFIX_styles` SET `name` = '%s', `code` = '%s', `acl` = %d WHERE `id` = %d",
-			$this->name, $this->code, $this->acl, $this->id);
+		qdb("UPDATE `PREFIX_styles` SET `name` = '%s', `code` = '%s' WHERE `id` = %d",
+			$this->name, $this->code, $this->id);
 	}
 	
 	/*
@@ -1207,7 +1006,6 @@ class Style
 	 */
 	public function delete()
 	{
-		$this->acl->delete();
 		qdb("DELETE FROM `PREFIX_styles` WHERE `id` = %d", $this->id);
 	}
 }
@@ -1688,11 +1486,9 @@ class Image
 	 * 
 	 * $name - The image name
 	 * $alt - The alternative text (a <Multilingual> object)
-	 * $acl - An <ACL> object
 	 */
 	public $name;
 	public $alt;
-	public $acl;
 	
 	private function __construct() { }
 	
@@ -1705,7 +1501,6 @@ class Image
 		$this->name = $sqlrow["name"];
 		$this->alt  = Multilingual::by_id($sqlrow["alt"]);
 		$this->file = $sqlrow["file"];
-		$this->acl  = ACL::by_id($sqlrow["acl"]);
 	}
 	
 	/*
@@ -1730,11 +1525,10 @@ class Image
 		$obj = new self;
 		$obj->name = $name;
 		$obj->alt  = Multilingual::create();
-		$obj->acl  = ACL::create();
 		$obj->file = "0";
 		
-		qdb("INSERT INTO `PREFIX_images` (`name`, `alt`, `file`, `acl`) VALUES ('%s', %d, '0', %d)",
-			$name, $obj->alt->get_id(), $obj->acl->get_id());
+		qdb("INSERT INTO `PREFIX_images` (`name`, `alt`, `file`) VALUES ('%s', %d, '0')",
+			$name, $obj->alt->get_id());
 		
 		$obj->id = mysql_insert_id();
 		try
@@ -1759,7 +1553,7 @@ class Image
 	public static function by_id($id)
 	{
 		$obj = new self;
-		$obj->populate_by_sqlresult(qdb("SELECT `id`, `name`, `alt`, `file`, `acl` FROM `PREFIX_images` WHERE `id` = %d", $id));
+		$obj->populate_by_sqlresult(qdb("SELECT `id`, `name`, `alt`, `file` FROM `PREFIX_images` WHERE `id` = %d", $id));
 		return $obj;
 	}
 	
@@ -1809,10 +1603,9 @@ class Image
 	 */
 	public function save()
 	{
-		$this->acl->save();
 		$this->alt->save();
-		qdb("UPDATE `PREFIX_images` SET `name` = '%s', `alt` = %d, `file` = '%s', `acl` = %d WHERE `id` = %d",
-			$this->name, $this->alt->get_id(), $this->file, $this->acl->get_id(), $this->id);
+		qdb("UPDATE `PREFIX_images` SET `name` = '%s', `alt` = %d, `file` = '%s' WHERE `id` = %d",
+			$this->name, $this->alt->get_id(), $this->file, $this->id);
 	}
 	
 	/*
@@ -1820,7 +1613,6 @@ class Image
 	 */
 	public function delete()
 	{
-		$this->acl->delete();
 		$this->alt->delete();
 		if(is_file(SITE_BASE_PATH . "/images/" . $this->file))
 			unlink(SITE_BASE_PATH . "/images/" . $this->file);
@@ -1856,7 +1648,6 @@ class Article
 	 * $excerpt - Excerpt (an <Multilingual> object)
 	 * $meta - Keywords, comma seperated
 	 * $custom - Custom fields, is an array
-	 * $acl - an <ACL> object
 	 * $article_image - The article <Image>. If none: NULL
 	 * $status - One of the ARTICLE_STATUS_* constants
 	 * $section - <Section>
@@ -1870,7 +1661,6 @@ class Article
 	public $excerpt;
 	public $meta;
 	public $custom;
-	public $acl;
 	public $article_image;
 	public $status;
 	public $section;
@@ -1896,7 +1686,6 @@ class Article
 		$this->excerpt        = Multilingual::by_id($sqlrow["excerpt"]);
 		$this->meta           = $sqlrow["meta"];
 		$this->custom         = unserialize(base64_decode($sqlrow["custom"]));
-		$this->acl            = ACL::by_id($sqlrow["acl"]);
 		$this->article_image  = $sqlrow["article_image"] == 0 ? NULL : Image::by_id($sqlrow["article_image"]);
 		$this->status         = $sqlrow["status"];
 		$this->section        = Section::by_id($sqlrow["section"]);
@@ -1927,19 +1716,17 @@ class Article
 		$obj->excerpt        = Multilingual::create();
 		$obj->meta           = "";
 		$obj->custom         = array();
-		$obj->acl            = ACL::create();
 		$obj->article_image  = NULL;
 		$obj->status         = ARTICLE_STATUS_HIDDEN;
 		$obj->section        = Section::by_id($ratatoeskr_settings["default_section"]);
 		$obj->timestamp      = time();
 		$obj->allow_comments = $ratatoeskr_settings["allow_comments_default"];
 		
-		qdb("INSERT INTO `PREFIX_articles` (`urltitle`, `title`, `text`, `excerpt`, `meta`, `custom`, `acl`, `article_image`, `status`, `section`, `timestamp`, `allow_comments`) VALUES ('', %d, %d, %d, '', '%s', %d, 0, %d, %d, %d, %d)",
+		qdb("INSERT INTO `PREFIX_articles` (`urltitle`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments`) VALUES ('', %d, %d, %d, '', '%s', 0, %d, %d, %d, %d)",
 			$obj->title->get_id(),
 			$obj->text->get_id(),
 			$obj->excerpt->get_id(),
 			base64_encode(serialize($obj->custom)),
-			$obj->acl->get_id(),
 			$obj->status,
 			$obj->section->get_id(),
 			$obj->timestamp,
@@ -1959,7 +1746,7 @@ class Article
 	{
 		$obj = new self;
 		$obj ->populate_by_sqlresult(qdb(
-			"SELECT `id`, `urltitle`, `title`, `text`, `excerpt`, `meta`, `acl`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments` FROM `PREFIX_articles` WHERE `id` = %d", $id
+			"SELECT `id`, `urltitle`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments` FROM `PREFIX_articles` WHERE `id` = %d", $id
 		));
 		return $obj;
 	}
@@ -1975,7 +1762,7 @@ class Article
 	{
 		$obj = new self;
 		$obj ->populate_by_sqlresult(qdb(
-			"SELECT `id`, `urltitle`, `title`, `text`, `excerpt`, `meta`, `custom`, `acl`, `article_image`, `status`, `section`, `timestamp`, `allow_comments` FROM `PREFIX_articles` WHERE `urlname` = '%s'", $urlname
+			"SELECT `id`, `urltitle`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments` FROM `PREFIX_articles` WHERE `urlname` = '%s'", $urlname
 		));
 		return $obj;
 	}
@@ -2020,7 +1807,6 @@ class Article
 		$this->title->save();
 		$this->text->save();
 		$this->excerpt->save();
-		$this->acl->save();
 		
 		qdb("DELETE FROM `PREFIX_article_tag_relations` WHERE `article`= %d", $this->id);
 		
@@ -2035,14 +1821,13 @@ class Article
 				)
 			);
 		
-		qdb("UPDATE `PREFIX_articles` SET `urltitle` = '%s', `title` = %d, `text` = %d, `excerpt` = %d, `meta` = '%s', `custom` = '%s', `acl` = %d, `article_image` = %d, `status` = %d, `section` = %d, `timestamp` = %d, `allow_comments` = %d WHERE `id` = %d",
+		qdb("UPDATE `PREFIX_articles` SET `urltitle` = '%s', `title` = %d, `text` = %d, `excerpt` = %d, `meta` = '%s', `custom` = '%s', `article_image` = %d, `status` = %d, `section` = %d, `timestamp` = %d, `allow_comments` = %d WHERE `id` = %d",
 			$this->urltitle,
 			$this->title->get_id(),
 			$this->text->get_id(),
 			$this->excerpt->get_id(),
 			$this->meta,
 			base64_encode(serialize($this->custom)),
-			$this->acl->get_id(),
 			$this->article_image === NULL ? 0 : $this->article_image->get_id(),
 			$this->status,
 			$this->section->get_id(),
@@ -2060,7 +1845,6 @@ class Article
 		$this->title->delete();
 		$this->text->delete();
 		$this->excerpt->delete();
-		$this->acl->delete();
 		
 		foreach($this->get_comments() as $comment)
 			$comment->delete();

@@ -4,12 +4,6 @@
 $sql = <<<SQL
 SET SQL_MODE="NO_AUTO_VALUE_ON_ZERO";
 
-CREATE TABLE `PREFIX_acl` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `acl_json` text COLLATE utf8_unicode_ci NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-
 CREATE TABLE `PREFIX_articles` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `urltitle` text COLLATE utf8_unicode_ci NOT NULL,
@@ -18,7 +12,6 @@ CREATE TABLE `PREFIX_articles` (
   `excerpt` int(11) NOT NULL,
   `meta` text COLLATE utf8_unicode_ci NOT NULL,
   `custom` text COLLATE utf8_unicode_ci NOT NULL,
-  `acl` int(11) NOT NULL,
   `article_image` int(11) NOT NULL,
   `status` int(11) NOT NULL,
   `section` int(11) NOT NULL,
@@ -60,7 +53,6 @@ CREATE TABLE `PREFIX_images` (
   `name` text COLLATE utf8_unicode_ci NOT NULL,
   `alt` int(11) NOT NULL,
   `file` text COLLATE utf8_unicode_ci NOT NULL,
-  `acl` int(11) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
@@ -107,7 +99,6 @@ CREATE TABLE `PREFIX_styles` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` text COLLATE utf8_unicode_ci NOT NULL,
   `code` text COLLATE utf8_unicode_ci NOT NULL,
-  `acl` int(11) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
