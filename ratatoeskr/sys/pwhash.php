@@ -11,7 +11,7 @@
  */
 
 /*
- * Class:PasswordHash
+ * Class: PasswordHash
  * Contains static functions for password hashes.
  * Is just used as a namespace, can not be created.
  * 
@@ -23,8 +23,8 @@ class PasswordHash
 	
 	private static $saltlen_min = 20;
 	private static $saltlen_max = 30;
-	private static $iterations_min = 5;
-	private static $iterations_max = 10;
+	private static $iterations_min = 200;
+	private static $iterations_max = 1000;
 	
 	private static function hash($data, $salt, $iterations)
 	{
