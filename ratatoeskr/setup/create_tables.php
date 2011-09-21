@@ -8,7 +8,7 @@ CREATE TABLE `PREFIX_acl` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `acl_json` text COLLATE utf8_unicode_ci NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 CREATE TABLE `PREFIX_articles` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -19,13 +19,13 @@ CREATE TABLE `PREFIX_articles` (
   `meta` text COLLATE utf8_unicode_ci NOT NULL,
   `custom` text COLLATE utf8_unicode_ci NOT NULL,
   `acl` int(11) NOT NULL,
-  `article_img` int(11) NOT NULL,
+  `article_image` int(11) NOT NULL,
   `status` int(11) NOT NULL,
   `section` int(11) NOT NULL,
   `timestamp` bigint(20) NOT NULL,
   `allow_comments` int(11) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 CREATE TABLE `PREFIX_article_tag_relations` (
   `tag` int(11) NOT NULL,
@@ -45,12 +45,12 @@ CREATE TABLE `PREFIX_comments` (
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 CREATE TABLE `PREFIX_groups` (
-  `int` int(11) NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` text COLLATE utf8_unicode_ci NOT NULL,
-  PRIMARY KEY (`int`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
-CREATE TABLE `PREFIX_group_memers` (
+CREATE TABLE `PREFIX_group_members` (
   `user` int(11) NOT NULL,
   `group` int(11) NOT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
@@ -96,7 +96,7 @@ CREATE TABLE `PREFIX_sections` (
   `template` text COLLATE utf8_unicode_ci NOT NULL,
   `styles` text COLLATE utf8_unicode_ci NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 CREATE TABLE `PREFIX_settings_kvstorage` (
   `key` text COLLATE utf8_unicode_ci NOT NULL,
@@ -133,7 +133,7 @@ CREATE TABLE `PREFIX_users` (
   `fullname` text COLLATE utf8_unicode_ci NOT NULL,
   `language` varchar(10) COLLATE utf8_unicode_ci NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 SQL;
 
 ?>

@@ -82,7 +82,7 @@ class User
 	 * 
 	 * Parameters:
 	 * 	$username - The username
-	 * 	$pwhash   - SHA1-Hash of the password
+	 * 	$pwhash   - <PasswordHash> of the password
 	 * 	$mail     - E-Mail-address
 	 * 	$fullname - The full name.
 	 * 
@@ -98,7 +98,7 @@ class User
 		catch(DoesNotExistError $e)
 		{
 			global $ratatoeskr_settings;
-			qdb("INSERT INTO `PREFIX_users` (`username`, `pwhash`, `mail`, `username`, `language`) VALUES ('%s', '%s', '%s', '%s', '%s')",
+			qdb("INSERT INTO `PREFIX_users` (`username`, `pwhash`, `mail`, `fullname`, `language`) VALUES ('%s', '%s', '%s', '%s', '%s')",
 				$username, $pwhash, $mail, $fullname, $ratatoeskr_settings["default_language"]);
 			$obj = new self;
 			
@@ -160,7 +160,7 @@ class User
 	 */
 	public static function by_name($username)
 	{
-		$result = qdb("SELECT `id`, `username`, `pwhash`, `mail`, `fullname`, `language` FROM `PREFIX_users` WHERE `name` = '%s'", $username);
+		$result = qdb("SELECT `id`, `username`, `pwhash`, `mail`, `fullname`, `language` FROM `PREFIX_users` WHERE `username` = '%s'", $username);
 		
 		$obj = new self;
 		$obj->populate_by_sqlresult($result);
@@ -287,7 +287,7 @@ class Group
 	{
 		try
 		{
-			$obj = self::by_username($name);
+			$obj = self::by_name($name);
 		}
 		catch(DoesNotExistError $e)
 		{
@@ -302,7 +302,6 @@ class Group
 		throw new AlreadyExistsError("\"$name\" is already in database.");
 	}
 	
-	/* DANGER: $result must be valid! The calling function has to check this! */
 	private function populate_by_sqlresult($result)
 	{
 		$sqlrow = mysql_fetch_assoc($result);
