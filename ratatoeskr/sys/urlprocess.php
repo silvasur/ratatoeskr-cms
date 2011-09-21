@@ -53,6 +53,8 @@ function url_action_subactions($actions)
 		$result = url_process($url_next, $actions, $data);
 		if($result !== NULL)
 			$url_next = $result;
+		else
+			$url_next = array();
 	};
 }
 
