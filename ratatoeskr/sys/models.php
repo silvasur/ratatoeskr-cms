@@ -31,7 +31,7 @@ $imagetype_file_extensions = array(
  * Variable: $ratatoeskr_settings
  * The global <Settings> object. For internal use.
  */
-$ratatoeskr_settings = new Settings("rw");
+$ratatoeskr_settings = NULL;
 
 /*
  * Class: DoesNotExistError
@@ -910,6 +910,8 @@ class Settings implements Countable, ArrayAccess, IteratorAggregate
 	/* IteratorAggregate interface implementation */
 	public function getIterator() { return new SettingsIterator($this); }
 }
+
+$ratatoeskr_settings = new Settings("rw");
 
 /*
  * Class: PluginKVStorage

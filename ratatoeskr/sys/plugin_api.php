@@ -38,10 +38,10 @@ abstract class RatatoeskrPlugin
 	 * Variables: Protected variables
 	 *
 	 * $kvstorage - The Key-Value-Storage for the Plugin.
-	 * $smarty - Access to the global smarty object.
+	 * $ste - Access to the global STECore object.
 	 */
 	protected $kvstorage;
-	protected $smarty;
+	protected $ste;
 	
 	
 	/*
@@ -54,11 +54,11 @@ abstract class RatatoeskrPlugin
 	 */
 	public function __construct($id)
 	{
-		global $smarty;
+		global $ste;
 		$this->id        = $id;
 		
 		$this->kvstorage = new PluginKVStorage($id);
-		$this->smarty    = $smarty;
+		$this->ste       = $ste;
 	}
 	
 	/*
@@ -70,7 +70,7 @@ abstract class RatatoeskrPlugin
 	 */
 	final public function get_id() { return $this->id; }
 	final protected function get_additional_files_dir() { return dirname(dirname(__FILE__)) . "/plugin_extradata/" . $this->id; }
-	final protected function get_template_dir() { return dirname(dirname(__FILE__)) . "/templates/plugintemplates/" . $this->id; }
+	final protected function get_template_dir() { return dirname(dirname(__FILE__)) . "/templates/src/plugintemplates/" . $this->id; }
 	
 	/*
 	 * Function: register_url_handler
@@ -85,7 +85,7 @@ abstract class RatatoeskrPlugin
 		register_url_handler($name, array($this, $objfunction));
 	}
 	
-	final protected function register_settings_page($get, $validate, $set, $structure)
+	/*final protected function register_settings_page($get, $validate, $set, $structure)*/
 	
 	/*
 	 * Functions: Functions that are called at special events

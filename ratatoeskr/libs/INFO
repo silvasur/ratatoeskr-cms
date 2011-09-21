@@ -1,11 +1,10 @@
 This directory will hold some libraries Ratatöskr needs.
 
-1. Smarty Template engine
+1. Stupid Template Engine (STE)
    
-   Create a directory called "smarty" and place the content of the "libs"
-   directory there.
+   Place "stupid_template_engine.php" directly into this directory.
    
-   Smarty can be found here: <http://www.smarty.net/download>
+   STE can be found here: <https://github.com/kch42/Stupid-Template-Engine>
 
 2. PHP Markdown
    

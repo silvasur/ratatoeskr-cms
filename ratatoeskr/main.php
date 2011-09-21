@@ -12,14 +12,15 @@
 require_once(dirname(__FILE__) . "/sys/db.php");
 require_once(dirname(__FILE__) . "/sys/plugin_api.php");
 require_once(dirname(__FILE__) . "/sys/models.php");
-require_once(dirname(__FILE__) . "/sys/load_smarty.php");
+require_once(dirname(__FILE__) . "/sys/init_ste.php");
+require_once(dirname(__FILE__) . "/sys/translation.php");
 require_once(dirname(__FILE__) . "/sys/urlprocess.php");
-require_once(dirname(__FILE__) . "/frontend.php");
+#require_once(dirname(__FILE__) . "/frontend.php");
 require_once(dirname(__FILE__) . "/backend/main.php");
 
 function ratatoeskr()
 {
-	global $backend_subactions, $smarty;
+	global $backend_subactions, $ste, $url_handlers;
 	session_start();
 	if(!CONFIG_FILLED_OUT)
 		return setup();
@@ -37,14 +38,16 @@ function ratatoeskr()
 	}
 	
 	/* Register URL handlers */
-	register_url_handler("_default", "frontend_url_handler");
+	#register_url_handler("_default", "frontend_url_handler");
 	register_url_handler("backend", $backend_subactions);
-	register_url_handler("_notfound", "e404handler");
+	#register_url_handler("_notfound", "e404handler");
 	
 	$urlpath = explode("/", $_GET["action"]);
 	$rel_path_to_root = implode("/", array_merge(array("."), array_repeat("..", count($urlpath) - 1)));
 	$data = array("rel_path_to_root" => $rel_path_to_root);
-	$smarty->assign("rel_path_to_root", $rel_path_to_root);
+	$ste->vars["rel_path_to_root"] = $rel_path_to_root;
+	
+	url_process($urlpath, $url_handlers, $data);
 }
 
 ?>

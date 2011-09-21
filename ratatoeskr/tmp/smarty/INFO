@@ -1,6 +1,0 @@
-Temp / Cache dir for smarty
-needs two subdirectories: "templates_c" and "cache". The server needs full file
-access (rwx) to both of them. Usually you can do this by set the group to
-"apache" or "nobody" and then `chmod 775`, or if you do not have the rights to
-set the group: `chmod 777`, but this usually not a good idea (because everyone
-can now see this files), so only do this if you can not set the group.
