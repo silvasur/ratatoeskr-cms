@@ -21,9 +21,11 @@
 					</div>
 				</ste:then>
 			</ste:if>
-			<p><ste:escape><ste:capitalize><ste:get_translation for="username" /></ste:capitalize></ste:escape>: <input type="text" name="user" /></p>
-			<p><ste:escape><ste:capitalize><ste:get_translation for="password" /></ste:capitalize></ste:escape>: <input type="password" name="password" /></p>
-			<p class="loginbtn"><input type="submit" value="<ste:escape><ste:get_translation for='login_form_button' /></ste:escape>" /></p>
+			<form action="$rel_path_to_root/backend/login" method="POST" accept-charset="utf-8">
+				<p><ste:escape><ste:capitalize><ste:get_translation for="username" /></ste:capitalize></ste:escape>: <input type="text" name="user" /></p>
+				<p><ste:escape><ste:capitalize><ste:get_translation for="password" /></ste:capitalize></ste:escape>: <input type="password" name="password" /></p>
+				<p class="loginbtn"><input type="submit" value="<ste:escape><ste:get_translation for='login_form_button' /></ste:escape>" /></p>
+			</form>
 		</div>
 		</div></div>
 		<div id="image_copyright">
