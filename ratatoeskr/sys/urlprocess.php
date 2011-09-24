@@ -87,6 +87,7 @@ function url_action_alias($for)
  * 	           Value is a callback of the form: function(&$data, $url_now, &$url_next). $data can be used for shared data between subactions. $url_next can be modified in order to redirect to another action / stop the routing.
  * 
  * Special actions:
+ * 	_index - If name is empty, the index will be called.
  * 	_default - If nothing was found, this is the default.
  * 	_notfound - If not even _default exists or NotFoundError was thrown.
  * 	_prelude - If existant, will be executed before everything else.
@@ -109,6 +110,8 @@ function url_process($url, $actions, &$data)
 	while(is_string($url_now) and ($url_now != "") and ($url_now != ".."))
 	{
 		$cb = NULL;
+		if(empty($url_now))
+			$url_now = "_index";
 		if(isset($actions[$url_now]))
 			$cb = $actions[$url_now];
 		else if(isset($actions["_default"]))
