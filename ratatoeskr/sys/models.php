@@ -34,6 +34,18 @@ $imagetype_file_extensions = array(
 $ratatoeskr_settings = NULL;
 
 /*
+ * Constants: ARTICLE_STATUS_
+ * Possible <Article>::$status values.
+ * 
+ * ARTICLE_STATUS_HIDDEN - Article is hidden (Numeric: 0)
+ * ARTICLE_STATUS_LIVE   - Article is visible / live (Numeric: 1)
+ * ARTICLE_STATUS_STICKY - Article is sticky (Numeric: 2)
+ */
+define("ARTICLE_STATUS_HIDDEN", 0);
+define("ARTICLE_STATUS_LIVE",   1);
+define("ARTICLE_STATUS_STICKY", 2);
+
+/*
  * Class: DoesNotExistError
  * This Exception is thrown by an ::by_*-constructor or any array-like object if the desired object is not present in the database.
  */
@@ -1621,17 +1633,6 @@ class Image
 }
 
 /*
- * Constants: Possible <Article>::$status values.
- * 
- * ARTICLE_STATUS_HIDDEN - Article is hidden
- * ARTICLE_STATUS_LIVE   - Article is visible / live
- * ARTICLE_STATUS_STICKY - Article is sticky
- */
-define("ARTICLE_STATUS_HIDDEN", 0);
-define("ARTICLE_STATUS_LIVE",   1);
-define("ARTICLE_STATUS_STICKY", 2);
-
-/*
  * Class: Article
  * Representation of an article
  */
@@ -1753,18 +1754,53 @@ class Article
 	
 	/*
 	 * Constructor: by_urlname
-	 * Get by urlname
+	 * Get by urltitle
 	 * 
 	 * Parameters:
 	 * 	$urlname - The urlname
 	 */
-	public static function by_urlname($id)
+	public static function by_urlname($urlname)
 	{
 		$obj = new self;
 		$obj ->populate_by_sqlresult(qdb(
 			"SELECT `id`, `urltitle`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments` FROM `PREFIX_articles` WHERE `urlname` = '%s'", $urlname
 		));
 		return $obj;
+	}
+	
+	/*
+	 * Constructor: by_multi
+	 * Get Articles by multiple criterias
+	 *
+	 * Parameters:
+	 * 	$criterias - Array that can have these keys: id, urltitle, section, status
+	 * 
+	 * Returns:
+	 * 	Array of Article objects
+	 */
+	public function by_multi($criterias)
+	{
+		$subqueries = array();
+		foreach($criterias as $k => $v)
+		{
+			switch($k)
+			{
+				case "id":       $subqueries[] = qdb_fmt("`id`       =  %d",  $v);           break;
+				case "urltitle": $subqueries[] = qdb_fmt("`urltitle` = '%s'", $v);           break;
+				case "section":  $subqueries[] = qdb_fmt("`section`  =  %d",  $v->get_id()); break;
+				case "status":   $subqueries[] = qdb_fmt("`status`   =  %d",  $v);           break;
+				default: continue;
+			}
+		}
+		
+		if(empty($subqueries))
+			return self::all(); /* No limiting criterias, so we take them all... */
+		
+		$result = qdb("SELECT `id` FROM `PREFIX_articles` WHERE " . implode(" AND ", $subqueries));
+		$rv = array();
+		while($sqlrow = mysql_fetch_assoc($result))
+			$rv[] = self::by_id($sqlrow["id"]);
+		return $rv;
 	}
 	
 	/*
@@ -1787,13 +1823,24 @@ class Article
 	 * Function: get_comments
 	 * Getting comments for this article.
 	 * 
+	 * Parameters:
+	 * 	$limit_lang   - Get only comments in a language (empty string for no limitation, this is the default).
+	 * 	$only_visible - Do you only want the visible comments? (Default: False)
+	 * 
 	 * Returns:
 	 * 	Array of <Comment> objects.
 	 */
-	public function get_comments()
+	public function get_comments($limit_lang = "", $only_visible = false)
 	{
 		$rv = array();
-		$result = qdb("SELECT `id` FROM `PREFIX_comments` WHERE `article` = %d", $this->id);
+		
+		$conditions = array(qdb_fmt("`article` = %d", $this->id));
+		if($limit_lang != "")
+			$conditions[] = qdb_fmt("`language` = '%s'", $limit_lang);
+		if($only_visible)
+			$conditions[] = "`visible` = 1";
+		
+		$result = qdb("SELECT `id` FROM `PREFIX_comments` WHERE " . implode(" AND ", $conditions));
 		while($sqlrow = mysql_fetch_assoc($result))
 			$rv[] = Comment::by_id($sqlrow["id"]);
 		return $rv;

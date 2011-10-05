@@ -1,6 +1,6 @@
 <?php
 /*
- * File: ratatoeskr/backend/main.php
+ * File: ratatoeskr/sys/translation.php
  * Load translation.
  * 
  * License:
