@@ -1,0 +1,22 @@
+<ste:load name="master.html" />
+<ste:block name="content">
+	<form action="$rel_path_to_root/content/write?{$article_editurl|/$article_editurl|}" method="POST" accept_charset="utf-8" class="fullwidthinputs">
+	<div class="triplecolumns">
+		<div class="column_left">
+			<h2>Markdown Cheat Sheet</h2>
+		</div>
+		<div class="column_right">
+			<h2>Settings / Metadata</h2>
+			
+			<p>Unique URL Title: <input type="text" name="urltitle" value="<ste:escape>$urltitle</ste:escape>" /></p>
+			<p></p>
+		</div>
+		<div class="column_main">
+			<p><ste:get_translation for="articleedit_title" />: <input type="text" name="title" value="<ste:escape>$title</ste:escape>" /></p>
+			<p><ste:get_translation for="articleedit_content" />: <textarea name="content" cols="80" rows="20"><ste:escape>$content</ste:escape></textarea></p>
+			<p><ste:get_translation for="articleedit_excerpt" />: <textarea name="excerpt" cols="80" rows="10"><ste:escape>$excerpt</ste:escape></textarea></p>
+		</div>
+	</div>
+	<div class="triplecolumns_stop"></div>
+	</form>
+</ste:block>

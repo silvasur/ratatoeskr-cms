@@ -1,0 +1,156 @@
+* {
+	font-family: sans-serif;
+	font-size: 10pt;
+}
+
+body, html {
+	margin: 0px;
+	padding:0px;
+}
+
+#bar_top {
+	margin: 0px;
+	position: fixed;
+	top: 0px;
+	left: 0px;
+	width: 100%;
+	background: black;
+	padding: 3px 15px 3px;
+	color: #ddd;
+	z-index: 1000;
+}
+#bar_top .user {
+	text-align: right;
+	position: absolute;
+	right: 45px;
+}
+
+#bar_top strong {
+	color: white;
+}
+
+#bar_top a {
+	color: #ddd;
+	text-decoration: underline;
+}
+
+#bar_top a:hover {
+	color: #fff;
+}
+
+#maincontainer {
+	position: absolute;
+	width: 95%;
+	left: 2.5%;
+	margin: 2.5em 0em 2em;
+	padding: 0px;
+}
+
+#mainmenu {
+	float:left;
+	width: 55mm
+}
+
+#mainmenu, #mainmenu ul {
+	padding: 0px;
+	margin: 0px;
+	list-style: none;
+}
+
+#mainmenu ul {
+	display: none;
+}
+
+#mainmenu ul.active {
+	display: block;
+}
+
+#mainmenu li {
+	font-size: 12pt;
+}
+
+#mainmenu li a {
+	padding: 0.5ex 2mm 0.5ex 2mm;
+	border-top: 1px solid #eee;
+	font-size: 12pt;
+	color: #666;
+	text-decoration: none;
+	display:block;
+}
+
+#mainmenu li a.first {
+	border: none;
+}
+
+#mainmenu ul li a {
+	padding: 0.5ex 0px 0.5ex 7mm;
+}
+
+#mainmenu li a.active {
+	color: black;
+}
+
+#mainmenu li a:hover {
+	color: black;
+	background: #eee;
+}
+
+#content {
+	padding: 0mm 0mm 0mm 60mm;
+}
+
+h1 {
+	font-size: 14pt;
+	font-weight: normal;
+	margin: 0mm auto 1.5em;
+	color: #333;
+	text-align: center;
+	padding: 0px 0px 5px 0px;
+	border-bottom: 1px solid #eee;
+	/*background: url(images/hline.png) no-repeat bottom center;*/
+	min-width: 300px;
+}
+
+code, code pre {
+	font-family: monospace;
+	background: #eee;
+}
+
+h1 strong {
+	font-size: 14pt;
+	font-weight: bold;
+	color: black;
+}
+
+h2 {
+	font-size: 11pt;
+	font-weight: bold;
+}
+
+.triplecolumns .column_left{
+	float: left;
+	width: 50mm;
+	margin: 0px;
+	padding: 0px;
+}
+
+.triplecolumns .column_right {
+	float: right;
+	width: 50mm;
+	margin: 0px;
+	padding: 0px;
+}
+
+.triplecolumns .column_main {
+	margin: 0mm;
+	padding: 0mm 55mm 0mm;
+}
+
+.triplecolumns_stop {
+	clear: both;
+}
+
+form.fullwidthinputs input[type="text"], form.fullwidthinputs input[type="password"], form.fullwidthinputs select, form.fullwidthinputs textarea {
+	width: 100%;
+	margin:0mm;
+}

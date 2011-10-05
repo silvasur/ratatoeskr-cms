@@ -1,0 +1,61 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta http-equiv="Content-Style-Type" content="text/css" />
+	<title><ste:get_translation for="section_$section" />::<ste:escape>$pagetitle</ste:escape> - Ratatöskr</title>
+	<ste:mktag name="cms_style"><link rel="stylesheet" type="text/css" media="screen" href="$rel_path_to_root/ratatoeskr/cms_style/<ste:tagcontent />" /></ste:mktag>
+	<ste:cms_style>layout.css</ste:cms_style>
+	<ste:foreach array="additional_styles" value="cssfile"><ste:cms_style>$cssfile</ste:cms_style></ste:foreach>
+</head>
+<body>
+	<div id="bar_top">
+		<span class="branding"><strong>Ratatöskr</strong>::Noctilucent clouds (v. 0.1)</span>
+		<span class="user">
+			<a href="$rel_path_to_root/backend/admin/users/_self">$user[name]</a> | <a href="$rel_path_to_root/backend/logout"><ste:get_translation for="logout" /></a>
+		</span>
+	</div>
+	<div id="maincontainer">
+		<h1><strong><ste:get_translation for="section_$section" /></strong>::<ste:escape>$pagetitle</ste:escape></h1>
+		<ul id="mainmenu">
+			<li>
+				<a href="$rel_path_to_root/backend/content/write" class="first"><ste:get_translation for="section_content" /></a>
+				<ul?{~{content|eq|$section}| class="active"|}>
+					<li><a href="$rel_path_to_root/backend/content/articles"?{~{articles|eq|$submenu}| class="active"|}><ste:get_translation for="menu_articles" /></a></li>
+					<li><a href="$rel_path_to_root/backend/content/write"?{~{newarticle|eq|$submenu}| class="active"|}><ste:get_translation for="menu_newarticles" /></a></li>
+					<li><a href="$rel_path_to_root/backend/content/tags"?{~{tags|eq|$submenu}| class="active"|}><ste:get_translation for="menu_tags" /></a></li>
+					<li><a href="$rel_path_to_root/backend/content/images"?{~{images|eq|$submenu}| class="active"|}><ste:get_translation for="menu_images" /></a></li>
+					<li><a href="$rel_path_to_root/backend/content/comments"?{~{comments|eq|$submenu}| class="active"|}><ste:get_translation for="menu_comments" /></a></li>
+				</ul>
+			</li>
+			<li>
+				<a href="$rel_path_to_root/backend/design/templates"><ste:get_translation for="section_design" /></a>
+				<ul?{~{design|eq|$section}| class="active"|}>
+					<li><a href="$rel_path_to_root/backend/design/sections"?{~{sections|eq|$submenu}| class="active"|}><ste:get_translation for="menu_pagesections" /></a></li>
+					<li><a href="$rel_path_to_root/backend/design/templates"?{~{templates|eq|$submenu}| class="active"|}><ste:get_translation for="menu_templates" /></a></li>
+					<li><a href="$rel_path_to_root/backend/design/styles"?{~{styles|eq|$submenu}| class="active"|}><ste:get_translation for="menu_styles" /></a></li>
+				</ul>
+			</li>
+			<li>
+				<a href="$rel_path_to_root/backend/admin/settings"><ste:get_translation for="section_admin" /></a>
+				<ul?{~{admin|eq|$section}| class="active"|}>
+					<li><a href="$rel_path_to_root/backend/admin/users"?{~{users|eq|$submenu}| class="active"|}><ste:get_translation for="menu_users_groups" /></a></li>
+					<li><a href="$rel_path_to_root/backend/admin/languages"?{~{comments|eq|$submenu}| class="active"|}><ste:get_translation for="menu_languages" /></a></li>
+					<li><a href="$rel_path_to_root/backend/admin/repos"?{~{repos|eq|$submenu}| class="active"|}><ste:get_translation for="menu_plugin_repos" /></a></li>
+					<li><a href="$rel_path_to_root/backend/admin/settings"?{~{settings|eq|$submenu}| class="active"|}><ste:get_translation for="menu_settings" /></a></li>
+				</ul>
+			</li>
+			<li>
+				<a href="$rel_path_to_root/backend/plugin/list"><ste:get_translation for="section_plugins" /></a>
+				<ul?{~{plugins|eq|$section}| class="active"|}>
+					<li><a href="$rel_path_to_root/backend/plugin/list"?{~{pluginlist|eq|$submenu}| class="active"|}><ste:get_translation for="menu_pluginlist" /></a></li>
+					<li><a href="$rel_path_to_root/backend/plugin/install"?{~{installplugins|eq|$submenu}| class="active"|}><ste:get_translation for="menu_plugininstall" /></a></li>
+				</ul>
+			</li>
+		</ul>
+		<div id="content">
+			<ste:block name="content"></ste:block>
+		</div>
+	</div>
+</body>
+</html>
