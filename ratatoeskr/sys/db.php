@@ -73,7 +73,7 @@ function qdb_vfmt($args)
  */
 function qdb_fmt()
 {
-	return qdb_vfmt(fung_get_args());
+	return qdb_vfmt(func_get_args());
 }
 
 /*

@@ -984,7 +984,7 @@ class Style
 	 */
 	public static function by_id($id)
 	{
-		$obj = new seld;
+		$obj = new self;
 		$obj->populate_by_sqlresult(qdb("SELECT `id`, `name`, `code` FROM `PREFIX_styles` WHERE `id` = %d", $id));
 		return $obj;
 	}
@@ -1183,9 +1183,18 @@ class Section
 		$this->name     = $sqlrow["name"];
 		$this->title    = Multilingual::by_id($sqlrow["title"]);
 		$this->template = $sqlrow["template"];
-		$this->styles   = array_filter_empty(array_map(
-			function($id) { try{return Style::by_id($id);}catch(DoesNotExistError $e){ return "";} },
-			array_filter_empty(explode("+", $sqlrow["styles"]))));
+		$this->styles   = array();
+		foreach(explode("+", $sqlrow["styles"]) as $style_id)
+		{
+			if(!empty($style_id))
+			{
+				try
+				{
+					$this->styles[] = Style::by_id($style_id);
+				}
+				catch(DoesNotExistError $e) { }
+			}
+		}
 	}
 	
 	/*
@@ -1285,7 +1294,7 @@ class Section
 		
 		$this->title->save();
 		qdb("UPDATE `PREFIX_sections` SET `name` = '%s', `title` = %d, `template` = '%s', `styles` = '%s' WHERE `id` = %d",
-			$this->name, $this->title->get_id(), $this->template, $styles);
+			$this->name, $this->title->get_id(), $this->template, $styles, $this->id);
 	}
 	
 	/*
