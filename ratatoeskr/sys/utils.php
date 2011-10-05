@@ -101,6 +101,33 @@ function array_filter_keys($input, $callback)
 }
 
 /*
+ * Function: array_kvpairs_to_assoc
+ * Convert array of key-value pairs to an associative array.
+ * 
+ * Parameters:
+ * 	$input - Array of key-value pairs
+ * 
+ * Returns:
+ * 	An associative array.
+ */
+function array_kvpairs_to_assoc($input)
+{
+	$rv = array();
+	foreach($input as $kvpair)
+		$rv[$kvpair[0]] = $kvpair[1];
+	return $rv;
+}
+
+/*
+ * Function: intcmp
+ * Compare integers (equavilent to strcmp)
+ */
+function intcmp($a, $b)
+{
+	return ($a == $b) ? 0 : (($a < $b) ? -1 : 1);
+}
+
+/*
  * Function: ucount
  * 
  * Count elements of an array matching unser-defined rules.
@@ -155,6 +182,21 @@ function self_url() {
 }
 function strleft($s1, $s2) {
 	return substr($s1, 0, strpos($s1, $s2));
+}
+
+/*
+ * Function: htmlesc
+ * Escape HTML (shorter than htmlentities($text, ENT_QUOTES, "UTF-8"))
+ * 
+ * Parameters:
+ * 	$text - Input text.
+ * 
+ * Returns:
+ * 	HTML
+ */
+function htmlesc($text)
+{
+	return htmlentities($text, ENT_QUOTES, "UTF-8");
 }
 
 /*
