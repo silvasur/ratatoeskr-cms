@@ -1772,7 +1772,7 @@ class Article
 	{
 		$obj = new self;
 		$obj ->populate_by_sqlresult(qdb(
-			"SELECT `id`, `urltitle`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments` FROM `PREFIX_articles` WHERE `urlname` = '%s'", $urlname
+			"SELECT `id`, `urltitle`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments` FROM `PREFIX_articles` WHERE `urltitle` = '%s'", $urlname
 		));
 		return $obj;
 	}

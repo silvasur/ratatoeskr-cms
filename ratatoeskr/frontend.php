@@ -668,7 +668,7 @@ function frontend_url_handler(&$data, $url_now, &$url_next)
 		{
 			throw new NotFoundError();
 		}
-		$ste->vars["current"]["tag"] = tag_transform_ste($tag);
+		$ste->vars["current"]["tag"] = tag_transform_ste($tag, $lang);
 	}
 	else
 	{
@@ -681,8 +681,8 @@ function frontend_url_handler(&$data, $url_now, &$url_next)
 			throw new NotFoundError();
 		}
 		
-		if(count($path == 0))
-			$ste->vars["current"]["section"] = section_transform_ste($section);
+		if(count($path)== 0)
+			$ste->vars["current"]["section"] = section_transform_ste($section, $lang);
 		else
 		{
 			try
@@ -693,7 +693,7 @@ function frontend_url_handler(&$data, $url_now, &$url_next)
 			{
 				throw new NotFoundError();
 			}
-			$ste->vars["current"]["article"] = article_transform_ste($article);
+			$ste->vars["current"]["article"] = article_transform_ste($article, $lang);
 			
 			if(isset($_GET["comment"]))
 			{
