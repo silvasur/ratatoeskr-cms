@@ -98,6 +98,7 @@ function url_process($url, $actions, &$data)
 	$epilog_running = 0;
 	if(is_string($url))
 		$url = explode("/", $url);
+	$url = array_filter($url, function($x) { return !empty($x); });
 	if(count($url) == 0)
 		$url = array("_index");
 	
