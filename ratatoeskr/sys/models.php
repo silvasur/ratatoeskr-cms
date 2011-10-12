@@ -53,7 +53,7 @@ class DoesNotExistError extends Exception { }
 
 /*
  * Class: AlreadyExistsError
- * This Exception is thrown by an ::create-constructor if the creation of the object would result in duplicates.
+ * This Exception is thrown by an ::create-constructor or a save-method, if the creation/modification of the object would result in duplicates.
  */
 class AlreadyExistsError extends Exception { }
 
@@ -210,6 +210,11 @@ class User
 	 */
 	public function save()
 	{
+		$result = qdb("SELECT COUNT(*) AS `n` FROM `PREFIX_users` WHERE `username` = '%s' AND `id` != %d", $this->username, $this->id);
+		$sqlrow = mysql_fetch_assoc($result);
+		if($sqlrow["n"] > 0)
+			throw new AlreadyExistsError();
+		
 		qdb("UPDATE `PREFIX_users` SET `username` = '%s', `pwhash` = '%s', `mail` = '%s', `fullname` = '%s', `language` = '%s' WHERE `id` = %d",
 			$this->username, $this->pwhash, $this->mail, $this->id, $this->fullname, $this->language);
 	}
@@ -627,8 +632,7 @@ class Multilingual implements Countable, ArrayAccess, IteratorAggregate
 }
 
 /*
- * Variable: $global_settings_keys_buffer
- * Buffer for settings key.
+ * Buffer for settings keys.
  * NEVER(!) MODIFY DIRECTLY!
  */
 $global_settings_keys_buffer = NULL;
@@ -847,7 +851,7 @@ class Comment
 	/*
 	 * Constructor: create
 	 * Creates a new comment.
-	 * Automatically sets the $timestamp and $visible (default form setting "comment_visible_default").
+	 * Automatically sets the $timestamp and $visible (default from setting "comment_visible_default").
 	 * 
 	 * Parameters:
 	 * 	$article  - An <Article> Object.
@@ -859,7 +863,7 @@ class Comment
 		$obj = new self;
 		
 		qdb("INSERT INTO `PREFIX_comments` (`article`, `language`, `author_name`, `author_mail`, `text`, `timestamp`, `visible`) VALUES (%d, '%s', '', '', '', UNIX_TIMESTAMP(NOW()), %d)",
-			$article->id, $language, $ratatoeskr_settings["comment_visible_default"] ? 1 : 0);
+			$article->get_id(), $language, $ratatoeskr_settings["comment_visible_default"] ? 1 : 0);
 		
 		$obj->id          = mysql_insert_id();
 		$obj->article     = $article;
@@ -869,6 +873,8 @@ class Comment
 		$obj->text        = "";
 		$obj->timestamp   = time();
 		$obj->visible     = $ratatoeskr_settings["comment_visible_default"];
+		
+		return $obj;
 	}
 	
 	/*
@@ -882,7 +888,7 @@ class Comment
 	{
 		$obj = new self;
 		
-		$result = qdb("SELECT `id`, `article`, `language`, `author_name`, `author_mail`, `text`, `timestamp`, visible` FROM `PREFIX_comments` WHERE `id` = %d",
+		$result = qdb("SELECT `id`, `article`, `language`, `author_name`, `author_mail`, `text`, `timestamp`, `visible` FROM `PREFIX_comments` WHERE `id` = %d",
 			$id);
 		$sqlrow = mysql_fetch_assoc($result);
 		if($sqlrow === False)
@@ -906,7 +912,7 @@ class Comment
 	 */
 	public function save()
 	{
-		qdb("UPDATE `PREFIX_comments` SET `author_name` = '%s', `author_mail` = '%s', `text` = '%s', `visible` = %d` WHERE `id` = %d`",
+		qdb("UPDATE `PREFIX_comments` SET `author_name` = '%s', `author_mail` = '%s', `text` = '%s', `visible` = %d WHERE `id` = %d",
 			$this->author_name, $this->author_mail, $this->text, ($this->visible ? 1 : 0), $this->id);
 	}
 	
@@ -964,15 +970,24 @@ class Style
 	 */
 	public static function create($name)
 	{
-		$obj = new self;
-		$obj->name = $name;
-		$obj->code = "";
+		try
+		{
+			self::by_name($name);
+		}
+		catch(DoesNotExistError $e)
+		{
+			$obj = new self;
+			$obj->name = $name;
+			$obj->code = "";
 		
-		qdb("INSERT INTO `PREFIX_styles` (`name`, `code`) VALUES ('%s', '')",
-			$name);
+			qdb("INSERT INTO `PREFIX_styles` (`name`, `code`) VALUES ('%s', '')",
+				$name);
 		
-		$obj->id = mysql_insert_id();
-		return $obj;
+			$obj->id = mysql_insert_id();
+			return $obj;
+		}
+		
+		throw new AlreadyExistsError();
 	}
 	
 	/*
@@ -996,9 +1011,9 @@ class Style
 	 * Parameters:
 	 * 	$name - The name.
 	 */
-	public static function by_name($id)
+	public static function by_name($name)
 	{
-		$obj = new seld;
+		$obj = new self;
 		$obj->populate_by_sqlresult(qdb("SELECT `id`, `name`, `code` FROM `PREFIX_styles` WHERE `name` = '%s'", $name));
 		return $obj;
 	}
@@ -1009,6 +1024,11 @@ class Style
 	 */
 	public function save()
 	{
+		$result = qdb("SELECT COUNT(*) AS `n` FROM `PREFIX_styles` WHERE `name` = '%' AND `id` != %d", $this->name, $this->id);
+		$sqlrow = mysql_fetch_assoc($result);
+		if($sqlrow["n"] > 0)
+			throw new AlreadyExistsError();
+		
 		qdb("UPDATE `PREFIX_styles` SET `name` = '%s', `code` = '%s' WHERE `id` = %d",
 			$this->name, $this->code, $this->id);
 	}
@@ -1283,6 +1303,11 @@ class Section
 	 */
 	public function save()
 	{
+		$result = qdb("SELECT COUNT(*) AS `n` FROM `PREFIX_sections` WHERE `name` = '%s' AND `id` != %d", $this->name, $this->id);
+		$sqlrow = mysql_fetch_assoc($result);
+		if($sqlrow["n"] > 0)
+			throw new AlreadyExistsError();
+		
 		$styles = "+";
 		foreach($this->styles as $style)
 		{
@@ -1465,6 +1490,11 @@ class Tag
 	 */
 	public function save()
 	{
+		$result = qdb("SELECT COUNT(*) AS `n` FROM `PREFIX_tags` WHERE `name` = '%s' AND `id` != %d", $this->name, $this->id);
+		$sqlrow = mysql_fetch_assoc($result);
+		if($sqlrow["n"] > 0)
+			throw new AlreadyExistsError();
+		
 		$this->title->save();
 		qdb("UPDATE `PREFIX_tags` SET `name` = '%s', `title` = %d` WHERE `id` = %d",
 			$this->name, $this->title->get_id(), $this->id);
@@ -1652,7 +1682,7 @@ class Article
 	/*
 	 * Variables: Public class variables
 	 * 
-	 * $urltitle - URL title
+	 * $urlname - URL name
 	 * $title - Title (an <Multilingual> object)
 	 * $text - The text (an <Multilingual> object)
 	 * $excerpt - Excerpt (an <Multilingual> object)
@@ -1665,7 +1695,7 @@ class Article
 	 * $allow_comments - Are comments allowed?
 	 * $tags - Arrray of <Tag> objects
 	 */
-	public $urltitle;
+	public $urlname;
 	public $title;
 	public $text;
 	public $excerpt;
@@ -1690,7 +1720,7 @@ class Article
 			throw new DoesNotExistError();
 		
 		$this->id             = $sqlrow["id"];
-		$this->urltitle       = $sqlrow["urltitle"];
+		$this->urlname        = $sqlrow["urlname"];
 		$this->title          = Multilingual::by_id($sqlrow["title"]);
 		$this->text           = Multilingual::by_id($sqlrow["text"]);
 		$this->excerpt        = Multilingual::by_id($sqlrow["excerpt"]);
@@ -1714,35 +1744,48 @@ class Article
 	
 	/*
 	 * Constructor: create
-	 * Create a new Article object
+	 * Create a new Article object.
+	 * 
+	 * Parameters:
+	 * 	urlname - A unique URL name
 	 */
-	public static function create()
+	public static function create($urlname)
 	{
 		global $ratatoeskr_settings;
-		$obj = new self;
-		$obj->urltitle       = "";
-		$obj->title          = Multilingual::create();
-		$obj->text           = Multilingual::create();
-		$obj->excerpt        = Multilingual::create();
-		$obj->meta           = "";
-		$obj->custom         = array();
-		$obj->article_image  = NULL;
-		$obj->status         = ARTICLE_STATUS_HIDDEN;
-		$obj->section        = Section::by_id($ratatoeskr_settings["default_section"]);
-		$obj->timestamp      = time();
-		$obj->allow_comments = $ratatoeskr_settings["allow_comments_default"];
 		
-		qdb("INSERT INTO `PREFIX_articles` (`urltitle`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments`) VALUES ('', %d, %d, %d, '', '%s', 0, %d, %d, %d, %d)",
-			$obj->title->get_id(),
-			$obj->text->get_id(),
-			$obj->excerpt->get_id(),
-			base64_encode(serialize($obj->custom)),
-			$obj->status,
-			$obj->section->get_id(),
-			$obj->timestamp,
-			$obj->allow_comments ? 1 : 0);
-		$obj->id = mysql_insert_id();
-		return $obj;
+		try
+		{
+			self::by_urlname($urlname);
+		}
+		catch(DoesNotExistError $e)
+		{
+			$obj = new self;
+			$obj->urlname        = $urlname;
+			$obj->title          = Multilingual::create();
+			$obj->text           = Multilingual::create();
+			$obj->excerpt        = Multilingual::create();
+			$obj->meta           = "";
+			$obj->custom         = array();
+			$obj->article_image  = NULL;
+			$obj->status         = ARTICLE_STATUS_HIDDEN;
+			$obj->section        = Section::by_id($ratatoeskr_settings["default_section"]);
+			$obj->timestamp      = time();
+			$obj->allow_comments = $ratatoeskr_settings["allow_comments_default"];
+		
+			qdb("INSERT INTO `PREFIX_articles` (`urlname`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments`) VALUES ('', %d, %d, %d, '', '%s', 0, %d, %d, %d, %d)",
+				$obj->title->get_id(),
+				$obj->text->get_id(),
+				$obj->excerpt->get_id(),
+				base64_encode(serialize($obj->custom)),
+				$obj->status,
+				$obj->section->get_id(),
+				$obj->timestamp,
+				$obj->allow_comments ? 1 : 0);
+			$obj->id = mysql_insert_id();
+			return $obj;
+		}
+		
+		throw new AlreadyExistsError();
 	}
 	
 	/*
@@ -1756,14 +1799,14 @@ class Article
 	{
 		$obj = new self;
 		$obj ->populate_by_sqlresult(qdb(
-			"SELECT `id`, `urltitle`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments` FROM `PREFIX_articles` WHERE `id` = %d", $id
+			"SELECT `id`, `urlname`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments` FROM `PREFIX_articles` WHERE `id` = %d", $id
 		));
 		return $obj;
 	}
 	
 	/*
 	 * Constructor: by_urlname
-	 * Get by urltitle
+	 * Get by urlname
 	 * 
 	 * Parameters:
 	 * 	$urlname - The urlname
@@ -1772,7 +1815,7 @@ class Article
 	{
 		$obj = new self;
 		$obj ->populate_by_sqlresult(qdb(
-			"SELECT `id`, `urltitle`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments` FROM `PREFIX_articles` WHERE `urltitle` = '%s'", $urlname
+			"SELECT `id`, `urlname`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments` FROM `PREFIX_articles` WHERE `urlname` = '%s'", $urlname
 		));
 		return $obj;
 	}
@@ -1782,7 +1825,7 @@ class Article
 	 * Get Articles by multiple criterias
 	 *
 	 * Parameters:
-	 * 	$criterias - Array that can have these keys: id, urltitle, section, status
+	 * 	$criterias - Array that can have these keys: id (int) , urlname (string), section (<Section> object), status (int)
 	 * 
 	 * Returns:
 	 * 	Array of Article objects
@@ -1795,7 +1838,7 @@ class Article
 			switch($k)
 			{
 				case "id":       $subqueries[] = qdb_fmt("`id`       =  %d",  $v);           break;
-				case "urltitle": $subqueries[] = qdb_fmt("`urltitle` = '%s'", $v);           break;
+				case "urlname":  $subqueries[] = qdb_fmt("`urlname`  = '%s'", $v);           break;
 				case "section":  $subqueries[] = qdb_fmt("`section`  =  %d",  $v->get_id()); break;
 				case "status":   $subqueries[] = qdb_fmt("`status`   =  %d",  $v);           break;
 				default: continue;
@@ -1860,6 +1903,11 @@ class Article
 	 */
 	public function save()
 	{
+		$result = qdb("SELECT COUNT(*) AS `n` FROM `PREFIX_article` WHERE `urlname` = '%s' AND `id` != %d", $this->urlname, $this->id);
+		$sqlrow = mysql_fetch_assoc($result);
+		if($sqlrow["n"] > 0)
+			throw new AlreadyExistsError();
+		
 		$this->title->save();
 		$this->text->save();
 		$this->excerpt->save();
@@ -1877,8 +1925,8 @@ class Article
 				)
 			);
 		
-		qdb("UPDATE `PREFIX_articles` SET `urltitle` = '%s', `title` = %d, `text` = %d, `excerpt` = %d, `meta` = '%s', `custom` = '%s', `article_image` = %d, `status` = %d, `section` = %d, `timestamp` = %d, `allow_comments` = %d WHERE `id` = %d",
-			$this->urltitle,
+		qdb("UPDATE `PREFIX_articles` SET `urlname` = '%s', `title` = %d, `text` = %d, `excerpt` = %d, `meta` = '%s', `custom` = '%s', `article_image` = %d, `status` = %d, `section` = %d, `timestamp` = %d, `allow_comments` = %d WHERE `id` = %d",
+			$this->urlname,
 			$this->title->get_id(),
 			$this->text->get_id(),
 			$this->excerpt->get_id(),

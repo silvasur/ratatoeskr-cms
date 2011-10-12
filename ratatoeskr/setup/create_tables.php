@@ -6,7 +6,7 @@ SET SQL_MODE="NO_AUTO_VALUE_ON_ZERO";
 
 CREATE TABLE `PREFIX_articles` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `urltitle` text COLLATE utf8_unicode_ci NOT NULL,
+  `urlname` text COLLATE utf8_unicode_ci NOT NULL,
   `title` int(11) NOT NULL,
   `text` int(11) NOT NULL,
   `excerpt` int(11) NOT NULL,

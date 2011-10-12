@@ -13,6 +13,7 @@ require_once(dirname(__FILE__) . "/sys/utils.php");
 require_once(dirname(__FILE__) . "/languages.php");
 require_once(dirname(__FILE__) . "/sys/models.php");
 require_once(dirname(__FILE__) . "/sys/textprocessors.php");
+require_once(dirname(__FILE__) . "/libs/kses.php");
 
 /*
  * Function: section_transform_ste
@@ -71,7 +72,7 @@ function tag_transform_ste($tag, $lang)
  * Returns:
  * 	Array with these fields:
  * 	* id
- * 	* urltitle
+ * 	* urlname
  * 	* fullurl
  * 	* title
  * 	* text
@@ -89,12 +90,12 @@ function article_transform_ste($article, $lang)
 	
 	$languages = array();
 	foreach($article->title as $language => $_)
-		$languages[$language] = "$rel_path_to_root/$language/{$article->section->name}/{$article->urltitle}";
+		$languages[$language] = "$rel_path_to_root/$language/{$article->section->name}/{$article->urlname}";
 	
 	return array(
 		"id" => $article->get_id(),
-		"urltitle"         => $article->urltitle,
-		"fullurl"          => htmlesc("$rel_path_to_root/$lang/{$article->section->name}/{$article->urltitle}"),
+		"urlname"          => $article->urlname,
+		"fullurl"          => htmlesc("$rel_path_to_root/$lang/{$article->section->name}/{$article->urlname}"),
 		"title"            => htmlesc($article->title[$lang]->text),
 		"text"             => textprocessor_apply_translation($article->text[$lang]),
 		"excerpt"          => textprocessor_apply_translation($article->excerpt[$lang]),
@@ -106,6 +107,52 @@ function article_transform_ste($article, $lang)
 		"languages"        => $languages,
 		"comments_allowed" => $article->comments_allowed
 	);
+}
+
+function comment_filter($html)
+{
+	return kses($html, array(
+		"a" => array("href" => 1, "hreflang" => 1, "title" => 1, "rel" => 1, "rev" => 1),
+		"b" => array(),
+		"i" => array(),
+		"u" => array(),
+		"strong" => array(),
+		"em" => array(),
+		"p" => array("align" => 1),
+		"br" => array(),
+		"abbr" => array(),
+		"acronym" => array(),
+		"code" => array(),
+		"pre" => array(),
+		"blockquote" => array("cite" => 1),
+		"h1" => array(), "h2" => array(), "h3" => array(), "h4" => array(), "h5" => array(), "h6" => array(), 
+		"img" => array("src" => 1, "alt" => 1, "width" => 1, "height" => 1),
+		"s" => array(),
+		"q" => array("cite" => 1),
+		"samp" => array(),
+		"ul" => array(),
+		"ol" => array(),
+		"li" => array(),
+		"del" => array(),
+		"ins" => array(),
+		"dl" => array(),
+		"dd" => array(),
+		"dt" => array(),
+		"dfn" => array(),
+		"div" => array(),
+		"dir" => array(),
+		"kbd" => array("prompt" => 1),
+		"strike" => array(),
+		"sub" => array(),
+		"sup" => array(),
+		"table" => array("style" => 1),
+		"tbody" => array(), "thead" => array(), "tfoot" => array(),
+		"tr" => array(),
+		"td" => array("colspan" => 1, "rowspan" => 1),
+		"th" => array("colspan" => 1, "rowspan" => 1),
+		"tt" => array(),
+		"var" => array()
+	));
 }
 
 /*
@@ -128,7 +175,7 @@ function comment_transform_ste($comment)
 	
 	return array(
 		"id"        => $comment->get_id(),
-		"text"      => textprocessor_apply($comment->text, $ratatoeskr_settings["comment_textprocessor"]),
+		"text"      => comment_filter(textprocessor_apply($comment->text, $ratatoeskr_settings["comment_textprocessor"])),
 		"author"    => htmlesc($comment->author_name),
 		"timestamp" => $comment->get_timestamp()
 	);
@@ -143,11 +190,11 @@ function comment_transform_ste($comment)
  * Parameters:
  * 	var      - (mandatory) The name of the variable, where the current article should be stored at.
  * 	id       - (optional)  Filter by ID.
- * 	urltitle - (optional)  Filter by urltitle.
+ * 	urlname  - (optional)  Filter by urlname.
  * 	section  - (optional)  Filter by section (section name).
  * 	status   - (optional)  Filter by status (numeric, <ARTICLE_STATUS_>).
  * 	tag      - (optional)  Filter by tag (tag name).
- * 	sort     - (optional)  How to sort. Format: "fieldname direction" where fieldname is one of [id, urltitle, title, timestamp] and direction is one of [asc, desc].
+ * 	sort     - (optional)  How to sort. Format: "fieldname direction" where fieldname is one of [id, urlname, title, timestamp] and direction is one of [asc, desc].
  * 	perpage  - (optional)  How many articles should be shown per page (default unlimited).
  * 	page     - (optional)  On which page are we (starting with 1). Useful in combination with $current[page], <page_prev> and <page_next>. (Default: 1)
  * 	maxpage  - (optional)  (variable name) If given, the number of pages are stored in this variable.
@@ -166,6 +213,18 @@ $ste->register_tag("articles_get", function($ste, $params, $sub)
 	
 	if(!isset($params["var"]))
 		throw new Exception("Parameter var is needed in article_get!");
+	
+	if(isset($params["section"]))
+	{
+		try
+		{
+			$params["section"] = Section::by_name($params["section"]);
+		}
+		catch(NotFoundError $e)
+		{
+			unset($params["section"]);
+		}
+	}
 	
 	$result = Article::by_multi($params);
 	
@@ -187,7 +246,7 @@ $ste->register_tag("articles_get", function($ste, $params, $sub)
 	
 	function sort_fx_factory($cmpfx, $field, $direction)
 	{
-		return function($a, $b) use ($sorter, $field, $direction) { return $cmpfx($a[$field], $b[$field]) * $direction; };
+		return function($a, $b) use ($cmpfx, $field, $direction) { return $cmpfx($a[$field], $b[$field]) * $direction; };
 	}
 	
 	if(isset($params["sort"]))
@@ -201,7 +260,7 @@ $ste->register_tag("articles_get", function($ste, $params, $sub)
 		switch($field)
 		{
 			case "id":        $sort_fx = sort_fx_factory("intcmp", "id",        $direction); break;
-			case "urltitle":  $sort_fx = sort_fx_factory("strcmp", "urltitle",  $direction); break;
+			case "urlname":   $sort_fx = sort_fx_factory("strcmp", "urlname",   $direction); break;
 			case "title":     $sort_fx = sort_fx_factory("strcmp", "title",     $direction); break;
 			case "timestamp": $sort_fx = sort_fx_factory("intcmp", "timestamp", $direction); break;
 		}
@@ -319,6 +378,7 @@ $ste->register_tag("article_comments_count", function($ste, $params, $sub)
  * Parameters:
  * 	var     - (mandatory) The name of the variable, where the current comment should be stored at.
  * 	article - (mandatory) The name of the variable, where the article is stored at.
+ * 	sort    - (optional)  Should the comments be sorted chronologically (asc) or inverse (desc)? Default: asc
  * 
  * Tag Content:
  * 	The tag's content will be executed for every comment. The current comment will be written to the variable specified by the var parameter before.
@@ -345,7 +405,8 @@ $ste->register_tag("article_comments", function($ste, $params, $sub)
 	}
 	
 	$comments = $article->get_comments($lang, True);
-	usort($comments, function($a,$b) { intcmp($a->get_timestamp(), $b->get_timestamp()); });
+	$sortdir = (@$params["sort"] == "desc") ? -1 : 1;
+	usort($comments, function($a,$b) use ($sortdir) { return intcmp($a->get_timestamp(), $b->get_timestamp()) * $sortdir; });
 	
 	$comments = array_map("comment_transform_ste", $comments);
 	
@@ -383,6 +444,9 @@ $ste->register_tag("article_comments", function($ste, $params, $sub)
  * 
  * Returns:
  * 	The finished HTML form.
+ * 
+ * See Also:
+ * 	The "prevcomment" field in <$current>.
  */
 $ste->register_tag("comment_form", function($ste, $params, $sub)
 {
@@ -403,15 +467,27 @@ $ste->register_tag("comment_form", function($ste, $params, $sub)
 	if(!$article->allow_comments)
 		return "";
 	
-	$form_header = "<form action=\"{$tpl_article["fullurl"]}?comment\" method=\"POST\" accept-charset=\"UTF-8\">";
+	/* A token protects from double sending of the same form and is also a simple protection from stupid spambots. */
+	$token = uniqid("", True);
+	$_SESSION["ratatoeskr_comment_tokens"][$token] = time();
+	
+	$form_header = "<form action=\"{$tpl_article["fullurl"]}?comment\" method=\"POST\" accept-charset=\"UTF-8\"><input type=\"hidden\" name=\"comment_token\" value=\"$token\" />";
 	
 	if($ste->evalbool(@$params["default"]))
-		$form_body = "<p>{$translation["comment_form_name"]}: <input type=\"text\" name=\"author_name\" /></p>
-<p>{$translation["comment_form_mail"]}: <input type=\"text\" name=\"author_mail\" /></p>
-<p>{$translation["comment_form_text"]}:<br /><textarea name=\"comment_text\" cols=\"50\" rows=\"10\"></textarea></p>
+		$form_body = "<p>{$translation["comment_form_name"]}: <input type=\"text\" name=\"author_name\" value=\"" . htmlesc(@$_POST["author_name"]) . "\" /></p>
+<p>{$translation["comment_form_mail"]}: <input type=\"text\" name=\"author_mail\" value=\"" . htmlesc(@$_POST["author_mail"]) . "\" /></p>
+<p>{$translation["comment_form_text"]}:<br /><textarea name=\"comment_text\" cols=\"50\" rows=\"10\">" . htmlesc(@$_POST["comment_text"]) . "</textarea></p>
 <p><input type=\"submit\" name=\"post_comment\" /></p>";
 	else
+	{
+		$ste->vars["current"]["oldcomment"] = array(
+			"name" => @$_POST["author_name"],
+			"mail" => @$_POST["author_mail"],
+			"text" => @$_POST["comment_text"]
+		);
 		$form_body = $sub($ste);
+		unset($ste->vars["current"]["oldcomment"]);
+	}
 	
 	return "$form_header\n$form_body\n</form>";
 });
@@ -437,32 +513,34 @@ $ste->register_tag("comment_form", function($ste, $params, $sub)
 
 $ste->register_tag("page_prev", function($ste, $params, $sub)
 {
+	global $translation;
 	if(!isset($params["current"]))
 		throw new Exception("Need parameter 'current' in ste:page_prev.");
 	if(!isset($params["maxpage"]))
 		throw new Exception("Need parameter 'maxpage' in ste:page_prev.");
 	
-	if($params["page"] == 1)
+	if($params["current"] == 1)
 		return "";
 	
 	parse_str(parse_url($_SERVER["REQUEST_URI"], PHP_URL_QUERY), $query);
-	$query["page"] = $params["page"] - 1;
+	$query["page"] = $params["current"] - 1;
 	$url = $_SERVER["REDIRECT_URL"] . "?" . http_build_query($query);
 	return "<a href=\"" . htmlesc($url) . "\">" . (($ste->evalbool(@$params["default"])) ? $translation["page_prev"] : $sub($ste)) . "</a>";
 });
 
 $ste->register_tag("page_next", function($ste, $params, $sub)
 {
+	global $translation;
 	if(!isset($params["current"]))
 		throw new Exception("Need parameter 'current' in ste:page_next.");
 	if(!isset($params["maxpage"]))
 		throw new Exception("Need parameter 'maxpage' in ste:page_next.");
 	
-	if($params["page"] == $params["maxpage"])
+	if($params["current"] == $params["maxpage"])
 		return "";
 	
 	parse_str(parse_url($_SERVER["REQUEST_URI"], PHP_URL_QUERY), $query);
-	$query["page"] = $params["page"] + 1;
+	$query["page"] = $params["current"] + 1;
 	$url = $_SERVER["REDIRECT_URL"] . "?" . http_build_query($query);
 	return "<a href=\"" . htmlesc($url) . "\">" . (($ste->evalbool(@$params["default"])) ? $translation["page_next"] : $sub($ste)) . "</a>";
 });
@@ -515,8 +593,8 @@ $ste->register_tag("languages", function($ste, $params, $sub)
 	{
 		$ste->set_var_by_name($params["var"], array(
 			"short"    => $lang,
-			"fullname" => urlesc($languages[$lang]["language"]),
-			"url"      => urlesc("$rel_path_to_root/$lang/" . implode("/", array_slice($ste->vars["current"]["url_fragments"], 1)))
+			"fullname" => htmlesc($languages[$lang]["language"]),
+			"url"      => htmlesc("$rel_path_to_root/$lang/" . implode("/", array_slice($ste->vars["current"]["url_fragments"], 1)))
 		));
 		$output .= $sub($ste);
 	}
@@ -566,7 +644,7 @@ $ste->register_tag("styles_load", function($ste, $params, $sub)
 			try
 			{
 				$style = Style::by_name($stylename);
-				$output .= "<link rel=\"stylesheet\" type=\"text/css\" href=\"" . htmlesc($rel_path_to_root . "css.php?name=" . urlencode($style->name)) . "\" />\n";
+				$output .= "<link rel=\"stylesheet\" type=\"text/css\" href=\"" . htmlesc($rel_path_to_root . "/css.php?name=" . urlencode($style->name)) . "\" />\n";
 			}
 			catch(DoesNotExistError $e)
 			{
@@ -575,6 +653,16 @@ $ste->register_tag("styles_load", function($ste, $params, $sub)
 		}
 	}
 	return $output;
+});
+
+$ste->register_tag("title", function($ste, $params, $sub)
+{
+	$pagetitle = $sub($ste);
+	if(isset($ste->vars["current"]["article"]))
+		return $ste->vars["current"]["article"]["title"] . " – $pagetitle";
+	if(isset($ste->vars["current"]["section"]))
+		return $ste->vars["current"]["section"]["title"] . " – $pagetitle";
+	return $pagetitle;
 });
 
 /*
@@ -591,6 +679,7 @@ $ste->register_tag("styles_load", function($ste, $params, $sub)
  * 	* comment_prev  - If the user wanted to preview the article, this will be set and contain the HTML code of the comment.
  * 	* styles        - The styles, that should be loaded. You can also just use <styles_load>.
  * 	* url_fragments - Array of URL parts. Mainly used internally, so you *really* should not modify this one...
+ * 	* oldcomment    - The data of the previously sent formular (subfields: name, mail, text). Only set inside the <comment_form> tag.
  * 	
  * 	Plugins might insert their own $current fields.
  */
@@ -601,16 +690,23 @@ $ste->register_tag("styles_load", function($ste, $params, $sub)
  */
 
 $comment_validators = array(
-	function()
+	function() /* Basic validator. Checks, if all mandatory fields are set and if the form token is okay. Also provides some stupid spambot protection...  */
 	{
 		global $translation;
 		if(empty($_POST["author_name"]))
 			throw new CommentRejected($translation["author_name_missing"]);
-		if(empty($_POST["author_email"]))
+		if(empty($_POST["author_mail"]))
 			throw new CommentRejected($translation["author_email_missing"]);
 		if(empty($_POST["comment_text"]))
 			throw new CommentRejected($translation["comment_text_missing"]);
-	}
+		if(!isset($_POST["comment_token"]))
+			throw new CommentRejected($translation["comment_form_invalid"]);
+		if(!isset($_SESSION["ratatoeskr_comment_tokens"][$_POST["comment_token"]]))
+			throw new CommentRejected($translation["comment_form_invalid"]);
+		if(time() - $_SESSION["ratatoeskr_comment_tokens"][$_POST["comment_token"]] < 10) /* Comment filled in in under 10 seconds? Most likely a spambot. */
+			throw new CommentRejected($translation["comment_too_fast"]);
+		unset($_SESSION["ratatoeskr_comment_tokens"][$_POST["comment_token"]]);
+	},
 );
 
 /*
@@ -654,7 +750,7 @@ function frontend_url_handler(&$data, $url_now, &$url_next)
 	load_language($languages[$lang]["translation_exist"] ? $lang : "en"); /* English is always available */
 	
 	if(count($path) == 0)
-		array_unshift($path, $ratatoeskr_settings["default_section"]->name);
+		array_unshift($path, $default_section->name);
 	
 	$section_name = array_shift($path);
 	
@@ -697,8 +793,8 @@ function frontend_url_handler(&$data, $url_now, &$url_next)
 			
 			if(isset($_GET["comment"]))
 			{
-				if(isset($_POST["comment_prev"]))
-					$ste->vars["current"]["comment_prev"] = textprocessor_apply($_POST["comment_text"], $ratatoeskr_settings["comment_textprocessor"]);
+				if(isset($_POST["preview_comment"]))
+					$ste->vars["current"]["comment_prev"] = comment_filter(textprocessor_apply($_POST["comment_text"], $ratatoeskr_settings["comment_textprocessor"]));
 				else if(isset($_POST["post_comment"]))
 				{
 					$rejected = False;
@@ -743,6 +839,6 @@ function frontend_url_handler(&$data, $url_now, &$url_next)
  * See Also:
  * 	<register_comment_validator>
  */
-class CommentValidationFailed extends Exception {}
+class CommentRejected extends Exception {}
 
 ?>
