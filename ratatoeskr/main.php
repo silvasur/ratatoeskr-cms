@@ -39,6 +39,8 @@ function ratatoeskr()
 	
 	/* Register URL handlers */
 	register_url_handler("_default", "frontend_url_handler");
+	register_url_handler("_index", "frontend_url_handler");
+	register_url_handler("index", "frontend_url_handler");
 	register_url_handler("backend", $backend_subactions);
 	register_url_handler("_notfound", url_action_simple(function($data)
 	{
