@@ -271,7 +271,10 @@ $ste->register_tag("articles_get", function($ste, $params, $sub)
 	if(isset($params["perpage"]))
 	{
 		if(isset($params["maxpage"]))
-			$ste->set_var_by_name($params["maxpage"], ceil(count($result) / $params["perpage"]));
+		{
+			$maxpage = ceil(count($result) / $params["perpage"]);
+			$ste->set_var_by_name($params["maxpage"], $maxpage == 0 ? 1 : $maxpage);
+		}
 		$page = isset($params["page"]) ? $params["page"] : 1;
 		$result = array_slice($result, ($page - 1) * $params["perpage"], $params["perpage"]);
 	}

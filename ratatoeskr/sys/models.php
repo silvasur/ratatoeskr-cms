@@ -1024,7 +1024,7 @@ class Style
 	 */
 	public function save()
 	{
-		$result = qdb("SELECT COUNT(*) AS `n` FROM `PREFIX_styles` WHERE `name` = '%' AND `id` != %d", $this->name, $this->id);
+		$result = qdb("SELECT COUNT(*) AS `n` FROM `PREFIX_styles` WHERE `name` = '%s' AND `id` != %d", $this->name, $this->id);
 		$sqlrow = mysql_fetch_assoc($result);
 		if($sqlrow["n"] > 0)
 			throw new AlreadyExistsError();
