@@ -52,7 +52,7 @@ $languages = array(
 	"ff" => array("language" => "Fulfulde, Pulaar, Pular", "translation_exist" => False),
 	"gl" => array("language" => "Galego", "translation_exist" => False),
 	"ka" => array("language" => "ქართული", "translation_exist" => False),
-	"de" => array("language" => "Deutsch", "translation_exist" => True),
+	"de" => array("language" => "Deutsch", "translation_exist" => False),
 	"el" => array("language" => "Ελληνικά", "translation_exist" => False),
 	"gn" => array("language" => "Avañe'ẽ", "translation_exist" => False),
 	"gu" => array("language" => "ગુજરાતી", "translation_exist" => False),
