@@ -1911,6 +1911,8 @@ class Article
 		$this->title->save();
 		$this->text->save();
 		$this->excerpt->save();
+		foreach($this->tags as $tag)
+			$tag->save();
 		
 		qdb("DELETE FROM `PREFIX_article_tag_relations` WHERE `article`= %d", $this->id);
 		
