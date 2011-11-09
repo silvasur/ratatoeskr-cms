@@ -111,7 +111,7 @@ h1 {
 	min-width: 300px;
 }
 
-code, code pre {
+code, code pre, code * {
 	font-family: monospace;
 	background: #eee;
 }
@@ -150,7 +150,33 @@ h2 {
 	clear: both;
 }
 
-form.fullwidthinputs input[type="text"], form.fullwidthinputs input[type="password"], form.fullwidthinputs select, form.fullwidthinputs textarea {
+.fullwidth {
 	width: 100%;
-	margin:0mm;
+}
+
+div.error {
+	border: 1px solid #f00;
+	background: #fcc;
+	color: #f00;
+	padding: 1em;
+	margin: 3mm 0mm 3mm;
+	text-align: center;
+}
+
+div.notice {
+	border: 1px solid #33f;
+	background: #ccf;
+	color: #33f;
+	padding: 1em;
+	margin: 3mm 0mm 3mm;
+	text-align: center;
+}
+
+div.success {
+	border: 1px solid #0a0;
+	background: #cfc;
+	color: #0a0;
+	padding: 1em;
+	margin: 3mm 0mm 3mm;
+	text-align: center;
 }

@@ -50,7 +50,17 @@ $translation = array(
 	"article_status" => "Article Status",
 	"article_status_hidden" => "Hidden",
 	"article_status_live" => "Live",
-	"article_status_sticky" => "Sticky"
+	"article_status_sticky" => "Sticky",
+	"article_section" => "Section",
+	"invalid_urlname" => "Invalid URL name (Can contain a-z A-Z 0-9 - and _)",
+	"invalid_article_status" => "Invalid article status",
+	"unknown_txtproc" => "Unknown Textprocessor",
+	"invalid_date" => "Invalid date",
+	"article_edit_error" => "Could not edit article.",
+	"unknown_section" => "Unknown section",
+	"allow_comments" => "Allow comments?",
+	"article_name_already_in_use" => "Article name is already in use.",
+	"article_save_success" => "Article successfully saved."
 );
 
 ?>
