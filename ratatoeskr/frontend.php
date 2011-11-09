@@ -675,7 +675,7 @@ $ste->register_tag("title", function($ste, $params, $sub)
  * $current has these fields:
  * 	* article       - Only set if a single article is shown. Holds information about an article. (sub-fields are described at <article_transform_ste>).
  * 	* section       - Only set if a whole section is shown. Holds information about an section. (sub-fields are described at <section_transform_ste>).
- * 	* tag           - Only set if all articles with the same tag should be shown. Holds information about a tag. (sub-fields are described at <tag_transform_ste>).
+ * 	* tag           - Only set if all articles with the same tag should be shown (pseudo section _tags). Holds information about a tag. (sub-fields are described at <tag_transform_ste>).
  * 	* page          - Which subpage is shown? Useful with <page_prev>, <page_next> and the page parameter of <articles_get>. Default: 1
  * 	* commented     - True, if the visitor has successfully written a comment.
  * 	* comment_fail  - If the user tried to comment, but the system rejected the comment, this will be set and will contain the error message.
