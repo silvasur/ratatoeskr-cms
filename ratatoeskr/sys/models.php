@@ -1496,7 +1496,7 @@ class Tag
 			throw new AlreadyExistsError();
 		
 		$this->title->save();
-		qdb("UPDATE `PREFIX_tags` SET `name` = '%s', `title` = %d` WHERE `id` = %d",
+		qdb("UPDATE `PREFIX_tags` SET `name` = '%s', `title` = %d WHERE `id` = %d",
 			$this->name, $this->title->get_id(), $this->id);
 	}
 	
@@ -1903,7 +1903,7 @@ class Article
 	 */
 	public function save()
 	{
-		$result = qdb("SELECT COUNT(*) AS `n` FROM `PREFIX_article` WHERE `urlname` = '%s' AND `id` != %d", $this->urlname, $this->id);
+		$result = qdb("SELECT COUNT(*) AS `n` FROM `PREFIX_articles` WHERE `urlname` = '%s' AND `id` != %d", $this->urlname, $this->id);
 		$sqlrow = mysql_fetch_assoc($result);
 		if($sqlrow["n"] > 0)
 			throw new AlreadyExistsError();
