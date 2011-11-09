@@ -462,7 +462,7 @@ class Group
 class Translation
 {
 	/*
-	 * Varialbes: Public class variables.
+	 * Variables: Public class variables.
 	 * 
 	 * $text - The translated text.
 	 * $texttype - The type of the text. Has only a meaning in a context.
