@@ -1452,7 +1452,7 @@ class Tag
 		$rv = array();
 		$result = qdb("SELECT `id` FROM `PREFIX_tags` WHERE 1");
 		while($sqlrow = mysql_fetch_assoc($result))
-			$rv[] = self::by_id($result["id"]);
+			$rv[] = self::by_id($sqlrow["id"]);
 		return $rv;
 	}
 	
