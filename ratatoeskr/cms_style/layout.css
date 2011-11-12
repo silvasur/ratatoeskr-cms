@@ -3,6 +3,19 @@
 	font-size: 10pt;
 }
 
+a img {
+	border: none;
+}
+
+a {
+	color: #666;
+	text-decoration: underline;
+}
+
+a:hover {
+	color: black;
+}
+
 body, html {
 	margin: 0px;
 	padding:0px;
@@ -154,29 +167,79 @@ h2 {
 	width: 100%;
 }
 
-div.error {
+/*div.error {
 	border: 1px solid #f00;
 	background: #fcc;
 	color: #f00;
 	padding: 1em;
 	margin: 3mm 0mm 3mm;
 	text-align: center;
+}*/
+
+div.error {
+	border: 1px solid #8d8d8d;
+	background: #ddd url(images/error.png) no-repeat top left;
+	min-height: 40px;
+	color: #222;
+	padding: 1em;
+	margin: 3mm 0mm 3mm;
+	text-align: center;
 }
 
 div.notice {
-	border: 1px solid #33f;
-	background: #ccf;
-	color: #33f;
+	border: 1px solid #8d8d8d;
+	background: #ddd url(images/notice.png) no-repeat top left;
+	min-height: 40px;
+	color: #222;
 	padding: 1em;
 	margin: 3mm 0mm 3mm;
 	text-align: center;
 }
 
 div.success {
-	border: 1px solid #0a0;
-	background: #cfc;
-	color: #0a0;
+	border: 1px solid #8d8d8d;
+	background: #ddd url(images/success.png) no-repeat top left;
+	min-height: 40px;
+	color: #222;
 	padding: 1em;
 	margin: 3mm 0mm 3mm;
 	text-align: center;
+}
+
+div.pos_center {
+	text-align: center;
+	margin: auto;
+}
+
+input.yes_btn {
+	font-weight: bold;
+	font-size: 125%;
+}
+
+input.no_btn {
+	font-weight: bold;
+	font-size: 125%;
+}
+
+table.listtab {
+	border-collapse: collapse;
+}
+
+table.listtab th {
+	font-weight: bold;
+	color: black;
+	text-align: left;
+	padding-left: 1ex;
+}
+
+table.listtab td {
+	border-top: 1px solid #eee;
+}
+
+table.listtab tr:first-child td {
+	border-top: 1px solid #666;
+}
+
+table.listtab tbody tr:hover {
+	background: #eee;
 }
