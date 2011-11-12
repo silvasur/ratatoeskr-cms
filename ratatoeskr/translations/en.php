@@ -60,7 +60,31 @@ $translation = array(
 	"unknown_section" => "Unknown section",
 	"allow_comments" => "Allow comments?",
 	"article_name_already_in_use" => "Article name is already in use.",
-	"article_save_success" => "Article successfully saved."
+	"article_save_success" => "Article successfully saved.",
+	"delete_tag_pagetitle" => "Delete \"[[TAGNAME]]\"",
+	"delete_comment_question" => "Do you want to delete this tag?",
+	"tag_deleted" => "Tag was deleted.",
+	"back_to_tags" => "Go back to Content::Tags",
+	"create_new_tag" => "Create a new Tag",
+	"new_tag_name" => "Name",
+	"tags_overview" => "Tag Overview",
+	"tag_name" => "Tag name",
+	"delete" => "Delete",
+	"yestext_default" => "Yes",
+	"notext_default" => "No",
+	"tag_add_lang" => "Add translation",
+	"language_unknown" => "Unknown language",
+	"no_translation_text_given" => "No translation text given.",
+	"translation_added_successfully" => "Translation added successfully.",
+	"tag_translation_added" => "Translation added.",
+	"invalid_tag_name" => "Invalid tag name. A tag name can not contain commas (,) or spaces ( ) and must not be empty.",
+	"tag_name_already_in_use" => "Tag name already in use.",
+	"tag_created_successfully" => "Tag created successfully.",
+	"tag_titles_edited_successfully" => "Tag titles changed successfully.",
+	"available_languages" => "Available languages",
+	"tags" => "Tags",
+	"section" => "Section",
+	"no_articles" => "No articles stored."
 );
 
 ?>

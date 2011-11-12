@@ -1,0 +1,22 @@
+<ste:load name="master.html" />
+<ste:block name="content">
+	<ste:if>$errors
+		<ste:then>
+			<div class="error">
+				<ul>
+				<ste:foreach array="errors" value="error">
+					<li><ste:escape>$error</ste:escape></li>
+				</ste:foreach>
+				</ul>
+			</div>
+		</ste:then>
+	</ste:if>
+	
+	<form action="$rel_path_to_root/backend/content/tags/$tagname/addtranslation" method="POST" accept_charset="UTF-8">
+		<select name="language">
+			<ste:foreach array="all_languages" key="code" value="name">
+				<option value="$code">($code) $name</option>
+			</ste:foreach>
+		</select>: <input type="text" name="translation" /> <input type="submit" name="addtranslation" />
+	</form>
+</ste:block>

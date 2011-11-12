@@ -1,0 +1,55 @@
+<ste:load name="master.html" />
+<ste:block name="content">
+	<ste:if>$error
+		<ste:then>
+			<div class="error">$error</div>
+		</ste:then>
+	</ste:if>
+	<ste:if>$success
+		<ste:then>
+			<div class="success">$success</div>
+		</ste:then>
+	</ste:if>
+	
+	<form action="$rel_path_to_root/backend/content/tags" method="POST" accept-charset="UTF-8">
+		<table>
+			<thead>
+				<tr>
+					<th><ste:escape><ste:get_translation for="tag_name" /></ste:escape></th>
+					<th><ste:escape><ste:get_translation for="delete" /></ste:escape></th>
+					<ste:foreach array="all_tag_langs" key="langcode" value="langname">
+						<th>($langcode) <ste:escape>$langname</ste:escape></th>
+					</ste:foreach>
+					<th><ste:escape><ste:get_translation for="tag_add_lang" /></ste:escape></th>
+				</tr>
+			</thead>
+			<tbody>
+				<ste:foreach array="alltags" value="tagdata">
+					<tr>
+						<td>$tagdata[name]</td>
+						<td>
+							<a href="$rel_path_to_root/backend/content/tags/$tagdata[name]/delete"><img src="$rel_path_to_root/ratatoeskr/cms_style/images/delete.png" alt="<ste:get_translation for='delete' />" /></a>
+						</td>
+						<ste:foreach array="all_tag_langs" key="langcode" value="_">
+							<td>
+								<input type="text" name="tagtrans_${langcode}_${tagdata[name]}" value="<ste:escape>$tagdata[translations][$langcode]</ste:escape>" />
+							</td>
+						</ste:foreach>
+						<td>
+							<a href="$rel_path_to_root/backend/content/tags/$tagdata[name]/addtranslation"><img src="$rel_path_to_root/ratatoeskr/cms_style/images/add.png" alt="<ste:escape><ste:get_translation for='tag_add_lang' /></ste:escape>" /></a>
+						</td>
+					</tr>
+				</ste:foreach>
+			</tbody>
+		</table>
+		<div><input type="submit" name="edit_translations" /></div>
+	</form>
+	
+	<div>
+		<h2><ste:get_translation for="create_new_tag" /></h2>
+		<form action="$rel_path_to_root/backend/content/tags" method="POST" accept-charset="UTF-8">
+			<p><ste:escape><ste:get_translation for="new_tag_name" /></ste:escape>: <input type="text" name="new_tag_name" /></p>
+			<p><input type="submit" name="create_new_tag" /></p>
+		</form>
+	</div>
+</ste:block>

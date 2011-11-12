@@ -1,0 +1,44 @@
+<ste:load name="master.html" />
+<ste:block name="content">
+	<div class="error">Example for errors</div>
+	<div class="notice">Example for notice</div>
+	<div class="success">Example for success</div>
+	
+	<table class="fullwidth listtab">
+		<thead><tr>
+			<th>&nbsp;</th>
+			<th><ste:get_translation for="urlname" /></th>
+			<th><ste:get_translation for="available_languages" /></th>
+			<th><ste:get_translation for="date_time" /></th>
+			<th><ste:get_translation for="tags" /></th>
+			<th><ste:get_translation for="section" /></th>
+		</tr></thead>
+		<tbody>
+			<ste:if>$articles
+				<ste:then>
+					<ste:foreach array="articles" value="article">
+						<tr>
+							<td><input type="checkbox" name="article_multiselect[]" value="$article[urlname]" /></td>
+							<td><a href="$rel_path_to_root/backend/content/write/$article[urlname]">$article[urlname]</a></td>
+							<td>
+								<ste:foreach array="article[languages]" value="lang" counter="i">
+									?{~{$i|eq|0}||, }<a href="$rel_path_to_root/backend/content/write/$article[urlname]/$lang">$lang</a>
+								</ste:foreach>
+							</td>
+							<td><ste:date timestamp="$article[date]">%Y-%m-%d %H:%M:%S</ste:date></td>
+							<td>
+								<ste:foreach array="article[tags]" value="tag" counter="i">
+									?{~{$i|eq|0}||, } <ste:escape>$tag</ste:escape>
+								</ste:foreach>
+							</td>
+							<td><a href="$rel_path_to_root/backend/design/sections/$article[section][id]"><ste:escape>$article[section][name]</ste:escape></a></td>
+						</tr>
+					</ste:foreach>
+				</ste:then>
+				<ste:else>
+					<tr><td colspan="6" style="text-align: center;"><em><ste:escape><ste:get_translation for="no_articles" /></ste:escape></em></td></tr>
+				</ste:else>
+			</ste:if>
+		</tbody>
+	</table>
+</ste:block>
