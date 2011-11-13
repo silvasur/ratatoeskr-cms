@@ -1569,7 +1569,7 @@ class Image
 	 * 
 	 * Parameters:
 	 * 	$name - The name for the image
-	 * 	$file - A uploaded image file (move_uploaded_file must be able to move the file!).
+	 * 	$file - An uploaded image file (move_uploaded_file must be able to move the file!).
 	 */
 	public static function create($name, $file)
 	{
