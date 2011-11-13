@@ -1,44 +1,83 @@
 <ste:load name="master.html" />
 <ste:block name="content">
-	<div class="error">Example for errors</div>
-	<div class="notice">Example for notice</div>
-	<div class="success">Example for success</div>
+	<ste:if>$success
+		<ste:then>
+			<div class="success"><ste:escape>$success</ste:escape></div>
+		</ste:then>
+	</ste:if>
+	<ste:if>$error
+		<ste:then>
+			<div class="error"><ste:escape>$error</ste:escape></div>
+		</ste:then>
+	</ste:if>
 	
-	<table class="fullwidth listtab">
-		<thead><tr>
-			<th>&nbsp;</th>
-			<th><ste:get_translation for="urlname" /></th>
-			<th><ste:get_translation for="available_languages" /></th>
-			<th><ste:get_translation for="date_time" /></th>
-			<th><ste:get_translation for="tags" /></th>
-			<th><ste:get_translation for="section" /></th>
-		</tr></thead>
-		<tbody>
-			<ste:if>$articles
-				<ste:then>
-					<ste:foreach array="articles" value="article">
-						<tr>
-							<td><input type="checkbox" name="article_multiselect[]" value="$article[urlname]" /></td>
-							<td><a href="$rel_path_to_root/backend/content/write/$article[urlname]">$article[urlname]</a></td>
-							<td>
-								<ste:foreach array="article[languages]" value="lang" counter="i">
-									?{~{$i|eq|0}||, }<a href="$rel_path_to_root/backend/content/write/$article[urlname]/$lang">$lang</a>
-								</ste:foreach>
-							</td>
-							<td><ste:date timestamp="$article[date]">%Y-%m-%d %H:%M:%S</ste:date></td>
-							<td>
-								<ste:foreach array="article[tags]" value="tag" counter="i">
-									?{~{$i|eq|0}||, } <ste:escape>$tag</ste:escape>
-								</ste:foreach>
-							</td>
-							<td><a href="$rel_path_to_root/backend/design/sections/$article[section][id]"><ste:escape>$article[section][name]</ste:escape></a></td>
-						</tr>
-					</ste:foreach>
-				</ste:then>
-				<ste:else>
-					<tr><td colspan="6" style="text-align: center;"><em><ste:escape><ste:get_translation for="no_articles" /></ste:escape></em></td></tr>
-				</ste:else>
-			</ste:if>
-		</tbody>
-	</table>
+	<form action="$rel_path_to_root/backend/content/articles" method="GET" accept-charset="UTF-8">
+		<div>
+			<strong><ste:escape><ste:get_translation for="filter" /></ste:escape>:</strong>
+			<ste:escape><ste:get_translation for="filter_urlname" /></ste:escape> <input type="text" name="filter_urlname" value="<ste:escape>$filter_urlname</ste:escape>" />
+			<ste:escape><ste:get_translation for="filter_tag" /></ste:escape> <input type="text" name="filter_tag" value="<ste:escape>$filter_tag</ste:escape>" />
+			<ste:escape><ste:get_translation for="filter_section" /></ste:escape> <input type="text" name="filter_section" value="<ste:escape>$filter_section</ste:escape>" />
+			<input type="hidden" name="sort_$sorting[dir]" value="$sorting[by]" />
+			<input type="submit" />
+		</div>
+	</form>
+	
+	<form action="$rel_path_to_root/backend/content/articles?$filterquery?{$filterquery|&|}$sortquery" method="POST">
+		<table class="fullwidth listtab">
+			<thead><tr>
+				<th>&nbsp;</th>
+				<th>
+					<ste:get_translation for="urlname" />
+					<a href="$rel_path_to_root/backend/content/articles??{$filterquery|${filterquery}&|}sort_asc=urlname"><img src="$rel_path_to_root/ratatoeskr/cms_style/images/sortarrow_up_?{$sort_asc_urlname|filled|outline}.png" alt="<ste:get_translation for='sort_asc' />" /></a>
+					<a href="$rel_path_to_root/backend/content/articles??{$filterquery|${filterquery}&|}sort_desc=urlname"><img src="$rel_path_to_root/ratatoeskr/cms_style/images/sortarrow_down_?{$sort_desc_urlname|filled|outline}.png" alt="<ste:get_translation for='sort_desc' />" /></a>
+				</th>
+				<th><ste:get_translation for="available_languages" /></th>
+				<th>
+					<ste:get_translation for="date_time" />
+					<a href="$rel_path_to_root/backend/content/articles??{$filterquery|${filterquery}&|}sort_asc=date"><img src="$rel_path_to_root/ratatoeskr/cms_style/images/sortarrow_up_?{$sort_asc_date|filled|outline}.png" alt="<ste:get_translation for='sort_asc' />" /></a>
+					<a href="$rel_path_to_root/backend/content/articles??{$filterquery|${filterquery}&|}sort_desc=date"><img src="$rel_path_to_root/ratatoeskr/cms_style/images/sortarrow_down_?{$sort_desc_date|filled|outline}.png" alt="<ste:get_translation for='sort_desc' />" /></a>
+				</th>
+				<th><ste:get_translation for="tags" /></th>
+				<th>
+					<ste:get_translation for="section" />
+					<a href="$rel_path_to_root/backend/content/articles??{$filterquery|${filterquery}&|}sort_asc=section"><img src="$rel_path_to_root/ratatoeskr/cms_style/images/sortarrow_up_?{$sort_asc_section|filled|outline}.png" alt="<ste:get_translation for='sort_asc' />" /></a>
+					<a href="$rel_path_to_root/backend/content/articles??{$filterquery|${filterquery}&|}sort_desc=section"><img src="$rel_path_to_root/ratatoeskr/cms_style/images/sortarrow_down_?{$sort_desc_section|filled|outline}.png" alt="<ste:get_translation for='sort_desc' />" /></a>
+				</th>
+			</tr></thead>
+			<tbody>
+				<ste:if>$articles
+					<ste:then>
+						<ste:foreach array="articles" value="article">
+							<tr>
+								<td><input type="checkbox" name="article_multiselect[]" value="$article[urlname]" /></td>
+								<td><a href="$rel_path_to_root/backend/content/write/$article[urlname]">$article[urlname]</a></td>
+								<td>
+									<ste:foreach array="article[languages]" value="lang" counter="i">
+										?{~{$i|eq|0}||, }<a href="$rel_path_to_root/backend/content/write/$article[urlname]/$lang">$lang</a>
+									</ste:foreach>
+								</td>
+								<td><ste:date timestamp="$article[date]">%Y-%m-%d %H:%M:%S</ste:date></td>
+								<td>
+									<ste:foreach array="article[tags]" value="tag" counter="i">
+										?{~{$i|eq|0}||, } <ste:escape>$tag</ste:escape>
+									</ste:foreach>
+								</td>
+								<td><a href="$rel_path_to_root/backend/design/sections/$article[section][id]"><ste:escape>$article[section][name]</ste:escape></a></td>
+							</tr>
+						</ste:foreach>
+					</ste:then>
+					<ste:else>
+						<tr><td colspan="6" style="text-align: center;"><em><ste:escape><ste:get_translation for="no_articles" /></ste:escape></em></td></tr>
+					</ste:else>
+				</ste:if>
+			</tbody>
+		</table>
+		<div>
+			<input type="submit" name="delete" value="<ste:escape><ste:get_translation for='delete' /></ste:escape>" />
+			<select name="really_delete">
+				<option value="no" selected="selected"><ste:escape><ste:get_translation for="notext_default" /></ste:escape></option>
+				<option value="yes"><ste:escape><ste:get_translation for="yestext_default" /></ste:escape></option>
+			</select>
+		</div>
+	</form>
 </ste:block>

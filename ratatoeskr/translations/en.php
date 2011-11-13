@@ -84,7 +84,15 @@ $translation = array(
 	"available_languages" => "Available languages",
 	"tags" => "Tags",
 	"section" => "Section",
-	"no_articles" => "No articles stored."
+	"no_articles" => "No articles stored.",
+	"delete" => "Delete",
+	"articles_deleted" => "Articles deleted.",
+	"sort_asc" => "ascending",
+	"sort_desc" => "descending",
+	"filter" => "Filter",
+	"filter_urlname" => "by URL name",
+	"filter_tag" => "by tag",
+	"filter_section" => "by section"
 );
 
 ?>

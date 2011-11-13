@@ -504,12 +504,112 @@ $backend_subactions = url_action_subactions(array(
 			$ste->vars["submenu"]   = "articles";
 			$ste->vars["pagetitle"] = $translation["menu_articles"];
 			
-			
+			if(isset($_POST["delete"]) and ($_POST["really_delete"] == "yes"))
+			{
+				foreach($_POST["article_multiselect"] as $article_urlname)
+				{
+					try
+					{
+						$article = Article::by_urlname($article_urlname);
+						$article->delete();
+					}
+					catch(DoesNotExistError $e)
+					{
+						continue;
+					}
+				}
+				
+				$ste->vars["success"] = $translation["articles_deleted"];
+			}
 			
 			$articles = Article::all();
 			
 			/* Filtering */
-			#if(isset)
+			$filterquery = array();
+			if(!empty($_GET["filter_urlname"]))
+			{
+				$searchfor = strtolower($_GET["filter_urlname"]);
+				$articles = array_filter($articles, function($a) use ($searchfor) { return strpos(strtolower($a->urlname), $searchfor) !== False; });
+				$filterquery[] = "filter_urlname=" . urlencode($_GET["filter_urlname"]);
+				$ste->vars["filter_urlname"] = $_GET["filter_urlname"];
+			}
+			if(!empty($_GET["filter_tag"]))
+			{
+				$searchfor = $_GET["filter_tag"];
+				$articles = array_filter($articles, function($a) use ($searchfor) { foreach($a->tags as $t) { if($t->name==$searchfor) return True; } return False; });
+				$filterquery[] = "filter_tag=" . urlencode($searchfor);
+				$ste->vars["filter_tag"] = $searchfor;
+			}
+			if(!empty($_GET["filter_section"]))
+			{
+				$searchfor = $_GET["filter_section"];
+				$articles = array_filter($articles, function($a) use ($searchfor) { return $a->section->name == $searchfor; });
+				$filterquery[] = "filter_section=" . urlencode($searchfor);
+				$ste->vars["filter_section"] = $searchfor;
+			}
+			$ste->vars["filterquery"] = implode("&", $filterquery);
+			
+			/* Sorting */
+			if(isset($_GET["sort_asc"]))
+			{
+				switch($_GET["sort_asc"])
+				{
+					case "date":
+						$ste->vars["sortquery"] = "sort_asc=date";
+						$ste->vars["sort_asc_date"] = True;
+						$ste->vars["sorting"] = array("dir" => "asc", "by" => "date");
+						usort($articles, function($a, $b) { return intcmp($a->timestamp, $b->timestamp); });
+						break;
+					case "section":
+						$ste->vars["sortquery"] = "sort_asc=section";
+						$ste->vars["sort_asc_section"] = True;
+						$ste->vars["sorting"] = array("dir" => "asc", "by" => "section");
+						usort($articles, function($a, $b) { return strcmp($a->section->name, $b->section->name); });
+						break;
+					case "urlname":
+						$ste->vars["sortquery"] = "sort_asc=urlname";
+					default:
+						$ste->vars["sort_asc_urlname"] = True;
+						$ste->vars["sorting"] = array("dir" => "asc", "by" => "urlname");
+						usort($articles, function($a, $b) { return strcmp($a->urlname, $b->urlname); });
+						break;
+				}
+			}
+			elseif(isset($_GET["sort_desc"]))
+			{
+				switch($_GET["sort_desc"])
+				{
+					case "date":
+						$ste->vars["sortquery"] = "sort_desc=date";
+						$ste->vars["sort_desc_date"] = True;
+						$ste->vars["sorting"] = array("dir" => "desc", "by" => "date");
+						usort($articles, function($a, $b) { return intcmp($b->timestamp, $a->timestamp); });
+						break;
+					case "section":
+						$ste->vars["sortquery"] = "sort_desc=section";
+						$ste->vars["sort_desc_section"] = True;
+						$ste->vars["sorting"] = array("dir" => "desc", "by" => "section");
+						usort($articles, function($a, $b) { return strcmp($b->section->name, $a->section->name); });
+						break;
+					case "urlname":
+						$ste->vars["sortquery"] = "sort_desc=urlname";
+						$ste->vars["sort_desc_urlname"] = True;
+						$ste->vars["sorting"] = array("dir" => "desc", "by" => "urlname");
+						usort($articles, function($a, $b) { return strcmp($b->urlname, $a->urlname); });
+						break;
+					default:
+						$ste->vars["sort_asc_urlname"] = True;
+						$ste->vars["sorting"] = array("dir" => "asc", "by" => "urlname");
+						usort($articles, function($a, $b) { return strcmp($a->urlname, $b->urlname); });
+						break;
+				}
+			}
+			else
+			{
+				$ste->vars["sort_asc_urlname"] = True;
+				$ste->vars["sorting"] = array("dir" => "asc", "by" => "urlname");
+				usort($articles, function($a, $b) { return strcmp($a->urlname, $b->urlname); });
+			}
 			
 			$ste->vars["articles"] = array_map(function($article) {
 				$avail_langs = array();
