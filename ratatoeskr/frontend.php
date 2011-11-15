@@ -93,12 +93,12 @@ function article_transform_ste($article, $lang)
 		$languages[$language] = "$rel_path_to_root/$language/{$article->section->name}/{$article->urlname}";
 	
 	return array(
-		"id" => $article->get_id(),
+		"id"               => $article->get_id(),
 		"urlname"          => $article->urlname,
 		"fullurl"          => htmlesc("$rel_path_to_root/$lang/{$article->section->name}/{$article->urlname}"),
 		"title"            => htmlesc($article->title[$lang]->text),
-		"text"             => textprocessor_apply_translation(str_replace("%root%", $rel_path_to_root, $article->text[$lang])),
-		"excerpt"          => textprocessor_apply_translation(str_replace("%root%", $rel_path_to_root, $article->excerpt[$lang])),
+		"text"             => textprocessor_apply(str_replace("%root%", $rel_path_to_root, $article->text[$lang]->text), $article->text[$lang]->texttype),
+		"excerpt"          => textprocessor_apply(str_replace("%root%", $rel_path_to_root, $article->excerpt[$lang]->text), $article->excerpt[$lang]->texttype),
 		"custom"           => $article->custom,
 		"status"           => $article->status,
 		"section"          => section_transform_ste($article->section, $lang),
@@ -213,7 +213,6 @@ $ste->register_tag("articles_get", function($ste, $params, $sub)
 	
 	if(!isset($params["var"]))
 		throw new Exception("Parameter var is needed in article_get!");
-	
 	if(isset($params["section"]))
 	{
 		try
