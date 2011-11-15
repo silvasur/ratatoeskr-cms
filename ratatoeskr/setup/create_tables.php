@@ -51,7 +51,6 @@ CREATE TABLE `PREFIX_group_members` (
 CREATE TABLE `PREFIX_images` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` text COLLATE utf8_unicode_ci NOT NULL,
-  `alt` int(11) NOT NULL,
   `file` text COLLATE utf8_unicode_ci NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;

@@ -1532,14 +1532,15 @@ class Image
 	private $id;
 	private $filename;
 	
+	private static $pre_maxw = 150;
+	private static $pre_maxh = 100;
+	
 	/*
 	 * Variables: Public class variables
 	 * 
 	 * $name - The image name
-	 * $alt - The alternative text (a <Multilingual> object)
 	 */
 	public $name;
-	public $alt;
 	
 	private function __construct() { }
 	
@@ -1549,8 +1550,8 @@ class Image
 		if($sqlrow === False)
 			throw new DoesNotExistError();
 		
+		$this->id   = $sqlrow["id"];
 		$this->name = $sqlrow["name"];
-		$this->alt  = Multilingual::by_id($sqlrow["alt"]);
 		$this->file = $sqlrow["file"];
 	}
 	
@@ -1575,11 +1576,10 @@ class Image
 	{
 		$obj = new self;
 		$obj->name = $name;
-		$obj->alt  = Multilingual::create();
 		$obj->file = "0";
 		
-		qdb("INSERT INTO `PREFIX_images` (`name`, `alt`, `file`) VALUES ('%s', %d, '0')",
-			$name, $obj->alt->get_id());
+		qdb("INSERT INTO `PREFIX_images` (`name`, `file`) VALUES ('%s', '0')",
+			$name);
 		
 		$obj->id = mysql_insert_id();
 		try
@@ -1604,7 +1604,7 @@ class Image
 	public static function by_id($id)
 	{
 		$obj = new self;
-		$obj->populate_by_sqlresult(qdb("SELECT `id`, `name`, `alt`, `file` FROM `PREFIX_images` WHERE `id` = %d", $id));
+		$obj->populate_by_sqlresult(qdb("SELECT `id`, `name`, `file` FROM `PREFIX_images` WHERE `id` = %d", $id));
 		return $obj;
 	}
 	
@@ -1643,10 +1643,41 @@ class Image
 			throw new UnknownFileFormat();
 		if(is_file(SITE_BASE_PATH . "/images/" . $this->file))
 			unlink(SITE_BASE_PATH . "/images/" . $this->file);
-		$new_fn = $this->id . $imagetype_file_extensions[$imageinfo[2]];
-		move_uploaded_file($file, SITE_BASE_PATH . "/images/" . $new_fn);
+		$new_fn = $this->id . "." . $imagetype_file_extensions[$imageinfo[2]];
+		if(!move_uploaded_file($file, SITE_BASE_PATH . "/images/" . $new_fn))
+			throw new IOError("Can not move file.");
 		$this->file = $new_fn;
 		$this->save();
+		
+		/* make preview image */
+		switch($imageinfo[2])
+		{
+			case IMAGETYPE_GIF:  $img = imagecreatefromgif (SITE_BASE_PATH . "/images/" . $new_fn); break;
+			case IMAGETYPE_JPEG: $img = imagecreatefromjpeg(SITE_BASE_PATH . "/images/" . $new_fn); break;
+			case IMAGETYPE_PNG:  $img = imagecreatefrompng (SITE_BASE_PATH . "/images/" . $new_fn); break;
+			default: $img = imagecreatetruecolor(40, 40); imagefill($img, 1, 1, imagecolorallocate($img, 127, 127, 127)); break;
+		}
+		$w_orig = imagesx($img);
+		$h_orig = imagesy($img);
+		if(($w_orig > self::$pre_maxw) or ($h_orig > self::$pre_maxh))
+		{
+			$ratio = $w_orig / $h_orig;
+			if($ratio > 1)
+			{
+				$w_new = round(self::$pre_maxw);
+				$h_new = round(self::$pre_maxw / $ratio);
+			}
+			else
+			{
+				$h_new = round(self::$pre_maxh);
+				$w_new = round(self::$pre_maxh * $ratio);
+			}
+			$preview = imagecreatetruecolor($w_new, $h_new);
+			imagecopyresized($preview, $img, 0, 0, 0, 0, $w_new, $h_new, $w_orig, $h_orig);
+			imagepng($preview, SITE_BASE_PATH . "/images/previews/{$this->id}.png");
+		}
+		else
+			imagepng($img, SITE_BASE_PATH . "/images/previews/{$this->id}.png");
 	}
 	
 	/*
@@ -1654,9 +1685,8 @@ class Image
 	 */
 	public function save()
 	{
-		$this->alt->save();
-		qdb("UPDATE `PREFIX_images` SET `name` = '%s', `alt` = %d, `file` = '%s' WHERE `id` = %d",
-			$this->name, $this->alt->get_id(), $this->file, $this->id);
+		qdb("UPDATE `PREFIX_images` SET `name` = '%s', `file` = '%s' WHERE `id` = %d",
+			$this->name, $this->file, $this->id);
 	}
 	
 	/*
@@ -1664,9 +1694,10 @@ class Image
 	 */
 	public function delete()
 	{
-		$this->alt->delete();
 		if(is_file(SITE_BASE_PATH . "/images/" . $this->file))
 			unlink(SITE_BASE_PATH . "/images/" . $this->file);
+		if(is_file(SITE_BASE_PATH . "/images/previews/{$this->id}.png"))
+			unlink(SITE_BASE_PATH . "/images/previews/{$this->id}.png");
 		qdb("DELETE FROM `PREFIX_images` WHERE `id` = %d", $this->id);
 	}
 }
