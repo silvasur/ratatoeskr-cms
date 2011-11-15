@@ -45,7 +45,8 @@
 				</th>
 			</tr></thead>
 			<tbody>
-				<ste:if>$articles
+				<ste:set var="articles_n"><ste:arraylen array="articles" /></ste:set>
+				<ste:if>~{$articles_n|gt|0}
 					<ste:then>
 						<ste:foreach array="articles" value="article">
 							<tr>
