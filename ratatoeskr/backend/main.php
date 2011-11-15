@@ -626,6 +626,102 @@ $backend_subactions = url_action_subactions(array(
 			}, $articles);
 			
 			echo $ste->exectemplate("systemtemplates/articles.html");
+		},
+		"images" => function(&$data, $url_now, &$url_next)
+		{
+			global $ste, $translation, $languages, $rel_path_to_root;
+			
+			list($imgid, $imageaction) = $url_next;
+			
+			$url_next = array();
+			
+			$ste->vars["section"]   = "content";
+			$ste->vars["submenu"]   = "images";
+			$ste->vars["pagetitle"] = $translation["menu_images"];
+			
+			if(!empty($imgid) and is_numeric($imgid))
+			{
+				try
+				{
+					$image = Image::by_id($imgid);
+				}
+				catch(DoesNotExistError $e)
+				{
+					throw new NotFoundError();
+				}
+				
+				if(empty($imageaction))
+					throw new NotFoundError();
+				else
+				{
+					if(($imageaction == "markdown") or ($imageaction == "html"))
+					{
+						$ste->vars["pagetitle"]      = $translations["generate_embed_code"];
+						$ste->vars["image_id"]       = $image->get_id();
+						$ste->vars["markup_variant"] = $imageaction;
+						if(isset($_POST["img_alt"]))
+						{
+							if($imageaction == "markdown")
+								$ste->vars["embed_code"] = "![" . str_replace("]", "\\]", $_POST["img_alt"]) . "](%root%/images/" . str_replace(")", "\\)", urlencode($image->get_filename())) . ")";
+							elseif($imageaction == "html")
+								$ste->vars["embed_code"] = "<img src=\"%root%/images/" . htmlesc(urlencode($image->get_filename())) . "\" alt=\"" . htmlesc($_POST["img_alt"]) . "\" />";
+						}
+						
+						echo $ste->exectemplate("systemtemplates/image_embed.html");
+					}
+					else
+						throw new NotFoundError();
+				}
+				return;
+			}
+			
+			/* Upload Form */
+			if(isset($_POST["upload"]))
+			{
+				try
+				{
+					$image = Image::create((!empty($_POST["upload_name"])) ? $_POST["upload_name"] : $_FILES["upload_img"]["name"], $_FILES["upload_img"]["tmp_name"]);
+					$image->save();
+					$ste->vars["success"] = $translation["upload_success"];
+				}
+				catch(IOError $e)
+				{
+					$ste->vars["error"] = $translation["upload_failed"];
+				}
+				catch(UnknownFileFormat $e)
+				{
+					$ste->vars["error"] = $translation["unknown_file_format"];
+				}
+			}
+			
+			/* Mass delete */
+			if(isset($_POST["delete"]) and ($_POST["really_delete"] == "yes"))
+			{
+				foreach($_POST["image_multiselect"] as $image_id)
+				{
+					try
+					{
+						$image = Image::by_id($image_id);
+						$image->delete();
+					}
+					catch(DoesNotExistError $e)
+					{
+						continue;
+					}
+				}
+				
+				$ste->vars["success"] = $translation["images_deleted"];
+			}
+			
+			$images = Image::all();
+			
+			$ste->vars["images"] = array_map(function($img) { return array(
+				"id"   => $img->get_id(),
+				"name" => $img->name,
+				"file" => $img->get_filename()
+			); }, $images);
+			
+			echo $ste->exectemplate("systemtemplates/image_list.html");
 		}
 	))
 ));

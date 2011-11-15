@@ -1,0 +1,68 @@
+<ste:load name="master.html" />
+<ste:block name="content">
+	<ste:if>$success
+		<ste:then>
+			<div class="success"><ste:escape>$success</ste:escape></div>
+		</ste:then>
+	</ste:if>
+	<ste:if>$error
+		<ste:then>
+			<div class="error"><ste:escape>$error</ste:escape></div>
+		</ste:then>
+	</ste:if>
+	
+	<div class="dualcolumns">
+		<div class="column_left">
+			<form action="$rel_path_to_root/backend/content/images" method="POST" accept-charset="UTF-8" enctype="multipart/form-data">
+				<h2><ste:escape><ste:get_translation for="image_upload" /></ste:escape></h2>
+				<p><input type="file" name="upload_img" class="fullwidth" /></p>
+				<p>
+					<strong><ste:escape><ste:get_translation for="img_upload_name" /></ste:escape></strong><br />
+					<input type="text" name="upload_name" class="fullwidth" /><br />
+					<ste:escape><ste:get_translation for="img_upload_name_leave_empty" /></ste:escape>
+				</p>
+				<p><input type="submit" name="upload" /></p>
+			</form>
+		</div>
+		<div class="column_main">
+			<form action="$rel_path_to_root/backend/content/images" method="POST">
+				<table class="fullwidth listtab">
+					<thead><tr>
+						<th>&nbsp;</th>
+						<th><ste:escape><ste:get_translation for="image_preview" /></ste:escape></th>
+						<th><ste:escape><ste:get_translation for="image_name" /></ste:escape></th>
+						<th><ste:escape><ste:get_translation for="image_getmarkup" /></ste:escape></th>
+					</tr></thead>
+					<tbody>
+						<ste:set var="images_n"><ste:arraylen array="images" /></ste:set>
+						<ste:if>~{$images_n|gt|0}
+							<ste:then>
+								<ste:foreach array="images" value="image">
+									<tr>
+										<td><input type="checkbox" name="image_multiselect[]" value="$image[id]" /></td>
+										<td><img src="$rel_path_to_root/images/previews/${image[id]}.png" alt="" /></td>
+										<td><a href="$rel_path_to_root/images/$image[file]"><ste:escape>$image[name]</ste:escape></a></td>
+										<td>
+											<a href="$rel_path_to_root/backend/content/images/$image[id]/markdown">Markdown</a> - <a href="$rel_path_to_root/backend/content/images/$image[id]/html">HTML</a>
+										</td>
+									</tr>
+								</ste:foreach>
+							</ste:then>
+							<ste:else>
+								<tr><td colspan="5" style="text-align: center;"><em><ste:escape><ste:get_translation for="no_images" /></ste:escape></em></td></tr>
+							</ste:else>
+						</ste:if>
+					</tbody>
+				</table>
+				<div>
+					<input type="submit" name="delete" value="<ste:escape><ste:get_translation for='delete' /></ste:escape>" />
+					<select name="really_delete">
+						<option value="no" selected="selected"><ste:escape><ste:get_translation for="notext_default" /></ste:escape></option>
+						<option value="yes"><ste:escape><ste:get_translation for="yestext_default" /></ste:escape></option>
+					</select>
+				</div>
+			</form>
+		</div>
+	</div>
+	<div class="dualcolumns_stop"></div>
+</ste:block>

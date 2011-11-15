@@ -92,7 +92,21 @@ $translation = array(
 	"filter" => "Filter",
 	"filter_urlname" => "by URL name",
 	"filter_tag" => "by tag",
-	"filter_section" => "by section"
+	"filter_section" => "by section",
+	"image_upload" => "Upload a new image",
+	"img_upload_name" => "Name",
+	"img_upload_name_leave_empty" => "(Leave empty for default filename)",
+	"image_preview" => "Preview",
+	"image_name" => "Name",
+	"image_getmarkup" => "Embed code",
+	"no_images" => "No images stored.",
+	"upload_failed" => "Upload failed.",
+	"unknown_file_format" => "Unknown file format.",
+	"upload_success" => "Upload successful",
+	"images_deleted" => "Images deleted.",
+	"generate_embed_code" => "Generate embed code.",
+	"image_alt" => "Alternative Title",
+	"embed_code" => "Embed code"
 );
 
 ?>

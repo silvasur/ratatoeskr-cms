@@ -140,7 +140,7 @@ h2 {
 	font-weight: bold;
 }
 
-.triplecolumns .column_left{
+.triplecolumns .column_left, .dualcolumns .column_left {
 	float: left;
 	width: 50mm;
 	margin: 0px;
@@ -159,7 +159,12 @@ h2 {
 	padding: 0mm 55mm 0mm;
 }
 
-.triplecolumns_stop {
+.dualcolumns .column_main {
+	margin: 0mm;
+	padding: 0mm 0mm 0mm 55mm;
+}
+
+.triplecolumns_stop .dualcolumns_stop {
 	clear: both;
 }
 
