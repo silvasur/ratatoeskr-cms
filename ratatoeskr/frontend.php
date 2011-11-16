@@ -814,7 +814,7 @@ function frontend_url_handler(&$data, $url_now, &$url_next)
 					{
 						$comment = Comment::create($article, $lang);
 						$comment->author_name = $_POST["author_name"];
-						$comment->author_mail = $_POST["author_email"];
+						$comment->author_mail = $_POST["author_mail"];
 						$comment->text        = $_POST["comment_text"];
 						$comment->save();
 						$ste->vars["current"]["commented"] = "Yes";
