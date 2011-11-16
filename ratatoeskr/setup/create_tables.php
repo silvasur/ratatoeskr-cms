@@ -34,6 +34,7 @@ CREATE TABLE `PREFIX_comments` (
   `text` text COLLATE utf8_unicode_ci NOT NULL,
   `timestamp` bigint(20) NOT NULL,
   `visible` tinyint(4) NOT NULL,
+  `read_by_admin` tinyint(4) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 

@@ -822,15 +822,17 @@ class Comment
 	/*
 	 * Variables: Public class variables.
 	 * 
-	 * $author_name - Name of comment author.
-	 * $author_mail - E-Mail of comment author.
-	 * $text        - Comment text.
-	 * $visible     - Should the comment be visible?
+	 * $author_name   - Name of comment author.
+	 * $author_mail   - E-Mail of comment author.
+	 * $text          - Comment text.
+	 * $visible       - Should the comment be visible?
+	 * $read_by_admin - Was the comment read by an admin.
 	 */
 	public $author_name;
 	public $author_mail;
 	public $text;
 	public $visible;
+	public $read_by_admin;
 	
 	/* Should not be constructed manually. */
 	private function __construct() { }
@@ -862,17 +864,18 @@ class Comment
 		global $ratatoeskr_settings;
 		$obj = new self;
 		
-		qdb("INSERT INTO `PREFIX_comments` (`article`, `language`, `author_name`, `author_mail`, `text`, `timestamp`, `visible`) VALUES (%d, '%s', '', '', '', UNIX_TIMESTAMP(NOW()), %d)",
+		qdb("INSERT INTO `PREFIX_comments` (`article`, `language`, `author_name`, `author_mail`, `text`, `timestamp`, `visible`, `read_by_admin`) VALUES (%d, '%s', '', '', '', UNIX_TIMESTAMP(NOW()), %d, 0)",
 			$article->get_id(), $language, $ratatoeskr_settings["comment_visible_default"] ? 1 : 0);
 		
-		$obj->id          = mysql_insert_id();
-		$obj->article     = $article;
-		$obj->language    = $language;
-		$obj->author_name = "";
-		$obj->author_mail = "";
-		$obj->text        = "";
-		$obj->timestamp   = time();
-		$obj->visible     = $ratatoeskr_settings["comment_visible_default"];
+		$obj->id            = mysql_insert_id();
+		$obj->article       = $article;
+		$obj->language      = $language;
+		$obj->author_name   = "";
+		$obj->author_mail   = "";
+		$obj->text          = "";
+		$obj->timestamp     = time();
+		$obj->visible       = $ratatoeskr_settings["comment_visible_default"];
+		$obj->read_by_admin = False;
 		
 		return $obj;
 	}
@@ -888,20 +891,21 @@ class Comment
 	{
 		$obj = new self;
 		
-		$result = qdb("SELECT `id`, `article`, `language`, `author_name`, `author_mail`, `text`, `timestamp`, `visible` FROM `PREFIX_comments` WHERE `id` = %d",
+		$result = qdb("SELECT `id`, `article`, `language`, `author_name`, `author_mail`, `text`, `timestamp`, `visible`, `read_by_admin` FROM `PREFIX_comments` WHERE `id` = %d",
 			$id);
 		$sqlrow = mysql_fetch_assoc($result);
 		if($sqlrow === False)
 			throw new DoesNotExistError();
 		
-		$obj->id          = $sqlrow["id"];
-		$obj->article     = Article::by_id($sqlrow["article"]);
-		$obj->language    = $sqlrow["language"];
-		$obj->author_name = $sqlrow["author_name"];
-		$obj->author_mail = $sqlrow["author_mail"];
-		$obj->text        = $sqlrow["text"];
-		$obj->timestamp   = $sqlrow["timestamp"];
-		$obj->visible     = $sqlrow["visible"] == 1;
+		$obj->id            = $sqlrow["id"];
+		$obj->article       = Article::by_id($sqlrow["article"]);
+		$obj->language      = $sqlrow["language"];
+		$obj->author_name   = $sqlrow["author_name"];
+		$obj->author_mail   = $sqlrow["author_mail"];
+		$obj->text          = $sqlrow["text"];
+		$obj->timestamp     = $sqlrow["timestamp"];
+		$obj->visible       = $sqlrow["visible"] == 1;
+		$obj->read_by_admin = $sqlrow["read_by_admin"] == 1;
 		
 		return $obj;
 	}
@@ -912,8 +916,8 @@ class Comment
 	 */
 	public function save()
 	{
-		qdb("UPDATE `PREFIX_comments` SET `author_name` = '%s', `author_mail` = '%s', `text` = '%s', `visible` = %d WHERE `id` = %d",
-			$this->author_name, $this->author_mail, $this->text, ($this->visible ? 1 : 0), $this->id);
+		qdb("UPDATE `PREFIX_comments` SET `author_name` = '%s', `author_mail` = '%s', `text` = '%s', `visible` = %d, `read_by_admin` = %d WHERE `id` = %d",
+			$this->author_name, $this->author_mail, $this->text, ($this->visible ? 1 : 0), ($this->read_by_admin ? 1 : 0), $this->id);
 	}
 	
 	/*
