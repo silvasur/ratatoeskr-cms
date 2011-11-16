@@ -911,6 +911,22 @@ class Comment
 	}
 	
 	/*
+	 * Constructor: all
+	 * Get all comments
+	 * 
+	 * Returns:
+	 * 	Array of Comment objects
+	 */
+	public static function all()
+	{
+		$rv = array();
+		$result = qdb("SELECT `id` FROM `PREFIX_comments` WHERE 1");
+		while($sqlrow = mysql_fetch_assoc($result))
+			$rv[] = self::by_id($sqlrow["id"]);
+		return $rv;
+	}
+	
+	/*
 	 * Function: save
 	 * Save changes to database.
 	 */
