@@ -722,6 +722,180 @@ $backend_subactions = url_action_subactions(array(
 			); }, $images);
 			
 			echo $ste->exectemplate("systemtemplates/image_list.html");
+		},
+		"comments" => function(&$data, $url_now, &$url_next)
+		{
+			global $ste, $translation, $languages, $rel_path_to_root;
+			
+			list($comment_id) = $url_next;
+			
+			$url_next = array();
+			
+			$ste->vars["section"]   = "content";
+			$ste->vars["submenu"]   = "comments";
+			$ste->vars["pagetitle"] = $translation["menu_comments"];
+			
+			/* Single comment? */
+			if(!empty($comment_id))
+			{
+				try
+				{
+					$comment = Comment::by_id($comment_id);
+				}
+				catch(DoesNotExistError $e)
+				{
+					throw new NotFoundError();
+				}
+				
+				if(!$comment->read_by_admin)
+				{
+					$comment->read_by_admin = True;
+					$comment->save();
+				}
+				
+				if(isset($_POST["action_on_comment"]))
+				{
+					switch($_POST["action_on_comment"])
+					{
+						case "delete":
+							$comment->delete();
+							$ste->vars["success"] = $translation["comment_successfully_deleted"];
+							goto backend_content_comments_overview;
+							break;
+						case "make_visible":
+							$comment->visible = True;
+							$comment->save();
+							$ste->vars["success"] = $translation["comment_successfully_made_visible"];
+							break;
+						case "make_invisible":
+							$comment->visible = False;
+							$comment->save();
+							$ste->vars["success"] = $translation["comment_successfully_made_invisible"];
+							break;
+					}
+				}
+				
+				$ste->vars["id"] = $comment->get_id();
+				$ste->vars["visible"] = $comment->visible;
+				$ste->vars["article"] = $comment->get_article()->urlname;
+				$ste->vars["language"] = $comment->get_language();
+				$ste->vars["date"] = $comment->get_timestamp();
+				$ste->vars["author"] = "\"{$comment->author_name}\" <{$comment->author_mail}>";
+				$ste->vars["comment_text"] = $comment->create_html();
+				$ste->vars["comment_raw"] = $comment->text;
+				
+				echo $ste->exectemplate("systemtemplates/single_comment.html");
+				return;
+			}
+			
+			backend_content_comments_overview:
+			
+			/* Perform an action on all selected comments */
+			if(!empty($_POST["action_on_comments"]))
+			{
+				switch($_POST["action_on_comments"])
+				{
+					case "delete":
+						$commentaction = function($c) { $c->delete(); };
+						$ste->vars["success"] = $translation["comments_successfully_deleted"];
+						break;
+					case "mark_read":
+						$commentaction = function($c) { $c->read_by_admin = True; $c->save(); };
+						$ste->vars["success"] = $translation["comments_successfully_marked_read"];
+						break;
+					case "mark_unread":
+						$commentaction = function($c) { $c->read_by_admin = False; $c->save(); };
+						$ste->vars["success"] = $translation["comments_successfully_marked_unread"];
+						break;
+					case "make_visible":
+						$commentaction = function($c) { $c->visible = True; $c->save(); };
+						$ste->vars["success"] = $translation["comments_successfully_made_visible"];
+						break;
+					case "make_invisible":
+						$commentaction = function($c) { $c->visible = False; $c->save(); };
+						$ste->vars["success"] = $translation["comments_successfully_made_invisible"];
+						break;
+					default;
+						$ste->vars["error"] = $translation["unknown_action"];
+						break;
+				}
+				if(isset($commentaction))
+				{
+					foreach($_POST["comment_multiselect"] as $c_id)
+					{
+						try
+						{
+							$comment = Comment::by_id($c_id);
+							$commentaction($comment);
+						}
+						catch(DoesNotExistError $e)
+						{
+							continue;
+						}
+					}
+				}
+			}
+			
+			$comments = Comment::all();
+			
+			/* Filtering */
+			$filterquery = array();
+			if(!empty($_GET["filter_article"]))
+			{
+				$searchfor = strtolower($_GET["filter_article"]);
+				$comments = array_filter($comments, function($c) use ($searchfor) { return strpos(strtolower($c->get_article()->urlname), $searchfor) !== False; });
+				$filterquery[] = "filter_article=" . urlencode($_GET["filter_article"]);
+				$ste->vars["filter_article"] = $_GET["filter_article"];
+			}
+			$ste->vars["filterquery"] = implode("&", $filterquery);
+			
+			/* Sorting */
+			if(isset($_GET["sort_asc"]))
+			{
+				$sort_dir = 1;
+				$sort_by  = $_GET["sort_asc"];
+			}
+			elseif(isset($_GET["sort_desc"]))
+			{
+				$sort_dir = -1;
+				$sort_by  = $_GET["sort_desc"];
+			}
+			else
+			{
+				$sort_dir = 1;
+				$sort_by  = "was_read";
+			}
+			
+			switch($sort_by)
+			{
+				case "language":
+					usort($comments, function($a, $b) use ($sort_dir) { return strcmp($a->get_language(), $b->get_language()) * $sort_dir; });
+					break;
+				case "date":
+					usort($comments, function($a, $b) use ($sort_dir) { return intcmp($a->get_timestamp(), $b->get_timestamp()) * $sort_dir; });
+					break;
+				case "was_read":
+				default:
+					usort($comments, function($a, $b) use ($sort_dir) { return intcmp((int) $a->read_by_admin, (int) $b->read_by_admin) * $sort_dir; });
+					$sort_by = "was_read";
+					break;
+			}
+			$ste->vars["sortquery"] = "sort_" . ($sort_dir == 1 ? "asc" : "desc") . "=$sort_by";
+			$ste->vars["sorting"] = array("dir" => ($sort_dir == 1 ? "asc" : "desc"), "by" => $sort_by);
+			$ste->vars["sort_" . ($sort_dir == 1 ? "asc" : "desc") . "_$sort_by"] = True;
+			
+			$ste->vars["comments"] = array_map(function($c) { return array(
+				"id" => $c->get_id(),
+				"visible" => $c->visible,
+				"read_by_admin" => $c->read_by_admin,
+				"article" => $c->get_article()->urlname,
+				"excerpt" => substr(str_replace(array("\r\n", "\n", "\r"), " ", $c->text), 0, 50),
+				"language" => $c->get_language(),
+				"date" => $c->get_timestamp(),
+				"author" => "\"{$c->author_name}\" <{$c->author_mail}>"
+			); }, $comments);
+			
+			echo $ste->exectemplate("systemtemplates/comments_list.html");
 		}
 	))
 ));

@@ -1,0 +1,62 @@
+<ste:load name="master.html" />
+<ste:block name="content">
+	<ste:if>$success
+		<ste:then>
+			<div class="success"><ste:escape>$success</ste:escape></div>
+		</ste:then>
+	</ste:if>
+	<ste:if>$error
+		<ste:then>
+			<div class="error"><ste:escape>$error</ste:escape></div>
+		</ste:then>
+	</ste:if>
+	
+	<div class="triplecolumns">
+		<div class="column_left">
+			<h2><ste:escape><ste:get_translation for="comment_perform_action" /></ste:escape></h2>
+			<form action="$rel_path_to_root/backend/content/comments/$id" method="POST">
+				<select name="action_on_comment">
+					<option value="" selected="selected"></option>
+					<option value="make_visible"><ste:escape><ste:get_translation for="commentaction_make_visible" /></ste:escape></option>
+					<option value="make_invisible"><ste:escape><ste:get_translation for="commentaction_make_invisible" /></ste:escape></option>
+					<option value="delete"><ste:escape><ste:get_translation for="delete" /></ste:escape></option>
+				</select>
+				<input type="submit" />
+			</form>
+		</div>
+		<div class="column_right">
+			<p>
+				<strong><ste:escape><ste:get_translation for="author" /></ste:escape></strong><br />
+				<ste:escape>$author</ste:escape>
+			</p>
+
+			<p>
+				<strong><ste:escape><ste:get_translation for="visible" /></ste:escape></strong><br />
+				?{$visible|<ste:get_translation for="yes" />|<ste:get_translation for="no" />}
+			</p>
+
+			<p>
+				<strong><ste:escape><ste:get_translation for="date_time" /></ste:escape></strong><br />
+				<ste:date timestamp="$date">%Y-%m-%d %H:%M:%S</ste:date>
+			</p>
+
+			<p>
+				<strong><ste:escape><ste:get_translation for="article" /></ste:escape></strong><br />
+				<a href="$rel_path_to_root/backend/content/write/<ste:escape>$article</ste:escape>"><ste:escape>$article</ste:escape></a>
+			</p>
+
+			<p>
+				<strong><ste:escape><ste:get_translation for="language" /></ste:escape></strong><br />
+				$language
+			</p>
+		</div>
+		<div class="column_main">
+			<h2><ste:escape><ste:get_translation for="comment_text" /></ste:escape></h2>
+			$comment_text
+			<hr />
+			<h2><ste:escape><ste:get_translation for="comment_text_raw" /></ste:escape></h2>
+			<pre><code><ste:escape>$comment_raw</ste:escape></code></pre>
+		</div>
+	</div>
+	<div class="triplecolumns_stop"></div>
+</ste:block>
