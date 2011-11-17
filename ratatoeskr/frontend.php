@@ -109,52 +109,6 @@ function article_transform_ste($article, $lang)
 	);
 }
 
-function comment_filter($html)
-{
-	return kses($html, array(
-		"a" => array("href" => 1, "hreflang" => 1, "title" => 1, "rel" => 1, "rev" => 1),
-		"b" => array(),
-		"i" => array(),
-		"u" => array(),
-		"strong" => array(),
-		"em" => array(),
-		"p" => array("align" => 1),
-		"br" => array(),
-		"abbr" => array(),
-		"acronym" => array(),
-		"code" => array(),
-		"pre" => array(),
-		"blockquote" => array("cite" => 1),
-		"h1" => array(), "h2" => array(), "h3" => array(), "h4" => array(), "h5" => array(), "h6" => array(), 
-		"img" => array("src" => 1, "alt" => 1, "width" => 1, "height" => 1),
-		"s" => array(),
-		"q" => array("cite" => 1),
-		"samp" => array(),
-		"ul" => array(),
-		"ol" => array(),
-		"li" => array(),
-		"del" => array(),
-		"ins" => array(),
-		"dl" => array(),
-		"dd" => array(),
-		"dt" => array(),
-		"dfn" => array(),
-		"div" => array(),
-		"dir" => array(),
-		"kbd" => array("prompt" => 1),
-		"strike" => array(),
-		"sub" => array(),
-		"sup" => array(),
-		"table" => array("style" => 1),
-		"tbody" => array(), "thead" => array(), "tfoot" => array(),
-		"tr" => array(),
-		"td" => array("colspan" => 1, "rowspan" => 1),
-		"th" => array("colspan" => 1, "rowspan" => 1),
-		"tt" => array(),
-		"var" => array()
-	));
-}
-
 /*
  * Function: comment_transform_ste
  * Transforms an <Comment> object to an array, so it can be accessed via a STE template.
@@ -175,7 +129,7 @@ function comment_transform_ste($comment)
 	
 	return array(
 		"id"        => $comment->get_id(),
-		"text"      => comment_filter(textprocessor_apply($comment->text, $ratatoeskr_settings["comment_textprocessor"])),
+		"text"      => $comment->create_html(),
 		"author"    => htmlesc($comment->author_name),
 		"timestamp" => $comment->get_timestamp()
 	);

@@ -11,6 +11,8 @@
 
 require_once(dirname(__FILE__) . "/db.php");
 require_once(dirname(__FILE__) . "/utils.php");
+require_once(dirname(__FILE__) . "/../libs/kses.php");
+require_once(dirname(__FILE__) . "/textprocessors.php");
 
 db_connect();
 
@@ -924,6 +926,62 @@ class Comment
 		while($sqlrow = mysql_fetch_assoc($result))
 			$rv[] = self::by_id($sqlrow["id"]);
 		return $rv;
+	}
+	
+	/*
+	 * Function: create_html
+	 * Creates the comments HTML representation. It applys the page's comment textprocessor on it
+	 * and filters some potentially harmful tags using kses.
+	 *
+	 * Returns:
+	 * 	The HTML representation.
+	 */
+	public function create_html()
+	{
+		global $ratatoeskr_settings;
+		
+		return kses(textprocessor_apply($this->text, $ratatoeskr_settings["comment_textprocessor"]), array(
+			"a" => array("href" => 1, "hreflang" => 1, "title" => 1, "rel" => 1, "rev" => 1),
+			"b" => array(),
+			"i" => array(),
+			"u" => array(),
+			"strong" => array(),
+			"em" => array(),
+			"p" => array("align" => 1),
+			"br" => array(),
+			"abbr" => array(),
+			"acronym" => array(),
+			"code" => array(),
+			"pre" => array(),
+			"blockquote" => array("cite" => 1),
+			"h1" => array(), "h2" => array(), "h3" => array(), "h4" => array(), "h5" => array(), "h6" => array(), 
+			"img" => array("src" => 1, "alt" => 1, "width" => 1, "height" => 1),
+			"s" => array(),
+			"q" => array("cite" => 1),
+			"samp" => array(),
+			"ul" => array(),
+			"ol" => array(),
+			"li" => array(),
+			"del" => array(),
+			"ins" => array(),
+			"dl" => array(),
+			"dd" => array(),
+			"dt" => array(),
+			"dfn" => array(),
+			"div" => array(),
+			"dir" => array(),
+			"kbd" => array("prompt" => 1),
+			"strike" => array(),
+			"sub" => array(),
+			"sup" => array(),
+			"table" => array("style" => 1),
+			"tbody" => array(), "thead" => array(), "tfoot" => array(),
+			"tr" => array(),
+			"td" => array("colspan" => 1, "rowspan" => 1),
+			"th" => array("colspan" => 1, "rowspan" => 1),
+			"tt" => array(),
+			"var" => array()
+		));
 	}
 	
 	/*
