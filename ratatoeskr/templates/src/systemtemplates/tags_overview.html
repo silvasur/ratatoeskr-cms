@@ -15,12 +15,12 @@
 		<table class="listtab">
 			<thead>
 				<tr>
-					<th><ste:escape><ste:get_translation for="tag_name" /></ste:escape></th>
-					<th><ste:escape><ste:get_translation for="delete" /></ste:escape></th>
+					<th><ste:get_translation for="tag_name" /></th>
+					<th><ste:get_translation for="delete" /></th>
 					<ste:foreach array="all_tag_langs" key="langcode" value="langname">
 						<th>($langcode) <ste:escape>$langname</ste:escape></th>
 					</ste:foreach>
-					<th><ste:escape><ste:get_translation for="tag_add_lang" /></ste:escape></th>
+					<th><ste:get_translation for="tag_add_lang" /></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -36,7 +36,7 @@
 							</td>
 						</ste:foreach>
 						<td>
-							<a href="$rel_path_to_root/backend/content/tags/$tagdata[name]/addtranslation"><img src="$rel_path_to_root/ratatoeskr/cms_style/images/add.png" alt="<ste:escape><ste:get_translation for='tag_add_lang' /></ste:escape>" /></a>
+							<a href="$rel_path_to_root/backend/content/tags/$tagdata[name]/addtranslation"><img src="$rel_path_to_root/ratatoeskr/cms_style/images/add.png" alt="<ste:get_translation for='tag_add_lang' />" /></a>
 						</td>
 					</tr>
 				</ste:foreach>
@@ -48,7 +48,7 @@
 	<div>
 		<h2><ste:get_translation for="create_new_tag" /></h2>
 		<form action="$rel_path_to_root/backend/content/tags" method="POST" accept-charset="UTF-8">
-			<p><ste:escape><ste:get_translation for="new_tag_name" /></ste:escape>: <input type="text" name="new_tag_name" /></p>
+			<p><ste:get_translation for="new_tag_name" />: <input type="text" name="new_tag_name" /></p>
 			<p><input type="submit" name="create_new_tag" /></p>
 		</form>
 	</div>

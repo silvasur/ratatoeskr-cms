@@ -12,24 +12,24 @@
 		<div id="bar_top"><strong>Ratatöskr</strong>::Noctilucent clouds (v. 0.1)</div>
 		<div class="vcenter_outer"><div class="vcenter_inner">
 		<div id="login_box">
-			<h1><ste:escape><ste:get_translation for="login_form_header" /></ste:escape></h1>
+			<h1><ste:get_translation for="login_form_header" /></h1>
 			<ste:if>
 				$login_failed
 				<ste:then>
 					<div class="error">
-						<ste:escape><ste:get_translation for="login_failed" /></ste:escape>
+						<ste:get_translation for="login_failed" />
 					</div>
 				</ste:then>
 			</ste:if>
 			<form action="$rel_path_to_root/backend/login" method="POST" accept-charset="utf-8">
-				<p><ste:escape><ste:capitalize><ste:get_translation for="username" /></ste:capitalize></ste:escape>: <input type="text" name="user" /></p>
-				<p><ste:escape><ste:capitalize><ste:get_translation for="password" /></ste:capitalize></ste:escape>: <input type="password" name="password" /></p>
-				<p class="loginbtn"><input type="submit" value="<ste:escape><ste:get_translation for='login_form_button' /></ste:escape>" /></p>
+				<p><ste:escape><ste:capitalize><ste:get_translation for="username" raw="y" /></ste:capitalize></ste:escape>: <input type="text" name="user" /></p>
+				<p><ste:escape><ste:capitalize><ste:get_translation for="password" raw="y" /></ste:capitalize></ste:escape>: <input type="password" name="password" /></p>
+				<p class="loginbtn"><input type="submit" value="<ste:get_translation for='login_form_button' />" /></p>
 			</form>
 		</div>
 		</div></div>
 		<div id="image_copyright">
-			<ste:l10n_replace URL="http://en.wikipedia.org/wiki/File:Helkivad_ööpilved_Kuresoo_kohal.jpg" FILENAME="Helkivad ööpilved Kuresoo kohal.jpg" AUTHOR="Martin Koitmäe" LICENSE="<a href=\"http://creativecommons.org/licenses/by-sa/3.0/deed.en\">CC BY-SA</a>"><ste:get_translation for="login_background_image" /></ste:l10n_replace>
+			<ste:l10n_replace URL="http://en.wikipedia.org/wiki/File:Helkivad_ööpilved_Kuresoo_kohal.jpg" FILENAME="Helkivad ööpilved Kuresoo kohal.jpg" AUTHOR="Martin Koitmäe" LICENSE="<a href=\"http://creativecommons.org/licenses/by-sa/3.0/deed.en\">CC BY-SA</a>"><ste:get_translation for="login_background_image" raw="y" /></ste:l10n_replace>
 		</div>
 	</div>
 </body>

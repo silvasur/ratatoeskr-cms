@@ -10,6 +10,7 @@
  */
 
 require_once(dirname(__FILE__) . "/models.php");
+require_once(dirname(__FILE__) . "/utils.php");
 require_once(dirname(__FILE__) . "/init_ste.php");
 
 if(!defined(TRANSLATION_PLUGIN_LOADED))
@@ -21,7 +22,8 @@ if(!defined(TRANSLATION_PLUGIN_LOADED))
 			global $translation;
 			if((!isset($translation)) or empty($params["for"]) or (!isset($translation[$params["for"]])))
 				return "";
-			return $translation[$params["for"]];
+			$rv = $translation[$params["for"]];
+			return (!empty($params["raw"])) ? $rv : htmlesc($rv);
 		}
 	);
 	define(TRANSLATION_PLUGIN_LOADED, True);

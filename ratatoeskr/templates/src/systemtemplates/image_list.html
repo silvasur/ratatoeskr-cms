@@ -14,12 +14,12 @@
 	<div class="dualcolumns">
 		<div class="column_left">
 			<form action="$rel_path_to_root/backend/content/images" method="POST" accept-charset="UTF-8" enctype="multipart/form-data">
-				<h2><ste:escape><ste:get_translation for="image_upload" /></ste:escape></h2>
+				<h2><ste:get_translation for="image_upload" /></h2>
 				<p><input type="file" name="upload_img" class="fullwidth" /></p>
 				<p>
-					<strong><ste:escape><ste:get_translation for="img_upload_name" /></ste:escape></strong><br />
+					<strong><ste:get_translation for="img_upload_name" /></strong><br />
 					<input type="text" name="upload_name" class="fullwidth" /><br />
-					<ste:escape><ste:get_translation for="img_upload_name_leave_empty" /></ste:escape>
+					<ste:get_translation for="img_upload_name_leave_empty" />
 				</p>
 				<p><input type="submit" name="upload" /></p>
 			</form>
@@ -29,9 +29,9 @@
 				<table class="fullwidth listtab">
 					<thead><tr>
 						<th>&nbsp;</th>
-						<th><ste:escape><ste:get_translation for="image_preview" /></ste:escape></th>
-						<th><ste:escape><ste:get_translation for="image_name" /></ste:escape></th>
-						<th><ste:escape><ste:get_translation for="image_getmarkup" /></ste:escape></th>
+						<th><ste:get_translation for="image_preview" /></th>
+						<th><ste:get_translation for="image_name" /></th>
+						<th><ste:get_translation for="image_getmarkup" /></th>
 					</tr></thead>
 					<tbody>
 						<ste:set var="images_n"><ste:arraylen array="images" /></ste:set>
@@ -49,16 +49,16 @@
 								</ste:foreach>
 							</ste:then>
 							<ste:else>
-								<tr><td colspan="5" style="text-align: center;"><em><ste:escape><ste:get_translation for="no_images" /></ste:escape></em></td></tr>
+								<tr><td colspan="5" style="text-align: center;"><em><ste:get_translation for="no_images" /></em></td></tr>
 							</ste:else>
 						</ste:if>
 					</tbody>
 				</table>
 				<div>
-					<input type="submit" name="delete" value="<ste:escape><ste:get_translation for='delete' /></ste:escape>" />
+					<input type="submit" name="delete" value="<ste:get_translation for='delete' />" />
 					<select name="really_delete">
-						<option value="no" selected="selected"><ste:escape><ste:get_translation for="notext_default" /></ste:escape></option>
-						<option value="yes"><ste:escape><ste:get_translation for="yestext_default" /></ste:escape></option>
+						<option value="no" selected="selected"><ste:get_translation for="notext_default" /></option>
+						<option value="yes"><ste:get_translation for="yestext_default" /></option>
 					</select>
 				</div>
 			</form>

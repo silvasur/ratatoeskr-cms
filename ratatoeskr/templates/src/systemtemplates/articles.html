@@ -13,10 +13,10 @@
 	
 	<form action="$rel_path_to_root/backend/content/articles" method="GET" accept-charset="UTF-8">
 		<div>
-			<strong><ste:escape><ste:get_translation for="filter" /></ste:escape>:</strong>
-			<ste:escape><ste:get_translation for="filter_urlname" /></ste:escape> <input type="text" name="filter_urlname" value="<ste:escape>$filter_urlname</ste:escape>" />
-			<ste:escape><ste:get_translation for="filter_tag" /></ste:escape> <input type="text" name="filter_tag" value="<ste:escape>$filter_tag</ste:escape>" />
-			<ste:escape><ste:get_translation for="filter_section" /></ste:escape> <input type="text" name="filter_section" value="<ste:escape>$filter_section</ste:escape>" />
+			<strong><ste:get_translation for="filter" />:</strong>
+			<ste:get_translation for="filter_urlname" /> <input type="text" name="filter_urlname" value="<ste:escape>$filter_urlname</ste:escape>" />
+			<ste:get_translation for="filter_tag" /> <input type="text" name="filter_tag" value="<ste:escape>$filter_tag</ste:escape>" />
+			<ste:get_translation for="filter_section" /> <input type="text" name="filter_section" value="<ste:escape>$filter_section</ste:escape>" />
 			<input type="hidden" name="sort_$sorting[dir]" value="$sorting[by]" />
 			<input type="submit" />
 		</div>
@@ -68,16 +68,16 @@
 						</ste:foreach>
 					</ste:then>
 					<ste:else>
-						<tr><td colspan="6" style="text-align: center;"><em><ste:escape><ste:get_translation for="no_articles" /></ste:escape></em></td></tr>
+						<tr><td colspan="6" style="text-align: center;"><em><ste:get_translation for="no_articles" /></em></td></tr>
 					</ste:else>
 				</ste:if>
 			</tbody>
 		</table>
 		<div>
-			<input type="submit" name="delete" value="<ste:escape><ste:get_translation for='delete' /></ste:escape>" />
+			<input type="submit" name="delete" value="<ste:get_translation for='delete' />" />
 			<select name="really_delete">
-				<option value="no" selected="selected"><ste:escape><ste:get_translation for="notext_default" /></ste:escape></option>
-				<option value="yes"><ste:escape><ste:get_translation for="yestext_default" /></ste:escape></option>
+				<option value="no" selected="selected"><ste:get_translation for="notext_default" /></option>
+				<option value="yes"><ste:get_translation for="yestext_default" /></option>
 			</select>
 		</div>
 	</form>

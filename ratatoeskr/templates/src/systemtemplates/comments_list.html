@@ -13,8 +13,8 @@
 	
 	<form action="$rel_path_to_root/backend/content/comments" method="GET" accept-charset="UTF-8">
 		<div>
-			<strong><ste:escape><ste:get_translation for="filter" /></ste:escape>:</strong>
-			<ste:escape><ste:get_translation for="filter_article" /></ste:escape> <input type="text" name="filter_article" value="<ste:escape>$filter_article</ste:escape>" />
+			<strong><ste:get_translation for="filter" />:</strong>
+			<ste:get_translation for="filter_article" /> <input type="text" name="filter_article" value="<ste:escape>$filter_article</ste:escape>" />
 			<input type="hidden" name="sort_$sorting[dir]" value="$sorting[by]" />
 			<input type="submit" />
 		</div>
@@ -26,24 +26,24 @@
 				<tr>
 					<th>&nbsp;</th>
 					<th>
-						<ste:escape><ste:get_translation for="was_read" /></ste:escape>
+						<ste:get_translation for="was_read" />
 						<a href="$rel_path_to_root/backend/content/comments??{$filterquery|${filterquery}&|}sort_asc=was_read"><img src="$rel_path_to_root/ratatoeskr/cms_style/images/sortarrow_up_?{$sort_asc_was_read|filled|outline}.png" alt="<ste:get_translation for='sort_asc' />" /></a>
 						<a href="$rel_path_to_root/backend/content/comments??{$filterquery|${filterquery}&|}sort_desc=was_read"><img src="$rel_path_to_root/ratatoeskr/cms_style/images/sortarrow_down_?{$sort_desc_was_read|filled|outline}.png" alt="<ste:get_translation for='sort_desc' />" /></a>
 					</th>
-					<th><ste:escape><ste:get_translation for="visible" /></ste:escape></th>
-					<th><ste:escape><ste:get_translation for="comment_excerpt" /></ste:escape></th>
+					<th><ste:get_translation for="visible" /></th>
+					<th><ste:get_translation for="comment_excerpt" /></th>
 					<th>
-						<ste:escape><ste:get_translation for="language" /></ste:escape>
+						<ste:get_translation for="language" />
 						<a href="$rel_path_to_root/backend/content/comments??{$filterquery|${filterquery}&|}sort_asc=language"><img src="$rel_path_to_root/ratatoeskr/cms_style/images/sortarrow_up_?{$sort_asc_language|filled|outline}.png" alt="<ste:get_translation for='sort_asc' />" /></a>
 						<a href="$rel_path_to_root/backend/content/comments??{$filterquery|${filterquery}&|}sort_desc=language"><img src="$rel_path_to_root/ratatoeskr/cms_style/images/sortarrow_down_?{$sort_desc_language|filled|outline}.png" alt="<ste:get_translation for='sort_desc' />" /></a>
 					</th>
-					<th><ste:escape><ste:get_translation for="author" /></ste:escape></th>
+					<th><ste:get_translation for="author" /></th>
 					<th>
-						<ste:escape><ste:get_translation for="date_time" /></ste:escape>
+						<ste:get_translation for="date_time" />
 						<a href="$rel_path_to_root/backend/content/comments??{$filterquery|${filterquery}&|}sort_asc=date"><img src="$rel_path_to_root/ratatoeskr/cms_style/images/sortarrow_up_?{$sort_asc_date|filled|outline}.png" alt="<ste:get_translation for='sort_asc' />" /></a>
 						<a href="$rel_path_to_root/backend/content/comments??{$filterquery|${filterquery}&|}sort_desc=date"><img src="$rel_path_to_root/ratatoeskr/cms_style/images/sortarrow_down_?{$sort_desc_date|filled|outline}.png" alt="<ste:get_translation for='sort_desc' />" /></a>
 					</th>
-					<th><ste:escape><ste:get_translation for="article" /></ste:escape></th>
+					<th><ste:get_translation for="article" /></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -55,7 +55,7 @@
 								<td><input type="checkbox" name="comment_multiselect[]" value="$comment[id]" /></td>
 								<td>?{$comment[read_by_admin]|<ste:get_translation for="yes" />|<strong><ste:get_translation for="no" /></strong>}</td>
 								<td>?{$comment[visible]|<ste:get_translation for="yes" />|<ste:get_translation for="no" />}</td>
-								<td><em><ste:escape>$comment[excerpt]</ste:escape>...</em> <a href="$rel_path_to_root/backend/content/comments/$comment[id]"><ste:escape><ste:get_translation for="read_more" /></ste:escape></a></td>
+								<td><em><ste:escape>$comment[excerpt]</ste:escape>...</em> <a href="$rel_path_to_root/backend/content/comments/$comment[id]"><ste:get_translation for="read_more" /></a></td>
 								<td>$comment[language]</td>
 								<td><ste:escape>$comment[author]</ste:escape></td>
 								<td><ste:date timestamp="$comment[date]">%Y-%m-%d %H:%M:%S</ste:date></td>
@@ -64,7 +64,7 @@
 						</ste:foreach>
 					</ste:then>
 					<ste:else>
-						<tr><td colspan="8" style="text-align: center"><em><ste:escape><ste:get_translation for="no_comments" /></ste:escape></em></td></tr>
+						<tr><td colspan="8" style="text-align: center"><em><ste:get_translation for="no_comments" /></em></td></tr>
 					</ste:else>
 				</ste:if>
 			</tbody>
@@ -72,11 +72,11 @@
 		<div>
 			<select name="action_on_comments">
 				<option value="" selected="selected"></option>
-				<option value="mark_read"><ste:escape><ste:get_translation for="commentaction_mark_read" /></ste:escape></option>
-				<option value="mark_unread"><ste:escape><ste:get_translation for="commentaction_mark_unread" /></ste:escape></option>
-				<option value="make_visible"><ste:escape><ste:get_translation for="commentaction_make_visible" /></ste:escape></option>
-				<option value="make_invisible"><ste:escape><ste:get_translation for="commentaction_make_invisible" /></ste:escape></option>
-				<option value="delete"><ste:escape><ste:get_translation for="delete" /></ste:escape></option>
+				<option value="mark_read"><ste:get_translation for="commentaction_mark_read" /></option>
+				<option value="mark_unread"><ste:get_translation for="commentaction_mark_unread" /></option>
+				<option value="make_visible"><ste:get_translation for="commentaction_make_visible" /></option>
+				<option value="make_invisible"><ste:get_translation for="commentaction_make_invisible" /></option>
+				<option value="delete"><ste:get_translation for="delete" /></option>
 			</select>
 			<input type="submit" />
 		</div>

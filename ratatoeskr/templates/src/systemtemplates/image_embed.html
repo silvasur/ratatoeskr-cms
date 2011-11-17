@@ -3,11 +3,11 @@
 	<div class="pos_center">
 		<ste:if>$embed_code
 			<ste:then>
-				<p><strong><ste:escape><ste:get_translation for="embed_code" /></ste:escape>:</strong> <code><ste:escape>$embed_code</ste:escape></code></p>
+				<p><strong><ste:get_translation for="embed_code" />:</strong> <code>$embed_code</code></p>
 			</ste:then>
 		</ste:if>
 		<form action="$rel_path_to_root/backend/content/images/$image_id/$markup_variant" method="POST">
-			<p><strong><ste:escape><ste:get_translation for="image_alt" /></ste:escape>:</strong> <input type="text" name="img_alt" /></p>
+			<p><strong><ste:get_translation for="image_alt" />:</strong> <input type="text" name="img_alt" /></p>
 			<p><input type="submit" /></p>
 		</form>
 	</div>
