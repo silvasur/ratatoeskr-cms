@@ -4,8 +4,8 @@
 		<h2><ste:escape>$question</ste:escape></h2>
 		?{$moredetails|<p><ste:escape>$moredetails</ste:escape></p>|}
 		<form action="$callback" method="POST">
-			<input type="submit" class="yes_btn" name="yes" value="<ste:escape>?{$yestext|$yestext|<ste:get_translation for='yestext_default' />}</ste:escape>" />
-			<input type="submit" class="no_btn" name="no" value="<ste:escape>?{$notext|$notext|<ste:get_translation for='notext_default' />}</ste:escape>" />
+			<input type="submit" class="yes_btn" name="yes" value="<ste:escape>?{$yestext|$yestext|<ste:get_translation for='yes' />}</ste:escape>" />
+			<input type="submit" class="no_btn" name="no" value="<ste:escape>?{$notext|$notext|<ste:get_translation for='no' />}</ste:escape>" />
 		</form>
 	</div>
 </ste:block>
