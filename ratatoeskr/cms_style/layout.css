@@ -241,3 +241,7 @@ table.listtab tr:first-child td {
 table.listtab tbody tr:hover {
 	background: #eee;
 }
+
+textarea.codeedit {
+	font-family: monospace;
+}

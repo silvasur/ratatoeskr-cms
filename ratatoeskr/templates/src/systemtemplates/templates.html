@@ -1,0 +1,60 @@
+<ste:load name="master.html" />
+<ste:block name="content">
+	<ste:if>$success
+		<ste:then>
+			<div class="success"><ste:escape>$success</ste:escape></div>
+		</ste:then>
+	</ste:if>
+	<ste:if>$error
+		<ste:then>
+			<div class="error"><ste:escape>$error</ste:escape></div>
+		</ste:then>
+	</ste:if>
+	<div class="dualcolumns">
+		<div class="column_left">
+			<form action="$rel_path_to_root/backend/design/templates" method="POST">
+				<table class="fullwidth listtab">
+					<thead>
+						<tr>
+							<th>&nbsp;</th>
+							<th><ste:get_translation for="template" /></th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td>&nbsp;</td>
+							<td><a href="$rel_path_to_root/backend/design/templates"><em><ste:get_translation for="new_template" /></em></a></td>
+						</tr>
+						<ste:foreach array="templates" value="template">
+							<tr>
+								<td><input type="checkbox" name="templates_multiselect[]" value="$template" /></td>
+								<td><a href="$rel_path_to_root/backend/design/templates/$template">$template</a></td>
+							</tr>
+						</ste:foreach>
+					</tbody>
+				</table>
+				<div>
+					<input type="submit" name="delete" value="<ste:get_translation for='delete' />" />
+					<select name="really_delete">
+						<option value="no" selected="selected"><ste:get_translation for="no" /></option>
+						<option value="yes"><ste:get_translation for="yes" /></option>
+					</select>
+				</div>
+			</form>
+		</div>
+		<div class="column_main">
+			<form action="$rel_path_to_root/backend/design/templates" method="POST" accept-charset="UTF-8">
+				<p>
+					<strong><ste:get_translation for="template_name" />:</strong><br />
+					<input type="text" name="template_name" value="<ste:escape>$template_name</ste:escape>" />
+				</p>
+				<p>
+					<strong><ste:get_translation for="template_code" />:</strong><br />
+					<textarea name="template_code" class="fullwidth codeedit" cols="80" rows="20"><ste:escape>$template_code</ste:escape></textarea>
+				</p>
+				<p><input type="submit" name="save_template" /></p>
+			</form>
+		</div>
+	</div>
+	<div class="dualcolumns_stop"></div>
+</ste:block>

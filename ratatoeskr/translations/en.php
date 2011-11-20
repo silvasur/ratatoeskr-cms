@@ -130,7 +130,22 @@ $translation = array(
 	"comment_successfully_made_invisible" => "Comment successfully made invisible.",
 	"comment_perform_action" => "Perform an action on this comment",
 	"comment_text" => "Comment Text",
-	"comment_text_raw" => "Comment Text (raw)"
+	"comment_text_raw" => "Comment Text (raw)",
+	"new_template" => "New Template",
+	"template" => "Template",
+	"template_name" => "Template name",
+	"template_code" => "Template code",
+	"templates_successfully_deleted" => "Templates successfully deleted",
+	"invalid_template_name" => "Invalid template name. Valid template names are at least 1 character long and only contains letters, numbers, underscores(_), hyphens(-) and dots(.)",
+	"could_not_compile_template" => "Could not compile template. Reason: ",
+	"template_successfully_saved" => "Template successfully saved.",
+	"style" => "Style",
+	"new_style" => "New style",
+	"style_name" => "Style name",
+	"style_code" => "Style code",
+	"styles_successfully_deleted" => "Styles successfully deleted",
+	"invalid_style_name" => "Invalid style name. Valid style names are at least 1 character long and only contains letters, numbers, underscores(_), hyphens(-) and dots(.)",
+	"style_successfully_saved" => "Style successfully saved."
 );
 
 ?>

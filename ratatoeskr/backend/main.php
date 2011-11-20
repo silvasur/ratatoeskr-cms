@@ -897,6 +897,157 @@ $backend_subactions = url_action_subactions(array(
 			
 			echo $ste->exectemplate("systemtemplates/comments_list.html");
 		}
+	)),
+	"design" => url_action_subactions(array(
+		"templates" => function(&$data, $url_now, &$url_next)
+		{
+			global $ste, $translation, $languages, $rel_path_to_root;
+			
+			list($template) = $url_next;
+			
+			$url_next = array();
+			
+			$ste->vars["section"]   = "design";
+			$ste->vars["submenu"]   = "templates";
+			$ste->vars["pagetitle"] = $translation["menu_templates"];
+			
+			if(isset($template))
+			{
+				if(preg_match("/^[a-zA-Z0-9\\-_\\.]+$/", $template) == 0) /* Prevent a possible LFI attack. */
+					throw new NotFoundError();
+				if(!is_file(SITE_BASE_PATH . "/ratatoeskr/templates/src/usertemplates/$template"))
+					throw new NotFoundError();
+				$ste->vars["template_name"] = $template;
+				$ste->vars["template_code"] = file_get_contents(SITE_BASE_PATH . "/ratatoeskr/templates/src/usertemplates/$template");
+			}
+			
+			/* Was there a delete request? */
+			if(isset($_POST["delete"]) and ($_POST["really_delete"] == "yes"))
+			{
+				foreach($_POST["templates_multiselect"] as $tplname)
+				{
+					if(preg_match("/^[a-zA-Z0-9\\-_\\.]+$/", $tplname) == 0) /* Prevent a possible LFI attack. */
+						continue;
+					if(is_file(SITE_BASE_PATH . "/ratatoeskr/templates/src/usertemplates/$tplname"))
+						@unlink(SITE_BASE_PATH . "/ratatoeskr/templates/src/usertemplates/$tplname");
+				}
+				$ste->vars["success"] = $translation["templates_successfully_deleted"];
+			}
+			
+			/* A write request? */
+			if(isset($_POST["save_template"]))
+			{
+				if(preg_match("/^[a-zA-Z0-9\\-_\\.]+$/", $_POST["template_name"]) == 1)
+				{
+					$ste->vars["template_name"] = $_POST["template_name"];
+					$ste->vars["template_code"] = $_POST["template_code"];
+					
+					try
+					{
+						\ste\transcompile(\ste\parse(\ste\precompile($_POST["template_code"]), $_POST["template_name"]));
+						file_put_contents(SITE_BASE_PATH . "/ratatoeskr/templates/src/usertemplates/" . $_POST["template_name"], $_POST["template_code"]);
+						$ste->vars["success"] = $translation["template_successfully_saved"];
+					}
+					catch(\ste\ParseCompileError $e)
+					{
+						$e->rewrite($_POST["template_code"]);
+						$ste->vars["error"] = $translation["could_not_compile_template"] . $e->getMessage();
+					}
+				}
+				else
+					$ste->vars["error"] = $translation["invalid_template_name"];
+			}
+			
+			/* Get all templates */
+			$ste->vars["templates"] = array();
+			$tpldir = new DirectoryIterator(SITE_BASE_PATH . "/ratatoeskr/templates/src/usertemplates");
+			foreach($tpldir as $fo)
+			{
+				if($fo->isFile())
+					$ste->vars["templates"][] = $fo->getFilename();
+			}
+			
+			sort($ste->vars["templates"]);
+			
+			echo $ste->exectemplate("systemtemplates/templates.html");
+		},
+		"styles" => function(&$data, $url_now, &$url_next)
+		{
+			global $ste, $translation, $languages, $rel_path_to_root;
+			
+			list($style) = $url_next;
+			
+			$url_next = array();
+			
+			$ste->vars["section"]   = "design";
+			$ste->vars["submenu"]   = "styles";
+			$ste->vars["pagetitle"] = $translation["menu_styles"];
+			
+			if(isset($style))
+			{
+				try
+				{
+					$style = Style::by_name($style);
+					$ste->vars["style_name"] = $style->name;
+					$ste->vars["style_code"] = $style->code;
+				}
+				catch(DoesNotExistError $e)
+				{
+					throw new NotFoundError();
+				}
+			}
+			
+			/* Was there a delete request? */
+			if(isset($_POST["delete"]) and ($_POST["really_delete"] == "yes"))
+			{
+				foreach($_POST["styles_multiselect"] as $stylename)
+				{
+					try
+					{
+						$style = Style::by_name($stylename);
+						$style->delete();
+					}
+					catch(DoesNotExistError $e)
+					{
+						continue;
+					}
+				}
+				$ste->vars["success"] = $translation["styles_successfully_deleted"];
+			}
+			
+			/* A write request? */
+			if(isset($_POST["save_style"]))
+			{
+				if(preg_match("/^[a-zA-Z0-9\\-_\\.]+$/", $_POST["style_name"]) == 1)
+				{
+					$ste->vars["style_name"] = $_POST["style_name"];
+					$ste->vars["style_code"] = $_POST["style_code"];
+					
+					try
+					{
+						$style = Style::by_name($_POST["style_name"]);
+					}
+					catch(DoesNotExistError $e)
+					{
+						$style = Style::create($_POST["style_name"]);
+					}
+					
+					$style->code = $_POST["style_code"];
+					$style->save();
+					
+					$ste->vars["success"] = $translation["style_successfully_saved"];
+				}
+				else
+					$ste->vars["error"] = $translation["invalid_style_name"];
+			}
+			
+			/* Get all styles */
+			$ste->vars["styles"] = array_map(function($s) { return $s->name; }, Style::all());
+			
+			sort($ste->vars["styles"]);
+			
+			echo $ste->exectemplate("systemtemplates/styles.html");
+		}
 	))
 ));
 
