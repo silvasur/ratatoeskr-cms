@@ -966,7 +966,6 @@ $backend_subactions = url_action_subactions(array(
 				if($fo->isFile())
 					$ste->vars["templates"][] = $fo->getFilename();
 			}
-			
 			sort($ste->vars["templates"]);
 			
 			echo $ste->exectemplate("systemtemplates/templates.html");
@@ -1043,7 +1042,6 @@ $backend_subactions = url_action_subactions(array(
 			
 			/* Get all styles */
 			$ste->vars["styles"] = array_map(function($s) { return $s->name; }, Style::all());
-			
 			sort($ste->vars["styles"]);
 			
 			echo $ste->exectemplate("systemtemplates/styles.html");
