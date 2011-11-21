@@ -142,17 +142,17 @@ h2 {
 
 .triplecolumns .column_left, .dualcolumns .column_left {
 	float: left;
-	width: 50mm;
+	width: 47mm;
 	margin: 0px;
-	padding: 0px;
+	padding: 0mm 3mm 0mm 0mm;
 	overflow: hidden;
 }
 
 .triplecolumns .column_right {
 	float: right;
-	width: 50mm;
+	width: 47mm;
 	margin: 0px;
-	padding: 0px;
+	padding: 0mm 3mm 0mm 0mm;
 	overflow: hidden;
 }
 
