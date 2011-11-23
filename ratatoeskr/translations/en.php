@@ -145,7 +145,28 @@ $translation = array(
 	"style_code" => "Style code",
 	"styles_successfully_deleted" => "Styles successfully deleted",
 	"invalid_style_name" => "Invalid style name. Valid style names are at least 1 character long and only contains letters, numbers, underscores(_), hyphens(-) and dots(.)",
-	"style_successfully_saved" => "Style successfully saved."
+	"style_successfully_saved" => "Style successfully saved.",
+	"new_section" => "New Section",
+	"section_name" => "Section name",
+	"section_is_default" => "Is default",
+	"styles" => "Styles",
+	"make_default" => "Make default",
+	"set_template" => "Set template",
+	"add_style" => "Add style",
+	"section_already_exists" => "Section already exists.",
+	"unknown_template" => "Unknown template",
+	"invalid_section_name" => "Invalid section name. Valid section names are at least 1 character long and only contains letters, numbers, underscores(_) and hyphens(-)",
+	"section_title" => "Title",
+	"set_title" => "Set Title",
+	"section_created_successfully" => "Section created",
+	"style_removed" => "Style removed",
+	"remove" => "Remove",
+	"cannot_delete_default_section" => "Can not delete default section.",
+	"section_successfully_deleted" => "Section successfully deleted.",
+	"default_section_changed_successfully" => "Default section changed successfully.",
+	"successfully_added_style" => "Successfully added style.",
+	"successfully_set_section_title" => "Successfully set title.",
+	"successfully_set_template" => "Successfully set template."
 );
 
 ?>

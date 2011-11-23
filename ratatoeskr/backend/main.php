@@ -66,9 +66,15 @@ $backend_subactions = url_action_subactions(array(
 		global $ratatoeskr_settings, $admin_grp, $ste, $languages;
 		
 		$ste->vars["all_languages"] = array();
+		$ste->vars["all_langcodes"] = array();
 		foreach($languages as $code => $data)
+		{
 			$ste->vars["all_languages"][$code] = $data["language"];
+			$ste->vars["all_langcodes"][]      = $code;
+		}
 		ksort($ste->vars["all_languages"]);
+		sort($ste->vars["all_langcodes"]);
+		
 		
 		/* Check authentification */
 		if(isset($_SESSION["ratatoeskr_uid"]))
@@ -159,7 +165,7 @@ $backend_subactions = url_action_subactions(array(
 			$default_section = Section::by_id($ratatoeskr_settings["default_section"]);
 			
 			$ste->vars["section"] = "content";
-			$ste->vars["submenu"] = "newarticle";
+			$ste->vars["submenu"] = isset($article) ? "articles" : "newarticle";
 			
 			$ste->vars["textprocessors"] = array();
 			foreach($textprocessors as $txtproc => $properties)
@@ -1045,6 +1051,197 @@ $backend_subactions = url_action_subactions(array(
 			sort($ste->vars["styles"]);
 			
 			echo $ste->exectemplate("systemtemplates/styles.html");
+		},
+		"sections" => function(&$data, $url_now, &$url_next)
+		{
+			global $ste, $translation, $languages, $rel_path_to_root, $ratatoeskr_settings;
+			
+			list($style) = $url_next;
+			
+			$url_next = array();
+			
+			$ste->vars["section"]   = "design";
+			$ste->vars["submenu"]   = "sections";
+			$ste->vars["pagetitle"] = $translation["menu_pagesections"];
+			
+			/* New section? */
+			if(isset($_POST["new_section"]))
+			{
+				try
+				{
+					Section::by_name($_POST["section_name"]);
+					$ste->vars["error"] = $translation["section_already_exists"];
+				}
+				catch(DoesNotExistError $e)
+				{
+					if((preg_match("/^[a-zA-Z0-9\\-_\\.]+$/", $_POST["template"]) == 0) or (!is_file(SITE_BASE_PATH . "/ratatoeskr/templates/src/usertemplates/{$_POST['template']}")))
+						$ste->vars["error"] = $translation["unknown_template"];
+					else if(preg_match("/^[a-zA-Z0-9\\-_]+$/", $_POST["section_name"]) == 0)
+						$ste->vars["error"] = $translation["invalid_section_name"];
+					else
+					{
+						$section = Section::create($_POST["section_name"]);
+						$section->template = $_POST["template"];
+						$section->title[$data["user"]->language] = new Translation($_POST["section_name"], "");
+						$section->save();
+						$ste->vars["success"] = $translation["section_created_successfully"];
+					}
+				}
+			}
+			
+			/* Remove a style? */
+			if(isset($_GET["rmstyle"]) and isset($_GET["rmfrom"]))
+			{
+				try
+				{
+					$section = Section::by_name($_GET["rmfrom"]);
+					$style   = $_GET["rmstyle"];
+					$section->styles = array_filter($section->styles, function($s) use ($style) { return $s->name != $style; });
+					$section->save();
+					$ste->vars["success"] = $translation["style_removed"];
+				}
+				catch(DoesNotExistError $e)
+				{
+					continue;
+				}
+			}
+			
+			/* Delete a section? */
+			if(isset($_POST["delete"]) and (@$_POST["really_delete"] == "yes") and isset($_POST["section_select"]))
+			{
+				try
+				{
+					$section = Section::by_name($_POST["section_select"]);
+					if($section->get_id() == $ratatoeskr_settings["default_section"])
+						$ste->vars["error"] = $translation["cannot_delete_default_section"];
+					else
+					{
+						$default_section = Section::by_id($ratatoeskr_settings["default_section"]);
+						foreach($section->get_articles() as $article)
+						{
+							$article->section = $default_section;
+							$article->save();
+						}
+						$section->delete();
+						$ste->vars["success"] = $translation["section_successfully_deleted"];
+					}
+				}
+				catch(DoesNotExistError $e)
+				{
+					continue;
+				}
+			}
+			
+			/* Make section default? */
+			if(isset($_POST["make_default"]) and isset($_POST["section_select"]))
+			{
+				try
+				{
+					$section = Section::by_name($_POST["section_select"]);
+					$ratatoeskr_settings["default_section"] = $section->get_id();
+					$ste->vars["success"] = $translation["default_section_changed_successfully"];
+				}
+				catch(DoesNotExistError $e)
+				{
+					continue;
+				}
+			}
+			
+			/* Set template? */
+			if(isset($_POST["set_template"]) and isset($_POST["section_select"]))
+			{
+				try
+				{
+					$section = Section::by_name($_POST["section_select"]);
+					if((preg_match("/^[a-zA-Z0-9\\-_\\.]+$/", $_POST["set_template_to"]) == 0) or (!is_file(SITE_BASE_PATH . "/ratatoeskr/templates/src/usertemplates/{$_POST['set_template_to']}")))
+						$ste->vars["error"] = $translation["unknown_template"];
+					else
+					{
+						$section->template = $_POST["set_template_to"];
+						$section->save();
+						$ste->vars["success"] = $translation["successfully_set_template"];
+					}
+				}
+				catch(DoesNotExistError $e)
+				{
+					continue;
+				}
+			}
+			
+			/* Adding a style? */
+			if(isset($_POST["add_style"]) and isset($_POST["section_select"]))
+			{
+				try
+				{
+					$section = Section::by_name($_POST["section_select"]);
+					$style   = Style::by_name($_POST["style_to_add"]);
+					if(!in_array($style, $section->styles))
+					{
+						$section->styles[] = $style;
+						$section->save();
+					}
+					$ste->vars["success"] = $translation["successfully_added_style"];
+				}
+				catch(DoesNotExistError $e)
+				{
+					continue;
+				}
+			}
+			
+			/* Set/unset title? */
+			if(isset($_POST["set_title"]) and isset($_POST["section_select"]))
+			{
+				if(!isset($languages[$_POST["set_title_lang"]]))
+					$ste->vars["error"] = $translation["language_unknown"];
+				else
+				{
+					try
+					{
+						$section = Section::by_name($_POST["section_select"]);
+						if(!empty($_POST["set_title_text"]))
+							$section->title[$_POST["set_title_lang"]] = new Translation($_POST["set_title_text"], "");
+						else if(isset($section->title[$_POST["set_title_lang"]]))
+							unset($section->title[$_POST["set_title_lang"]]);
+						$section->save();
+						$ste->vars["success"] = $translation["successfully_set_section_title"];
+					}
+					catch(DoesNotExistError $e)
+					{
+						continue;
+					}
+				}
+			}
+			
+			/* Get all templates */
+			$ste->vars["templates"] = array();
+			$tpldir = new DirectoryIterator(SITE_BASE_PATH . "/ratatoeskr/templates/src/usertemplates");
+			foreach($tpldir as $fo)
+			{
+				if($fo->isFile())
+					$ste->vars["templates"][] = $fo->getFilename();
+			}
+			sort($ste->vars["templates"]);
+			
+			/* Get all styles */
+			$ste->vars["styles"] = array_map(function($s) { return $s->name; }, Style::all());
+			sort($ste->vars["styles"]);
+			
+			/* Get all sections */
+			$sections = Section::all();
+			$ste->vars["sections"] = array_map(function($section) use ($ratatoeskr_settings) {
+				$titles = array();
+				foreach($section->title as $l => $t)
+					$titles[$l] = $t->text;
+				return array(
+					"name"     => $section->name,
+					"title"    => $titles,
+					"template" => $section->template,
+					"styles"   => array_map(function($style) { return $style->name; }, $section->styles),
+					"default"  => ($section->get_id() == $ratatoeskr_settings["default_section"])
+				);
+			}, $sections);
+			
+			echo $ste->exectemplate("systemtemplates/sections.html");
 		}
 	))
 ));

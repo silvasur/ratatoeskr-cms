@@ -1,0 +1,87 @@
+<ste:load name="master.html" />
+<ste:mktag name="instant_select" mandatory="name|array"><select name="$_tag_parameters[name]">
+	<ste:foreach array="$_tag_parameters[array]" value="instant_select_v">
+		<option value="$instant_select_v"?{~{$_tag_parameters[selected]|eq|$instant_select_v}| selected="selected"|}>$instant_select_v</option>
+	</ste:foreach>
+</select></ste:mktag>
+<ste:block name="content">
+	<ste:if>$success
+		<ste:then>
+			<div class="success"><ste:escape>$success</ste:escape></div>
+		</ste:then>
+	</ste:if>
+	<ste:if>$error
+		<ste:then>
+			<div class="error"><ste:escape>$error</ste:escape></div>
+		</ste:then>
+	</ste:if>
+	<div class="dualcolumns">
+		<div class="column_left">
+			<h2><ste:get_translation for="new_section" /></h2>
+			<form action="$rel_path_to_root/backend/design/sections" method="POST" accept-charset="UTF-8">
+				<p>
+					<strong><ste:get_translation for="section_name" />:</strong><br />
+					<input type="text" name="section_name" />
+				</p>
+				<p>
+					<strong><ste:get_translation for="template" />:</strong><br />
+					<ste:instant_select name="template" array="templates" />
+				</p>
+				<p><input type="submit" name="new_section" /></p>
+			</form>
+		</div>
+		<div class="column_main">
+			<form action="$rel_path_to_root/backend/design/sections" method="POST" accept-charset="UTF-8">
+				<table class="listtab fullwidth">
+					<thead>
+						<tr>
+							<th>&nbsp;</th>
+							<th><ste:get_translation for="section" /></th>
+							<th><ste:get_translation for="section_title" /></th>
+							<th><ste:get_translation for="section_is_default" /></th>
+							<th><ste:get_translation for="template" /></th>
+							<th><ste:get_translation for="styles" /></th>
+						</tr>
+					</thead>
+					<tbody>
+						<ste:foreach array="sections" value="section">
+							<tr>
+								<td><input type="radio" name="section_select" value="$section[name]" /></td>
+								<td><ste:escape>$section[name]</ste:escape></td>
+								<td>
+									<ste:foreach array="section[title]" key="langcode" value="title" counter="ti">
+										?{~{$ti|eq|0}||<br />}
+										($langcode) <ste:escape>$title</ste:escape>
+									</ste:foreach>
+								</td>
+								<td>?{$section[default]|<strong><ste:get_translation for="yes" /></strong>|<ste:get_translation for="no" />}</td>
+								<td><a href="$rel_path_to_root/backend/design/templates/<ste:escape>$section[template]</ste:escape>"><ste:escape>$section[template]</ste:escape></a></td>
+								<td>
+									<ste:foreach array="section[styles]" value="style" counter="si">
+										?{~{$si|eq|0}||<br />}
+										<a href="$rel_path_to_root/backend/design/sections?rmstyle=${style}&rmfrom=${section[name]}"><img src="$rel_path_to_root/ratatoeskr/cms_style/images/delete.png" alt="<ste:get_translation for='remove' />" /></a> <a href="$rel_path_to_root/backend/design/styles/$style">$style</a>
+									</ste:foreach>
+								</td>
+							</tr>
+						</ste:foreach>
+					</tbody>
+				</table>
+				<div>
+					<input type="submit" name="delete" value="<ste:get_translation for='delete' />" />&nbsp;<select name="really_delete">
+						<option value="no" selected="selected"><ste:get_translation for="no" /></option>
+						<option value="yes"><ste:get_translation for="yes" /></option>
+					</select>
+					|
+					<input type="submit" name="make_default" value="<ste:get_translation for='make_default' />" />
+					|
+					<input type="submit" name="set_template" value="<ste:get_translation for='set_template' />" />&nbsp;<ste:instant_select name="set_template_to" array="templates" />
+					|
+					<input type="submit" name="add_style" value="<ste:get_translation for='add_style' />" />&nbsp;<ste:instant_select name="style_to_add" array="styles" />
+					|
+					<input type="submit" name="set_title" value="<ste:get_translation for='set_title' />" />&nbsp;<ste:instant_select name="set_title_lang" array="all_langcodes" />&nbsp;<input type="text" name="set_title_text" />
+				</div>
+			</form>
+		</div>
+	</div>
+	<div class="dualcolumns_stop"></div>
+</ste:block>
