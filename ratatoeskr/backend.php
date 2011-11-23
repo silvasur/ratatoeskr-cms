@@ -1,7 +1,7 @@
 <?php
 /*
- * File: ratatoeskr/backend/main.php
- * Main file for the backend.
+ * File: ratatoeskr/backend.php
+ * The backend.
  * 
  * License:
  * This file is part of Ratatöskr.
@@ -9,10 +9,10 @@
  * See "ratatoeskr/licenses/ratatoeskr" for more information.
  */
 
-require_once(dirname(__FILE__) . "/../sys/models.php");
-require_once(dirname(__FILE__) . "/../sys/pwhash.php");
-require_once(dirname(__FILE__) . "/../sys/textprocessors.php");
-require_once(dirname(__FILE__) . "/../languages.php");
+require_once(dirname(__FILE__) . "/sys/models.php");
+require_once(dirname(__FILE__) . "/sys/pwhash.php");
+require_once(dirname(__FILE__) . "/sys/textprocessors.php");
+require_once(dirname(__FILE__) . "/languages.php");
 
 $admin_grp = Group::by_name("admins");
 

@@ -16,7 +16,7 @@ require_once(dirname(__FILE__) . "/sys/init_ste.php");
 require_once(dirname(__FILE__) . "/sys/translation.php");
 require_once(dirname(__FILE__) . "/sys/urlprocess.php");
 require_once(dirname(__FILE__) . "/frontend.php");
-require_once(dirname(__FILE__) . "/backend/main.php");
+require_once(dirname(__FILE__) . "/backend.php");
 
 function ratatoeskr()
 {
