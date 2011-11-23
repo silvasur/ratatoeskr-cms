@@ -40,7 +40,6 @@
 				<a href="$rel_path_to_root/backend/admin/settings"><ste:get_translation for="section_admin" /></a>
 				<ul?{~{admin|eq|$section}| class="active"|}>
 					<li><a href="$rel_path_to_root/backend/admin/users"?{~{users|eq|$submenu}| class="active"|}><ste:get_translation for="menu_users_groups" /></a></li>
-					<li><a href="$rel_path_to_root/backend/admin/languages"?{~{comments|eq|$submenu}| class="active"|}><ste:get_translation for="menu_languages" /></a></li>
 					<li><a href="$rel_path_to_root/backend/admin/repos"?{~{repos|eq|$submenu}| class="active"|}><ste:get_translation for="menu_plugin_repos" /></a></li>
 					<li><a href="$rel_path_to_root/backend/admin/settings"?{~{settings|eq|$submenu}| class="active"|}><ste:get_translation for="menu_settings" /></a></li>
 				</ul>
