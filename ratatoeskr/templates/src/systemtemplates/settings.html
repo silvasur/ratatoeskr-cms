@@ -1,0 +1,52 @@
+<ste:load name="master.html" />
+<ste:load name="instant_select.tpl" />
+<ste:block name="content">
+	<ste:if>$error
+		<ste:then>
+			<div class="error"><ste:escape>$error</ste:escape></div>
+		</ste:then>
+	</ste:if>
+	<ste:if>$success
+		<ste:then>
+			<div class="success"><ste:escape>$success</ste:escape></div>
+		</ste:then>
+	</ste:if>
+	
+	<form action="$rel_path_to_root/backend/admin/settings" method="POST" accept-charset="UTF-8">
+		<h2><ste:get_translation for="comment_settings" /></h2>
+		<strong><ste:get_translation for="comment_textprocessor" />:</strong> <ste:instant_select name="comment_textprocessor" array="textprocessors" selected="$comment_textprocessor" /><br />
+		<strong><ste:get_translation for="comment_auto_visible" />:</strong> <input type="checkbox" name="comment_auto_visible" value="yes"?{$comment_auto_visible| checked="checked"|} /><br />
+		<input type="submit" name="save_comment_settings" />
+	</form>
+	
+	<form action="$rel_path_to_root/backend/admin/settings" method="POST" accept-charset="UTF-8">
+		<h2><ste:get_translation for="language_settings" /></h2>
+		<table class="listtab">
+			<thead>
+				<tr>
+					<th>&nbsp;</th>
+					<th><ste:get_translation for="language_code" /></th>
+					<th><ste:get_translation for="language" /></th>
+					<th><ste:get_translation for="default_language" /></th>
+				</tr>
+			</thead>
+			<tbody>
+				<ste:foreach array="used_langs" value="lang">
+					<tr>
+						<td><input type="radio" name="language_select" value="$lang[code]" /></td>
+						<td>$lang[code]</td>
+						<td><ste:escape>$lang[name]</ste:escape></td>
+						<td>?{$lang[default]|<strong><ste:get_translation for="yes" /></strong>|<ste:get_translation for="no" />}</td>
+					</tr>
+				</ste:foreach>
+			</tbody>
+		</table>
+		<div>
+			<input type="submit" name="delete" value="<ste:get_translation for='delete' />" />&nbsp;<select name="really_delete"><option value="no" selected="selected"><ste:get_translation for="no" /></option><option value="yes"><ste:get_translation for="yes" /></option></select>
+			|
+			<input type="submit" name="make_default" value="<ste:get_translation for='make_default' />" />
+			|
+			<input type="submit" name="add_language" value="<ste:get_translation for='add_language' />" />&nbsp;<ste:instant_select name="language_to_add" array="all_langcodes" />
+		</div>
+	</form>
+</ste:block>

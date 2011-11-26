@@ -166,7 +166,19 @@ $translation = array(
 	"default_section_changed_successfully" => "Default section changed successfully.",
 	"successfully_added_style" => "Successfully added style.",
 	"successfully_set_section_title" => "Successfully set title.",
-	"successfully_set_template" => "Successfully set template."
+	"successfully_set_template" => "Successfully set template.",
+	"comment_textprocessor" => "Textprocessor for comments",
+	"language_settings" => "Language settings",
+	"language_code" => "Language code",
+	"default_language" => "Default language",
+	"add_language" => "Add language",
+	"comment_auto_visible" => "Make comments visible automatically",
+	"comment_settings" => "Comment settings",
+	"comment_settings_successfully_saved" => "Comment settings successfully saved",
+	"cannot_delete_default_language" => "Can not delete default language.",
+	"language_successfully_deleted" => "Language successfully deleted.",
+	"successfully_set_default_language" => "Successfully set default language.",
+	"language_successfully_added" => "Language successfully added."
 );
 
 ?>

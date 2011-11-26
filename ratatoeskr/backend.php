@@ -1243,6 +1243,85 @@ $backend_subactions = url_action_subactions(array(
 			
 			echo $ste->exectemplate("systemtemplates/sections.html");
 		}
+	)),
+	"admin" => url_action_subactions(array(
+		"settings" => function(&$data, $url_now, &$url_next)
+		{
+			global $ste, $translation, $languages, $rel_path_to_root, $ratatoeskr_settings, $textprocessors;
+			
+			$url_next = array();
+			
+			$ste->vars["section"]   = "admin";
+			$ste->vars["submenu"]   = "settings";
+			$ste->vars["pagetitle"] = $translation["menu_settings"];
+			
+			$ste->vars["textprocessors"] = array();
+			foreach($textprocessors as $txtproc => $properties)
+				if($properties[1])
+					$ste->vars["textprocessors"][] = $txtproc;
+			
+			/* Save comment settings? */
+			if(isset($_POST["save_comment_settings"]))
+			{
+				if(!in_array(@$_POST["comment_textprocessor"], $ste->vars["textprocessors"]))
+					$ste->vars["error"] = $translation["unknown_txtproc"];
+				else
+				{
+					$ratatoeskr_settings["comment_textprocessor"]   = $_POST["comment_textprocessor"];
+					$ratatoeskr_settings["comment_visible_default"] = (isset($_POST["comment_auto_visible"]) and ($_POST["comment_auto_visible"] == "yes"));
+					$ste->vars["success"] = $translation["comment_settings_successfully_saved"];
+				}
+			}
+			
+			/* Delete language? */
+			if(isset($_POST["delete"]) and ($_POST["really_delete"] == "yes") and isset($_POST["language_select"]))
+			{
+				if($ratatoeskr_settings["default_language"] == $_POST["language_select"])
+					$ste->vars["error"] = $translation["cannot_delete_default_language"];
+				else
+				{
+					$ratatoeskr_settings["languages"] = array_filter($ratatoeskr_settings["languages"], function($l) { return $l != $_POST["language_select"]; });
+					$ste->vars["success"] = $translation["language_successfully_deleted"];
+				}
+			}
+			
+			/* Set default language */
+			if(isset($_POST["make_default"]) and isset($_POST["language_select"]))
+			{
+				if(in_array($_POST["language_select"], $ratatoeskr_settings["languages"]))
+				{
+					$ratatoeskr_settings["default_language"] = $_POST["language_select"];
+					$ste->vars["success"] = $translation["successfully_set_default_language"];
+				}
+			}
+			
+			/* Add a language */
+			if(isset($_POST["add_language"]))
+			{
+				if(!isset($languages[$_POST["language_to_add"]]))
+					$ste->vars["error"] = $translation["language_unknown"];
+				else
+				{
+					if(!in_array($_POST["language_to_add"], $ratatoeskr_settings["languages"]))
+					{
+						$ls = $ratatoeskr_settings["languages"];
+						$ls[] = $_POST["language_to_add"];
+						$ratatoeskr_settings["languages"] = $ls;
+					}
+					$ste->vars["success"] = $translation["language_successfully_added"];
+				}
+			}
+			
+			$ste->vars["comment_auto_visible"]  = $ratatoeskr_settings["comment_visible_default"];
+			$ste->vars["comment_textprocessor"] = $ratatoeskr_settings["comment_textprocessor"];
+			$ste->vars["used_langs"] = array_map(function ($l) use ($ratatoeskr_settings, $languages) { return array(
+				"code"    => $l,
+				"name"    => $languages[$l]["language"],
+				"default" => ($l == $ratatoeskr_settings["default_language"])
+			);}, $ratatoeskr_settings["languages"]);
+			
+			echo $ste->exectemplate("systemtemplates/settings.html");
+		}
 	))
 ));
 
