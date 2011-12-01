@@ -161,7 +161,7 @@ class User
 	}
 	
 	/*
-	 * Constructor: by_username
+	 * Constructor: by_name
 	 * Get a User object by username
 	 * 
 	 * Parameters:
