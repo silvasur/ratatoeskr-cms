@@ -216,7 +216,7 @@ class User
 			throw new AlreadyExistsError();
 		
 		qdb("UPDATE `PREFIX_users` SET `username` = '%s', `pwhash` = '%s', `mail` = '%s', `fullname` = '%s', `language` = '%s' WHERE `id` = %d",
-			$this->username, $this->pwhash, $this->mail, $this->id, $this->fullname, $this->language);
+			$this->username, $this->pwhash, $this->mail, $this->fullname, $this->language, $this->id);
 	}
 	
 	/*
