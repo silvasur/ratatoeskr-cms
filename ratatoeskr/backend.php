@@ -94,7 +94,7 @@ $backend_subactions = url_action_subactions(array(
 					if($url_next[0] == "login")
 						$url_next = array("content", "write");
 					$data["user"] = $user;
-					$ste->vars["user"] = array("name" => $user->username, "lang" => $user->language);
+					$ste->vars["user"] = array("id" => $user->get_id(), "name" => $user->username, "lang" => $user->language);
 					
 					return; /* Authentification successful, continue  */
 				}
