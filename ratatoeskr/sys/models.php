@@ -182,10 +182,10 @@ class User
 	}
 	
 	/*
-	 * Function: all_users
+	 * Function: all
 	 * Returns array of all available users.
 	 */
-	public static function all_users()
+	public static function all()
 	{
 		$rv = array();
 		
@@ -370,10 +370,10 @@ class Group
 	}
 	
 	/*
-	 * Function: all_groups
+	 * Function: all
 	 * Returns array of all groups
 	 */
-	public static function all_groups()
+	public static function all()
 	{
 		$rv = array();
 		
