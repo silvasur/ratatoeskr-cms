@@ -97,13 +97,11 @@ class User
 	 * Parameters:
 	 * 	$username - The username
 	 * 	$pwhash   - <PasswordHash> of the password
-	 * 	$mail     - E-Mail-address
-	 * 	$fullname - The full name.
 	 * 
 	 * Returns:
 	 * 	An User object
 	 */
-	public static function create($username, $pwhash, $mail, $fullname)
+	public static function create($username, $pwhash)
 	{
 		try
 		{
@@ -112,15 +110,15 @@ class User
 		catch(DoesNotExistError $e)
 		{
 			global $ratatoeskr_settings;
-			qdb("INSERT INTO `PREFIX_users` (`username`, `pwhash`, `mail`, `fullname`, `language`) VALUES ('%s', '%s', '%s', '%s', '%s')",
-				$username, $pwhash, $mail, $fullname, $ratatoeskr_settings["default_language"]);
+			qdb("INSERT INTO `PREFIX_users` (`username`, `pwhash`, `mail`, `fullname`, `language`) VALUES ('%s', '%s', '', '', '%s')",
+				$username, $pwhash, $ratatoeskr_settings["default_language"]);
 			$obj = new self;
 			
 			$obj->id       = mysql_insert_id();
 			$obj->username = $username;
 			$obj->pwhash   = $pwhash;
-			$obj->mail     = $mail;
-			$obj->fullname = $fullname;
+			$obj->mail     = "";
+			$obj->fullname = "";
 			$obj->language = $ratatoeskr_settings["default_language"];
 			
 			return $obj;
