@@ -1,8 +1,8 @@
 <?php
 
 $translation = array(
-	"username" => "username",
-	"password" => "password",
+	"username" => "Username",
+	"password" => "Password",
 	"login_form_header" => "Login",
 	"login_form_button" => "Login",
 	"login_background_image" => "Background image: <a href=\"[[URL]]\">[[FILENAME]]</a> by [[AUTHOR]]. License: [[LICENSE]]",
@@ -178,7 +178,30 @@ $translation = array(
 	"cannot_delete_default_language" => "Can not delete default language.",
 	"language_successfully_deleted" => "Language successfully deleted.",
 	"successfully_set_default_language" => "Successfully set default language.",
-	"language_successfully_added" => "Language successfully added."
+	"language_successfully_added" => "Language successfully added.",
+	"new_user" => "New user",
+	"initial_password" => "Initial password",
+	"new_group" => "New Group",
+	"groupname" => "Group name",
+	"users" => "Users",
+	"groups" => "Groups",
+	"group" => "Group",
+	"member_of_groups" => "Member of these groups",
+	"cannot_delete_admin_group" => "Can not delete admin group.",
+	"successfully_deleted_groups" => "Successfully deleted groups.",
+	"empty_group_name" => "Can not create group: Empty group name.",
+	"group_already_exists" => "Group already exists.",
+	"successfully_created_group" => "Successfully created group.",
+	"empty_username" => "Can not create user: Empty username.",
+	"user_already_exists" => "User already exists.",
+	"successfully_created_user" => "Successfully created user.",
+	"cannot_delete_yourself" => "You can not delete yourself.",
+	"successfully_deleted_users" => "Successfully deleted users.",
+	"fullname" => "Full name",
+	"mail_address" => "Mail Address",
+	"new_password" => "New password",
+	"successfully_modified_user" => "Successfully modified user.",
+	"successfully_set_new_password" => "Successfully set new password."
 );
 
 ?>

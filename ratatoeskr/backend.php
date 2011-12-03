@@ -103,7 +103,7 @@ $backend_subactions = url_action_subactions(array(
 			}
 			catch(DoesNotExistError $e)
 			{
-				unset($_SESSION["uid"]);
+				unset($_SESSION["ratatoeskr_uid"]);
 			}
 		}
 		load_language();
@@ -127,7 +127,7 @@ $backend_subactions = url_action_subactions(array(
 				$_SESSION["ratatoeskr_uid"]    = $user->get_id();
 				$_SESSION["ratatoeskr_pwhash"] = $user->pwhash;
 				$data["user"] = $user;
-				$ste->vars["user"] = array("name" => $user->username, "lang" => $user->language);
+				$ste->vars["user"] = array("id" => $user->get_id(), "name" => $user->username, "lang" => $user->language);
 			}
 			catch(Exception $e)
 			{
@@ -1321,7 +1321,218 @@ $backend_subactions = url_action_subactions(array(
 			);}, $ratatoeskr_settings["languages"]);
 			
 			echo $ste->exectemplate("systemtemplates/settings.html");
-		}
+		},
+		"users" => url_action_subactions(array(
+			"_index" => function(&$data, $url_now, &$url_next)
+			{
+				global $ste, $translation, $languages, $rel_path_to_root, $ratatoeskr_settings, $textprocessors;
+			
+				$url_next = array();
+			
+				$ste->vars["section"]   = "admin";
+				$ste->vars["submenu"]   = "users";
+				$ste->vars["pagetitle"] = $translation["menu_users_groups"];
+			
+				/* Add a new group? */
+				if(isset($_POST["new_group"]))
+				{
+					if(empty($_POST["group_name"]))
+						$ste->vars["error"] = $translation["empty_group_name"];
+					else
+					{
+						try
+						{
+							Group::by_name($_POST["group_name"]);
+							$ste->vars["error"] = $translation["group_already_exists"];
+						}
+						catch(DoesNotExistError $e)
+						{
+							$group = Group::create($_POST["group_name"]);
+							$ste->vars["success"] = $translation["successfully_created_group"];
+						}
+					}
+				}
+			
+				/* Add a new user? */
+				if(isset($_POST["new_user"]))
+				{
+					if(empty($_POST["username"]))
+						$ste->vars["error"] = $translation["empty_username"];
+					else
+					{
+						try
+						{
+							User::by_name($_POST["username"]);
+							$ste->vars["error"] = $translation["user_already_exists"];
+						}
+						catch(DoesNotExistError $e)
+						{
+							$group = User::create($_POST["username"], PasswordHash::create($_POST["initial_password"]));
+							$ste->vars["success"] = $translation["successfully_created_user"];
+						}
+					}
+				}
+			
+				/* Delete groups? */
+				if(isset($_POST["delete_groups"]) and ($_POST["really_delete"] == "yes") and (!empty($_POST["groups_multiselect"])))
+				{
+					$deleted = 0;
+					foreach($_POST["groups_multiselect"] as $gid)
+					{
+						try
+						{
+							$group = Group::by_id($gid);
+							if($group->name == "admins")
+							{
+								$ste->vars["error"] = $translation["cannot_delete_admin_group"];
+							}
+							else
+							{
+								$group->delete();
+								++$deleted;
+							}
+						}
+						catch(DoesNotExistError $e)
+						{
+							continue;
+						}
+					}
+					if($deleted > 0)
+						$ste->vars["success"] = $translation["successfully_deleted_groups"];
+				}
+			
+				/* Delete users? */
+				if(isset($_POST["delete_users"]) and ($_POST["really_delete"] == "yes") and (!empty($_POST["users_multiselect"])))
+				{
+					$deleted = 0;
+					foreach($_POST["users_multiselect"] as $uid)
+					{
+						if($uid == $data["user"]->get_id())
+							$ste->vars["error"] = $translation["cannot_delete_yourself"];
+						else
+						{
+							try
+							{
+								$user = User::by_id($uid);
+								$user->delete();
+								++$deleted;
+							}
+							catch(DoesNotExistError $e)
+							{
+								continue;
+							}
+						}
+					}
+					if($deleted > 0)
+						$ste->vars["success"] = $translation["successfully_deleted_users"];
+				}
+			
+				/* Get all groups */
+				$ste->vars["groups"] = array_map(function($g) { return array(
+					"id"   => $g->get_id(),
+					"name" => $g->name
+				); }, Group::all());
+			
+				/* Get all users */
+				$ste->vars["users"] = array_map(function($u) { return array(
+					"id"       => $u->get_id(),
+					"name"     => $u->username,
+					"memberof" => array_map(function($g) { return $g->name; }, $u->get_groups()),
+					"fullname" => $u->fullname,
+					"mail"     => $u->mail
+				); }, User::all());
+			
+				echo $ste->exectemplate("systemtemplates/users.html");
+			},
+			"u" => function(&$data, $url_now, &$url_next)
+			{
+				global $ste, $translation, $languages, $rel_path_to_root, $admin_grp;
+				
+				try
+				{
+					$user = User::by_id($url_next[0]);
+				}
+				catch(DoesNotExistError $e)
+				{
+					throw new NotFoundError();
+				}
+				
+				$url_next = array();
+				
+				$ste->vars["section"]   = "admin";
+				$ste->vars["submenu"]   = "users";
+				$ste->vars["pagetitle"] = $user->username;
+				
+				/* Modify data? */
+				if(isset($_POST["change_data"]))
+				{
+					$user->fullname = $_POST["fullname"];
+					$user->mail     = $_POST["mail"];
+					
+					$current_groups = array_map(function($g) { return $g->get_id(); }, $user->get_groups());
+					$new_groups     = empty($_POST[groups_multiselect]) ? array() : $_POST["groups_multiselect"];
+					$groups_exclude = array_diff($current_groups, $new_groups);
+					$groups_include = array_diff($new_groups, $current_groups);
+					
+					foreach($groups_exclude as $gid)
+					{
+						try
+						{
+							$g = Group::by_id($gid);
+							$g->exclude_user($user);
+						}
+						catch(DoesNotExistError $e)
+						{
+							continue;
+						}
+					}
+					
+					foreach($groups_include as $gid)
+					{
+						try
+						{
+							$g = Group::by_id($gid);
+							$g->include_user($user);
+						}
+						catch(DoesNotExistError $e)
+						{
+							continue;
+						}
+					}
+					
+					$user->save();
+					
+					$ste->vars["success"] = $translation["successfully_modified_user"];
+				}
+				
+				/* New Password? */
+				if(isset($_POST["new_password"]))
+				{
+					$pwhash = PasswordHash::create($_POST["password"]);
+					$user->pwhash = $pwhash;
+					if($user->get_id() == $data["user"]->get_id())
+						$_SESSION["ratatoeskr_pwhash"] = $pwhash;
+					$user->save();
+					
+					$ste->vars["success"] = $translation["successfully_set_new_password"];
+				}
+				
+				/* Put data to STE */
+				$ste->vars["u"] = array(
+					"id"       => $user->get_id(),
+					"name"     => $user->username,
+					"fullname" => $user->fullname,
+					"mail"     => $user->mail
+				);
+				$ste->vars["groups"] = array_map(function($g) use ($user) { return array(
+					"id"     => $g->get_id(),
+					"name"   => $g->name,
+					"member" => $user->member_of($g)
+				); }, Group::all());
+				
+				echo $ste->exectemplate("systemtemplates/user.html");
+			}
+		))
 	))
 ));
 

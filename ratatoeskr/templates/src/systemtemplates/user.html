@@ -1,0 +1,41 @@
+<ste:comment>This template looks very boring/ugly, too much empty space, should be fixed some day...</ste:comment>
+<ste:load name="master.html" />
+<ste:block name="content">
+	<ste:if>$error
+		<ste:then>
+			<div class="error"><ste:escape>$error</ste:escape></div>
+		</ste:then>
+	</ste:if>
+	<ste:if>$success
+		<ste:then>
+			<div class="success"><ste:escape>$success</ste:escape></div>
+		</ste:then>
+	</ste:if>
+	
+	<form action="$rel_path_to_root/backend/admin/users/u/$u[id]" method="POST" accept-charset="UTF-8">
+		<p>
+			<strong><ste:get_translation for="fullname" />:</strong><br />
+			<input type="text" name="fullname" value="<ste:escape>$u[fullname]</ste:escape>" />
+		</p>
+		<p>
+			<strong><ste:get_translation for="mail_address" />:</strong><br />
+			<input type="text" name="mail" value="$u[mail]" />
+		</p>
+		<p><strong><ste:get_translation for="member_of_groups" />:</strong></p>
+		<ul class="bulletfree">
+			<ste:foreach array="groups" value="group">
+				<li>
+					<input type="checkbox" name="groups_multiselect[]" value="$group[id]" ?{$group[member]|checked="checked" |}/> <ste:escape>$group[name]</ste:escape>
+				</li>
+			</ste:foreach>
+		</ul>
+		<p><input type="submit" name="change_data" /></p>
+		
+		<h2><ste:get_translation for="new_password" /></h2>
+		<p>
+			<strong><ste:get_translation for="password" />:</strong><br />
+			<input type="password" name="password" />
+		</p>
+		<p><input type="submit" name="new_password" /></p>
+	</form>
+</ste:block>

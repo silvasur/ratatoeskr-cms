@@ -245,3 +245,8 @@ table.listtab tbody tr:hover {
 textarea.codeedit {
 	font-family: monospace;
 }
+
+ul.bulletfree {
+	list-style: none;
+	padding-left: 0mm;
+}

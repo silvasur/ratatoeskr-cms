@@ -1,0 +1,89 @@
+<ste:load name="master.html" />
+<ste:block name="content">
+	<ste:if>$error
+		<ste:then>
+			<div class="error"><ste:escape>$error</ste:escape></div>
+		</ste:then>
+	</ste:if>
+	<ste:if>$success
+		<ste:then>
+			<div class="success"><ste:escape>$success</ste:escape></div>
+		</ste:then>
+	</ste:if>
+	
+	<div class="dualcolumns">
+		<div class="column_left">
+			<form action="$rel_path_to_root/backend/admin/users" method="POST" accept-charset="UTF-8">
+				<h2><ste:get_translation for="new_group" /></h2>
+				<strong><ste:get_translation for="groupname" />:</strong><br />
+				<input type="text" name="group_name" class="fullwidth" /><br />
+				<input type="submit" name="new_group" />
+				
+				<h2><ste:get_translation for="new_user" /></h2>
+				<strong><ste:get_translation for="username" />:</strong><br />
+				<input type="text" name="username" class="fullwidth" /><br />
+				<strong><ste:get_translation for="initial_password" />:</strong><br />
+				<input type="password" name="initial_password" class="fullwidth" /><br />
+				<input type="submit" name="new_user" />
+			</form>
+		</div>
+		<div class="column_main">
+			<form action="$rel_path_to_root/backend/admin/users" method="POST" accept-charset="UTF-8">
+				<h2><ste:get_translation for="groups" /></h2>
+				<table class="listtab fullwidth">
+					<thead>
+						<tr>
+							<th style="width: 3ex">&nbsp;</th>
+							<th><ste:get_translation for="groupname" /></th>
+						</tr>
+					</thead>
+					<tbody>
+						<ste:foreach array="groups" value="group">
+							<tr>
+								<td><input type="checkbox" name="groups_multiselect[]" value="$group[id]" /></td>
+								<td><ste:escape>$group[name]</ste:escape></td>
+							</tr>
+						</ste:foreach>
+					</tbody>
+				</table>
+				<div>
+					<input type="submit" name="delete_groups" value="<ste:get_translation for='delete' />" /><select name="really_delete"><option value="no" selected="selected"><ste:get_translation for="no" /></option><option value="yes"><ste:get_translation for="yes" /></option></select>
+				</div>
+			</form>
+			
+			<form action="$rel_path_to_root/backend/admin/users" method="POST" accept-charset="UTF-8">
+				<h2><ste:get_translation for="users" /></h2>
+				<table class="listtab fullwidth">
+					<thead>
+						<tr>
+							<th style="width: 3ex">&nbsp;</th>
+							<th><ste:get_translation for="username" /></th>
+							<th><ste:get_translation for="member_of_groups" /></th>
+							<th><ste:get_translation for="fullname"/></th>
+							<th><ste:get_translation for="mail_address" /></th>
+						</tr>
+					</thead>
+					<tbody>
+						<ste:foreach array="users" value="user_x">
+							<tr>
+								<td><input type="checkbox" name="users_multiselect[]" value="$user_x[id]" /></td>
+								<td><a href="$rel_path_to_root/backend/admin/users/u/$user_x[id]"><ste:escape>$user_x[name]</ste:escape></a></td>
+								<td>
+									<ste:foreach array="user_x[memberof]" value="group" counter="i">
+										?{~{$i|eq|0}||, }<ste:escape>$group</ste:escape>
+									</ste:foreach>
+								</td>
+								<td><ste:escape>$user_x[fullname]</ste:escape></td>
+								<td><ste:escape>$user_x[mail]</ste:escape></td>
+							</tr>
+						</ste:foreach>
+					</tbody>
+				</table>
+				<div>
+					<input type="submit" name="delete_users" value="<ste:get_translation for='delete' />" /><select name="really_delete"><option value="no" selected="selected"><ste:get_translation for="no" /></option><option value="yes"><ste:get_translation for="yes" /></option></select>
+				</div>
+			</form>
+		</div>
+	</div>
+	<div class="dualcolumns_stop"></div>
+</ste:block>
