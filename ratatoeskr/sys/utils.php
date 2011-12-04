@@ -203,5 +203,5 @@ function htmlesc($text)
  * Constant: SITE_BASE_PATH
  * The Base path of this ratatoeskr site.
  */
-define(SITE_BASE_PATH, dirname(dirname(dirname(__FILE__))));
+define("SITE_BASE_PATH", dirname(dirname(dirname(__FILE__))));
 ?>
