@@ -13,6 +13,7 @@ require_once(dirname(__FILE__) . "/db.php");
 require_once(dirname(__FILE__) . "/utils.php");
 require_once(dirname(__FILE__) . "/../libs/kses.php");
 require_once(dirname(__FILE__) . "/textprocessors.php");
+require_once(dirname(__FILE__) . "/pluginpackage.php");
 
 db_connect();
 
@@ -1791,6 +1792,229 @@ class Image
 		if(is_file(SITE_BASE_PATH . "/images/previews/{$this->id}.png"))
 			unlink(SITE_BASE_PATH . "/images/previews/{$this->id}.png");
 		qdb("DELETE FROM `PREFIX_images` WHERE `id` = %d", $this->id);
+	}
+}
+
+/*
+ * Class RepositoryUnreachableOrInvalid
+ * A Exception that will be thrown, if the repository is aunreachable or seems to be an invalid repository.
+ */
+class RepositoryUnreachableOrInvalid extends Exception { }
+
+/*
+ * Class: Repository
+ * Representation of an plugin repository.
+ */
+class Repository
+{
+	private $id;
+	private $baseurl;
+	private $name;
+	private $description;
+	private $lastrefresh;
+	
+	private $stream_ctx;
+	
+	/*
+	 * Variables: Public class variables
+	 * $packages - Array with all packages from this repository. A entry itself is an array: array(name, versioncounter, description)
+	 */
+	public $packages;
+	
+	private function __construct()
+	{
+		$this->stream_ctx = stream_context_create(array("http" => array("timeout" => 5)));
+	}
+	
+	/*
+	 * Functions: Getters
+	 * get_id          - Get internal ID.
+	 * get_baseurl     - Get the baseurl of the repository.
+	 * get_name        - Get repository name.
+	 * get_description - Get repository description.
+	 */
+	public function get_id()          { return $this->id;          }
+	public function get_baseurl()     { return $this->baseurl;     }
+	public function get_name()        { return $this->name;        }
+	public function get_description() { return $this->description; }
+	
+	/*
+	 * Constructor: create
+	 * Create a new repository entry from a base url.
+	 * 
+	 * Parameters:
+	 * 	$baseurl - The baseurl of the repository.
+	 * 
+	 * Throws:
+	 * 	Could throw a <RepositoryUnreachableOrInvalid> exception. In this case, nothing will be written to the database.
+	 * 
+	 * Returns:
+	 * 	A <Repository> object.
+	 */
+	public static function create($baseurl)
+	{
+		$obj = new self();
+		
+		if(preg_match('/^(http[s]?:\\/\\/.*?)[\\/]?$/', $baseurl, $matches) == 0)
+			throw new RepositoryUnreachableOrInvalid();
+		
+		$obj->baseurl = $$matches[1];
+		$obj->refresh(True);
+		
+		qdb("INSERT INTO `ratatoeskr_repositories` () VALUES ()");
+		$obj->id = mysql_insert_id();
+		$obj->save();
+		return $obj;
+	}
+	
+	/*
+	 * Constructor: by_id
+	 * Get a repository entry by ID.
+	 * 
+	 * Parameters:
+	 * 	$id - ID.
+	 * 
+	 * Returns:
+	 * 	A <Repository> object.
+	 */
+	public static function by_id($id)
+	{
+		$result = qdb("SELECT `name`, `description`, `baseurl`, `pkgcache`, `lastrefresh` WHERE  id` = %d", $this->id);
+		$sqlrow = mysql_fetch_assoc($result);
+		if(!$sqlrow)
+			throw new DoesNotExistError();
+		
+		$obj = new self();
+		$obj->id          = $id;
+		$obj->name        = $sqlrow["name"];
+		$obj->description = $sqlrow["description"];
+		$obj->baseurl     = $sqlrow["baseurl"];
+		$obj->packages    = unserialize(base64_decode($sqlrow["pkgcache"]));
+		$obj->lastrefresh = $sqlrow["lastrefresh"];
+		
+		return $obj;
+	}
+	
+	private function save()
+	{
+		qdb("UPDATE `PREFIX_repositories` SET `baseurl` => '%s', `name` = '%s', `description` = '%s', `pkgcache` = '%s', `lastrefresh` = %d WHERE `id` = %d",
+		    $this->baseurl,
+		    $this->name,
+		    $this->description,
+		    base64_encode(serialize($this->packages)),
+		    $this->lastrefresh,
+		    $this->id);
+	}
+	
+	/* 
+	 * Function: delete
+	 * Delete the repository entry from the database.
+	 */
+	public function delete()
+	{
+		qdb("DELETE FROM `PREFIX_repositories` WHERE `id` = %d", $this->id);
+	}
+	
+	/*
+	 * Function: refresh
+	 * Refresh the package cache and the name and description.
+	 * 
+	 * Parameters:
+	 * 	$force - Force a refresh, even if the data was already fetched in the last 6 hours (default: False).
+	 * 
+	 * Throws:
+	 * 	<RepositoryUnreachableOrInvalid>
+	 */
+	public function refresh($force = False)
+	{
+		if(($this->lastrefresh > (time() - (60*60*4))) and (!$force))
+			return;
+		
+		$repometa = @file_get_contents($this->baseurl . "/repometa", False, $this->stream_ctx);
+		if($repometa === FALSE)
+			throw new RepositoryUnreachableOrInvalid();
+		$repometa = @unserialize($repometa);
+		if((!is_array($repometa)) or (!isset($repometa["name"])) or (!isset($repometa["description"])))
+			throw new RepositoryUnreachableOrInvalid();
+		
+		$this->name        = $repometa["name"];
+		$this->description = $repometa["description"];
+		$this->packages    = @unserialize(@file_get_contents($this->baseurl . "/packagelist", False, $ctx));
+		
+		$this->lastrefresh = time();
+		
+		$this->save();
+	}
+	
+	/*
+	 * Function: get_package_meta
+	 * Get metadata of a plugin package from this repository.
+	 * 
+	 * Parameters:
+	 * 	$pkgname - The name of the package.
+	 * 
+	 * Throws:
+	 * 	A <DoesNotExistError> Exception, if the package was not found.
+	 * 
+	 * Returns:
+	 * 	A <PluginPackageMeta> object
+	 */
+	public function get_package_meta($pkgname)
+	{
+		$found = False;
+		foreach($this->packages as $p)
+		{
+			if($p[0] == $pkgname)
+			{
+				$found = True;
+				break;
+			}
+		}
+		if(!$found)
+			throw new DoesNotExistError("Package not in package cache.");
+		
+		$pkgmeta = @unserialize(@file_get_contents($this->baseurl . "/packages/" . urlencode($pkgname) . "/meta", False, $this->stream_ctx));
+		
+		if(!($pkgmeta instanceof PluginPackageMeta))
+			throw new DoesNotExistError();
+		
+		return $pkgmeta;
+	}
+	
+	/*
+	 * Function: download_package
+	 * Download a package from the repository
+	 * 
+	 * Parameters:
+	 * 	$pkgname - Name of the package.
+	 * 	$version - The version to download (defaults to "current").
+	 * 
+	 * Throws:
+	 * 	* A <DoesNotExistError> Exception, if the package was not found.
+	 * 	* A <InvalidPackage> Exception, if the package was malformed.
+	 * 
+	 * Returns:
+	 * 	A <PluginPackage> object.
+	 */
+	public function download_package($pkgname, $version = "current")
+	{
+		$found = False;
+		foreach($this->packages as $p)
+		{
+			if($p[0] == $pkgname)
+			{
+				$found = True;
+				break;
+			}
+		}
+		if(!$found)
+			throw new DoesNotExistError("Package not in package cache.");
+		
+		$raw = @file_get_contents($this->baseurl . "/packages/" . urlencode($pkgname) . "/versions/" . urlencode($version), False, $this->stream_ctx);
+		if($raw === False)
+			throw new DoesNotExistError();
+		
+		return PluginPackage::load($raw);
 	}
 }
 

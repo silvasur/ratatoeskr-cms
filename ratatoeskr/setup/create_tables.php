@@ -125,6 +125,15 @@ CREATE TABLE `PREFIX_users` (
   `language` varchar(10) COLLATE utf8_unicode_ci NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+CREATE TABLE `s_db_47`.`PREFIX_repositories` (
+`id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
+`baseurl` TEXT CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL ,
+`name` TEXT CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL ,
+`description` TEXT CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL ,
+`pkgcache` TEXT CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL ,
+`lastrefresh` BIGINT NOT NULL 
+) ENGINE = MYISAM CHARACTER SET utf8 COLLATE utf8_unicode_ci;
 SQL;
 
 ?>
