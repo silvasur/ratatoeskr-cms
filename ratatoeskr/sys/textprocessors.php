@@ -17,7 +17,7 @@ require_once(dirname(__FILE__) . "/utils.php");
  * Register a textprocessor.
  * 
  * Parameters:
- * 	$namen              - The name of the textprocessor
+ * 	$name               - The name of the textprocessor
  * 	$fx                 - The textprocessor function (function($input), returns HTML)
  * 	$visible_in_backend - Should this textprocessor be visible in the backend? Defaults to True.
  */

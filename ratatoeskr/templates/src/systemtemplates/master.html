@@ -49,6 +49,9 @@
 				<ul?{~{plugins|eq|$section}| class="active"|}>
 					<li><a href="$rel_path_to_root/backend/plugin/list"?{~{pluginlist|eq|$submenu}| class="active"|}><ste:get_translation for="menu_pluginlist" /></a></li>
 					<li><a href="$rel_path_to_root/backend/plugin/install"?{~{installplugins|eq|$submenu}| class="active"|}><ste:get_translation for="menu_plugininstall" /></a></li>
+					<ste:foreach array="pluginpages" value="pname" key="pid">
+						<li><a href="$rel_path_to_root/backend/pluginpages/p$pid"?{~{plugin$pid|eq|$submenu}| class="active"|}><ste:escape>$pname</ste:escape></a></li>
+					</ste:foreach>
 				</ul>
 			</li>
 		</ul>
