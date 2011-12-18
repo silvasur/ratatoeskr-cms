@@ -928,18 +928,21 @@ class Comment
 	}
 	
 	/*
-	 * Function: create_html
-	 * Creates the comments HTML representation. It applys the page's comment textprocessor on it
+	 * Function: htmlize_comment_text
+	 * Creates the HTML representation of a comment text. It applys the page's comment textprocessor on it
 	 * and filters some potentially harmful tags using kses.
-	 *
+	 * 
+	 * Parameters:
+	 * 	$text - Text to HTMLize.
+	 * 
 	 * Returns:
-	 * 	The HTML representation.
+	 * 	HTML code.
 	 */
-	public function create_html()
+	public static function htmlize_comment_text($text)
 	{
 		global $ratatoeskr_settings;
 		
-		return kses(textprocessor_apply($this->text, $ratatoeskr_settings["comment_textprocessor"]), array(
+		return kses(textprocessor_apply($text, $ratatoeskr_settings["comment_textprocessor"]), array(
 			"a" => array("href" => 1, "hreflang" => 1, "title" => 1, "rel" => 1, "rev" => 1),
 			"b" => array(),
 			"i" => array(),
@@ -953,7 +956,12 @@ class Comment
 			"code" => array(),
 			"pre" => array(),
 			"blockquote" => array("cite" => 1),
-			"h1" => array(), "h2" => array(), "h3" => array(), "h4" => array(), "h5" => array(), "h6" => array(), 
+			"h1" => array(),
+			"h2" => array(),
+			"h3" => array(),
+			"h4" => array(),
+			"h5" => array(),
+			"h6" => array(), 
 			"img" => array("src" => 1, "alt" => 1, "width" => 1, "height" => 1),
 			"s" => array(),
 			"q" => array("cite" => 1),
@@ -981,6 +989,18 @@ class Comment
 			"tt" => array(),
 			"var" => array()
 		));
+	}
+	
+	/*
+	 * Function: create_html
+	 * Applys <htmlize_comment_text> onto this comment's text.
+	 *
+	 * Returns:
+	 * 	The HTML representation.
+	 */
+	public function create_html()
+	{
+		return self::htmlize_comment_text($this->text);
 	}
 	
 	/*
@@ -1136,39 +1156,55 @@ class Style
 }
 
 /*
- * Class: PluginDB
+ * Class: Plugin
  * The representation of a plugin in the database.
- * See <plugin.php> for loader functions and higher-level plugin access.
  */
-class PluginDB
+class Plugin
 {
 	private $id;
 	
 	/*
 	 * Variables: Public class variables.
 	 *
-	 * $name        - Plugin name
-	 * $class       - Main class of the plugin
-	 * $version     - Plugin version
-	 * $author      - Plugin author
-	 * $author_url  - Website of author
-	 * $description - Description of plugin
-	 * $help        - Help page (HTML)
-	 * $phpcode     - The plugin code
-	 * $active      - Is the plugin active?
+	 * $name              - Plugin name.
+	 * $code              - Plugin code.
+	 * $classname         - Main class of the plugin.
+	 * $active            - Is the plugin activated?
+	 * $author            - Author of the plugin.
+	 * $versiontext       - Version (text)
+	 * $versioncount      - Version (counter)
+	 * $short_description - A short description.
+	 * $updatepath        - URL for updates.
+	 * $web               - Webpage of the plugin.
+	 * $help              - Help page.
+	 * $license           - License text.
+	 * $installed         - Is this plugin installed? Used during the installation process.
 	 */
 	
-	public $name        = "";
-	public $class       = "";
-	public $version     = "";
-	public $author      = "";
-	public $author_url  = "";
-	public $description = "";
-	public $help        = "";
-	public $phpcode     = "";
-	public $active      = False;
+	public $name;
+	public $code;
+	public $classname;
+	public $active;
+	public $author;
+	public $versiontext;
+	public $versioncount;
+	public $short_description;
+	public $updatepath;
+	public $web;
+	public $help;
+	public $license;
+	public $installed;
 	
 	private function __construct() { }
+	
+	/*
+	 * Function: clean_db
+	 * Performs some datadase cleanup jobs on the plugin table.
+	 */
+	public static function clean_db()
+	{
+		qdb("DELETE FROM `PREFIX_plugins` WHERE `installed` = 0 AND `added` < %d", (time() - (60*5)));
+	}
 	
 	/*
 	 * Function: get_id
@@ -1182,7 +1218,7 @@ class PluginDB
 	public static function create()
 	{
 		$obj = new self;
-		qdb("INSERT INTO `PREFIX_plugins` () VALUES ()");
+		qdb("INSERT INTO `PREFIX_plugins` (`added`) VALUES (%d)", time());
 		$obj->id = mysql_insert_id();
 		return $obj;
 	}
@@ -1198,21 +1234,25 @@ class PluginDB
 	{
 		$obj = new self;
 		
-		$result = qdb("SELECT `name`, `class`, `version`, `author`, `author_url`, `description`, `help`, `phpcode`, `active` FROM `PREFIX_plugins` WHERE `id` = %d", $id);
+		$result = qdb("SELECT `name`, `author`, `versiontext`, `versioncount`, `short_description`, `updatepath`, `web`, `help`, `code`, `classname`, `active`, `license`, `installed` FROM `PREFIX_plugins` WHERE `id` = %d", $id);
 		$sqlrow = mysql_fetch_assoc($result);
 		if($sqlrow === False)
 			throw new DoesNotExistError();
 		
-		$obj->id          = $id;
-		$obj->name        = $sqlrow["name"];
-		$obj->class       = $sqlrow["class"];
-		$obj->version     = $sqlrow["version"];
-		$obj->author      = $sqlrow["author"];
-		$obj->author_url  = $sqlrow["author_url"];
-		$obj->description = $sqlrow["description"];
-		$obj->help        = $sqlrow["help"];
-		$obj->phpcode     = $sqlrow["phpcode"];
-		$obj->active      = ($sqlrow["active"] == 1);
+		$this->id                = $id;
+		$this->name              = $sqlrow["name"];
+		$this->code              = $sqlrow["code"];
+		$this->classname         = $sqlrow["classname"];
+		$this->active            = ($sqlrow["active"] == 1);
+		$this->author            = $sqlrow["author"];
+		$this->versiontext       = $sqlrow["versiontext"];
+		$this->versioncount      = $sqlrow["versioncount"];
+		$this->short_description = $sqlrow["short_description"];
+		$this->updatepath        = $sqlrow["updatepath"];
+		$this->web               = $sqlrow["web"];
+		$this->help              = $sqlrow["help"];
+		$this->license           = $sqlrow["license"];
+		$this->installed         = ($sqlrow["installed"] == 1);
 		
 		return $obj;
 	}
@@ -1222,7 +1262,7 @@ class PluginDB
 	 * Gets all Plugins
 	 * 
 	 * Returns:
-	 * 	List of <PluginDB> objects.
+	 * 	List of <Plugin> objects.
 	 */
 	public static function all()
 	{
@@ -1238,8 +1278,8 @@ class PluginDB
 	 */
 	public function save()
 	{
-		qdb("UPDATE `PREFIX_plugins` SET `name` = '%s', `class` = '%s', `version` = '%s', `author` = '%s', `author_url` = '%s', `description` = '%s', `help` = '%s', `phpcode` = '%s', `active` = %d WHERE `id` = %d`",
-			$this->name, $this->class, $this->version, $this->author, $this->author_url, $this->description, $this->help, $this->phpcode, $this->active ? 1 : 0, $this->id);
+		qdb("UPDATE `PREFIX_plugins` SET `name` = '%s', `code` = '%s', `classname` = '%s', `active` = %d, `versiontext` = '%s', `versioncount` = %d, `short_description` = '%s', `updatepath` = '%s', `web` = '%s', `help` = '%s', `installed` = %d, `license` = '%s' WHERE `id` = %d",
+			$this->name, $this->code, $this->classname, ($this->active ? 1 : 0), $this->versiontext, $this->versioncount, $this->short_description, $this>updatepath, $this->web, $this->help, ($this->installed ? 1 : 0), $this->license, $this->id);
 	}
 	
 	/*
@@ -1248,6 +1288,12 @@ class PluginDB
 	public function delete()
 	{
 		qdb("DELETE FROM `PREFIX_plugins` WHERE `id` = %d", $this->id);
+		if(is_dir(SITE_BASE_PATH . "/ratatoeskr/plugin_extradata/private/" . $this->id))
+			delete_directory(SITE_BASE_PATH . "/ratatoeskr/plugin_extradata/private/" . $this->id);
+		if(is_dir(SITE_BASE_PATH . "/ratatoeskr/plugin_extradata/public/" . $this->id))
+			delete_directory(SITE_BASE_PATH . "/ratatoeskr/plugin_extradata/public/" . $this->id);
+		if(is_dir(SITE_BASE_PATH . "/ratatoeskr/templates/src/plugintemplates/" . $this->id))
+			delete_directory(SITE_BASE_PATH . "/ratatoeskr/templates/src/plugintemplates/" . $this->id);
 	}
 	
 	/*
@@ -2304,6 +2350,20 @@ class Article
 		
 		qdb("DELETE FROM `PREFIX_article_tag_relations` WHERE `article` = %d", $this->id);
 		qdb("DELETE FROM `PREFIX_articles` WHERE `id` = %d", $this->id);
+	}
+}
+
+/*
+ * Function: clean_database
+ * Clean up the database
+ */
+function clean_database()
+{
+	global $ratatoeskr_settings;
+	if((!isset($ratatoeskr_settings["last_db_cleanup"])) or ($ratatoeskr_repositories["last_db_cleanup"] < (time() - 86400)))
+	{
+		Plugin::clean_db();
+		$ratatoeskr_settings["last_db_cleanup"] = time();
 	}
 }
 

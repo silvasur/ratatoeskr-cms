@@ -750,7 +750,7 @@ function frontend_url_handler(&$data, $url_now, &$url_next)
 			if(isset($_GET["comment"]))
 			{
 				if(isset($_POST["preview_comment"]))
-					$ste->vars["current"]["comment_prev"] = comment_filter(textprocessor_apply($_POST["comment_text"], $ratatoeskr_settings["comment_textprocessor"]));
+					$ste->vars["current"]["comment_prev"] = Comment::htmlize_comment_text($_POST["comment_text"]);
 				else if(isset($_POST["post_comment"]))
 				{
 					$rejected = False;

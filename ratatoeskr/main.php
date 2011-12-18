@@ -20,14 +20,16 @@ require_once(dirname(__FILE__) . "/backend.php");
 
 function ratatoeskr()
 {
-	global $backend_subactions, $ste, $url_handlers;
+	global $backend_subactions, $ste, $url_handlers, $ratatoeskr_settings;
 	session_start();
 	if(!CONFIG_FILLED_OUT)
 		return setup();
 	
 	db_connect();
 	
-	$activeplugins = array_filter(PluginDB::all(), function($plugin) { return $plugin->active; });
+	clean_database();
+	
+	$activeplugins = array_filter(Plugin::all(), function($plugin) { return $plugin->active; });
 	$plugin_objs = array();
 	foreach($activeplugins as $plugin)
 	{
