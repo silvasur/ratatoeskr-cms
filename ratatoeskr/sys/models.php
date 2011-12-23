@@ -248,7 +248,7 @@ class User
 			}
 			catch(DoesNotExistError $e)
 			{
-				/* WTF?!? This should be fixed! */
+				/* Database inconsistence found. This will "fix" it (read: delete the entry). */
 				qdb("DELETE FROM `PREFIX_group_members` WHERE `user` = %d AND `group` = %d", $this->id, $sqlrow["group"]);
 			}
 		}
