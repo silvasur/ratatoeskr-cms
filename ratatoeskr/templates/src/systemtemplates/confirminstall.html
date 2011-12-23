@@ -1,0 +1,26 @@
+<ste:load name="master.html" />
+<ste:block name="content">
+	<h2><ste:escape>$name</ste:escape></h2>
+	
+	<ste:escape>$description</ste:escape>
+	
+	<h3><ste:get_translation for="plugin_src" /></h3>
+	<code><pre><ste:escape>$code</ste:escape></pre></code>
+	
+	<ste:if>
+		$license
+		<ste:then>
+			<h3><ste:get_translation for="license" /></h3>
+			<code><pre><ste:escape>$license</ste:escape></pre></code>
+		</ste:then>
+	</ste:if>
+	
+	<h3><ste:get_translation for="really_install" /></h3>
+	<div class="notice">
+		<ste:get_translation for="plugin_safety_warning" raw="1" />
+	</div>
+	<form action="$rel_path_to_root/backend/plugin/confirminstall/$plugin_id" method="POST">
+		<input type="submit" name="yes" value="<ste:get_translation for='yes' />" />
+		<input type="submit" name="no" value="<ste:get_translation for='no' />" />
+	</form>
+</ste:block>

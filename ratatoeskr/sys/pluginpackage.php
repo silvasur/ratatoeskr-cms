@@ -39,6 +39,29 @@ function dir2array($dir)
 }
 
 /*
+ * Function: array2dir
+ * Unpack an array into a directory.
+ * 
+ * Parameters:
+ * 	$a   - Array to unpack.
+ * 	$dir - Directory to unpack to.
+ */
+function array2dir($a, $dir)
+{
+	if(!is_dir($dir))
+		mkdir($dir);
+	
+	foreach($a as $k => $v)
+	{
+		$k = "$dir/$k";
+		if(is_array($v))
+			array2dir($v, $k);
+		else
+			file_put_contents($k, $v);
+	}
+}
+
+/*
  * Class: InvalidPackage
  * An Exception that <PluginPackage>'s function can throw, if the package is invalid.
  */
@@ -99,7 +122,7 @@ class PluginPackage
 	 */
 	public function validate()
 	{
-		function validate_url     ($u) { return preg_match("/^http[s]{0,1}://.*$/", $u) != 0; }
+		function validate_url     ($u) { return preg_match("/^http[s]{0,1}:\\/\\/.*$/", $u) != 0; }
 		function validate_arraydir($a)
 		{
 			if(!is_array($a))
@@ -177,7 +200,7 @@ class PluginPackage
 			throw new InvalidPackage("Wrong SHA1 hash");
 		
 		$plugin = @unserialize($pluginser);
-		if(!($plugin instanceof this))
+		if(!($plugin instanceof self))
 			throw new InvalidPackage("Not the correct class or not unserializeable.");
 		
 		$plugin->validate();
@@ -198,8 +221,8 @@ class PluginPackage
 	public function save()
 	{
 		$this->validate();
-		$ser = serialize($self);
-		return this::$magic . sha1($ser, True) . gzcompress($ser, 9);
+		$ser = serialize($this);
+		return self::$magic . sha1($ser, True) . gzcompress($ser, 9);
 	}
 	
 	/*

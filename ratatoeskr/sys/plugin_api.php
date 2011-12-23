@@ -15,7 +15,7 @@ require_once(dirname(__FILE__) . "/../frontend.php");
 
 /*
  * Constant: APIVERSION
- * The current API version.
+ * The current API version (1).
  */
 define("APIVERSION", 1);
 

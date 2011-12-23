@@ -61,7 +61,7 @@ CREATE TABLE `PREFIX_multilingual` (
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
-CREATE TABLE `ratatoeskr_plugins` (
+CREATE TABLE `PREFIX_plugins` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` text COLLATE utf8_unicode_ci NOT NULL,
   `author` text COLLATE utf8_unicode_ci NOT NULL,
@@ -70,14 +70,16 @@ CREATE TABLE `ratatoeskr_plugins` (
   `short_description` text COLLATE utf8_unicode_ci NOT NULL,
   `updatepath` text COLLATE utf8_unicode_ci NOT NULL,
   `web` text COLLATE utf8_unicode_ci NOT NULL,
+  `license` text COLLATE utf8_unicode_ci NOT NULL,
   `help` text COLLATE utf8_unicode_ci NOT NULL,
   `code` text COLLATE utf8_unicode_ci NOT NULL,
   `classname` text COLLATE utf8_unicode_ci NOT NULL,
   `active` tinyint(4) NOT NULL,
   `installed` tinyint(4) NOT NULL,
   `added` bigint(20) NOT NULL,
+  `update` tinyint(4) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 CREATE TABLE `PREFIX_plugin_kvstorage` (
   `plugin` int(11) NOT NULL,

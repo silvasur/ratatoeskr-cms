@@ -1179,6 +1179,7 @@ class Plugin
 	 * $help              - Help page.
 	 * $license           - License text.
 	 * $installed         - Is this plugin installed? Used during the installation process.
+	 * $update            - Should the plugin be updated at next start?
 	 */
 	
 	public $name;
@@ -1194,6 +1195,7 @@ class Plugin
 	public $help;
 	public $license;
 	public $installed;
+	public $update;
 	
 	private function __construct() { }
 	
@@ -1224,6 +1226,35 @@ class Plugin
 	}
 	
 	/*
+	 * Function: fill_from_pluginpackage
+	 * Fills plugin data from an <PluginPackage> object.
+	 * 
+	 * Parameters:
+	 * 	$pkg - The <PluginPackage> object.
+	 */
+	public function fill_from_pluginpackage($pkg)
+	{
+		$this->name              = $pkg->name;
+		$this->code              = $pkg->code;
+		$this->classname         = $pkg->classname;
+		$this->author            = $pkg->author;
+		$this->versiontext       = $pkg->versiontext;
+		$this->versioncount      = $pkg->versioncount;
+		$this->short_description = $pkg->short_description;
+		$this->updatepath        = $pkg->updatepath;
+		$this->web               = $pkg->web;
+		$this->license           = $pkg->license;
+		$this->help              = $pkg->help;
+		
+		if(!empty($pkg->custompub))
+			array2dir($pkg->custompub, dirname(__FILE__) . "/../plugin_extradata/public/" . $this->get_id());
+		if(!empty($pkg->custompriv))
+			array2dir($pkg->custompriv, dirname(__FILE__) . "/../plugin_extradata/private/" . $this->get_id());
+		if(!empty($pkg->tpls))
+			array2dir($pkg->tpls, dirname(__FILE__) . "/../templates/srv/plugintemplates/" . $this->get_id());
+	}
+	
+	/*
 	 * Constructor: by_id
 	 * Gets plugin by ID.
 	 * 
@@ -1234,25 +1265,26 @@ class Plugin
 	{
 		$obj = new self;
 		
-		$result = qdb("SELECT `name`, `author`, `versiontext`, `versioncount`, `short_description`, `updatepath`, `web`, `help`, `code`, `classname`, `active`, `license`, `installed` FROM `PREFIX_plugins` WHERE `id` = %d", $id);
+		$result = qdb("SELECT `name`, `author`, `versiontext`, `versioncount`, `short_description`, `updatepath`, `web`, `help`, `code`, `classname`, `active`, `license`, `installed`, `update` FROM `PREFIX_plugins` WHERE `id` = %d", $id);
 		$sqlrow = mysql_fetch_assoc($result);
 		if($sqlrow === False)
 			throw new DoesNotExistError();
 		
-		$this->id                = $id;
-		$this->name              = $sqlrow["name"];
-		$this->code              = $sqlrow["code"];
-		$this->classname         = $sqlrow["classname"];
-		$this->active            = ($sqlrow["active"] == 1);
-		$this->author            = $sqlrow["author"];
-		$this->versiontext       = $sqlrow["versiontext"];
-		$this->versioncount      = $sqlrow["versioncount"];
-		$this->short_description = $sqlrow["short_description"];
-		$this->updatepath        = $sqlrow["updatepath"];
-		$this->web               = $sqlrow["web"];
-		$this->help              = $sqlrow["help"];
-		$this->license           = $sqlrow["license"];
-		$this->installed         = ($sqlrow["installed"] == 1);
+		$obj->id                = $id;
+		$obj->name              = $sqlrow["name"];
+		$obj->code              = $sqlrow["code"];
+		$obj->classname         = $sqlrow["classname"];
+		$obj->active            = ($sqlrow["active"] == 1);
+		$obj->author            = $sqlrow["author"];
+		$obj->versiontext       = $sqlrow["versiontext"];
+		$obj->versioncount      = $sqlrow["versioncount"];
+		$obj->short_description = $sqlrow["short_description"];
+		$obj->updatepath        = $sqlrow["updatepath"];
+		$obj->web               = $sqlrow["web"];
+		$obj->help              = $sqlrow["help"];
+		$obj->license           = $sqlrow["license"];
+		$obj->installed         = ($sqlrow["installed"] == 1);
+		$obj->update            = ($sqlrow["update"] == 1);
 		
 		return $obj;
 	}
@@ -1278,8 +1310,8 @@ class Plugin
 	 */
 	public function save()
 	{
-		qdb("UPDATE `PREFIX_plugins` SET `name` = '%s', `code` = '%s', `classname` = '%s', `active` = %d, `versiontext` = '%s', `versioncount` = %d, `short_description` = '%s', `updatepath` = '%s', `web` = '%s', `help` = '%s', `installed` = %d, `license` = '%s' WHERE `id` = %d",
-			$this->name, $this->code, $this->classname, ($this->active ? 1 : 0), $this->versiontext, $this->versioncount, $this->short_description, $this>updatepath, $this->web, $this->help, ($this->installed ? 1 : 0), $this->license, $this->id);
+		qdb("UPDATE `PREFIX_plugins` SET `name` = '%s', `author` = '%s', `code` = '%s', `classname` = '%s', `active` = %d, `versiontext` = '%s', `versioncount` = %d, `short_description` = '%s', `updatepath` = '%s', `web` = '%s', `help` = '%s', `installed` = %d, `update` = %d, `license` = '%s' WHERE `id` = %d",
+			$this->name, $this>author, $this->code, $this->classname, ($this->active ? 1 : 0), $this->versiontext, $this->versioncount, $this->short_description, $this->updatepath, $this->web, $this->help, ($this->installed ? 1 : 0), ($this->update ? 1 : 0), $this->license, $this->id);
 	}
 	
 	/*
@@ -1288,6 +1320,7 @@ class Plugin
 	public function delete()
 	{
 		qdb("DELETE FROM `PREFIX_plugins` WHERE `id` = %d", $this->id);
+		qdb("DELETE FROM `PREFIX_plugin_kvstorage` WHERE `plugin` = %d", $this->id);
 		if(is_dir(SITE_BASE_PATH . "/ratatoeskr/plugin_extradata/private/" . $this->id))
 			delete_directory(SITE_BASE_PATH . "/ratatoeskr/plugin_extradata/private/" . $this->id);
 		if(is_dir(SITE_BASE_PATH . "/ratatoeskr/plugin_extradata/public/" . $this->id))

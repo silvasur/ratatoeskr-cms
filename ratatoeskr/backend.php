@@ -1532,8 +1532,268 @@ $backend_subactions = url_action_subactions(array(
 				
 				echo $ste->exectemplate("systemtemplates/user.html");
 			}
-		))
-	))
+		)),
+		"repos" => function(&$data, $url_now, &$url_next)
+		{
+			global $ste, $translation, $languages, $rel_path_to_root;
+			
+			$url_next = array();
+			
+			$ste->vars["section"]   = "admin";
+			$ste->vars["submenu"]   = "repos";
+			$ste->vars["pagetitle"] = $translation["menu_plugin_repos"];
+			
+			
+			
+			echo $ste->exectemplate("systemtemplates/repos.html");
+		}
+	)),
+	"plugin" => url_action_subactions(array(
+		"list" => function(&$data, $url_now, &$url_next)
+		{
+			global $ste, $translation, $languages, $rel_path_to_root, $plugin_objs;
+			
+			$url_next = array();
+			
+			$ste->vars["section"]   = "plugins";
+			$ste->vars["submenu"]   = "pluginlist";
+			$ste->vars["pagetitle"] = $translation["menu_pluginlist"];
+			
+			/* Delete plugins? */
+			if(isset($_POST["delete"]) and ($_POST["really_delete"] == "yes") and (!empty($_POST["plugins_multiselect"])))
+			{
+				foreach($_POST["plugins_multiselect"] as $pid)
+				{
+					try
+					{
+						$plugin = Plugin::by_id($pid);
+						if(!isset($plugin_objs[$pid]))
+						{
+							eval($plugin->code);
+							$plugin_objs[$pid] = new $plugin->classname($pid);
+						}
+						$plugin_objs[$pid]->uninstall();
+						$plugin->delete();
+					}
+					catch(DoesNotExistError $e)
+					{
+						continue;
+					}
+				}
+				
+				$ste->vars["success"] = $translation["successfully_deleted_plugins"];
+			}
+			
+			/* Activate or deactivate plugins? */
+			if((isset($_POST["activate"]) or isset($_POST["deactivate"])) and (!empty($_POST["plugins_multiselect"])))
+			{
+				$newstatus = isset($_POST["activate"]);
+				foreach($_POST["plugins_multiselect"] as $pid)
+				{
+					try
+					{
+						$plugin = Plugin::by_id($pid);
+						if(!$plugin->installed)
+							continue;
+						$plugin->active = $newstatus;
+						$plugin->save();
+						if($newstatus and(!isset($plugin_objs[$pid])))
+						{
+							eval($plugin->code);
+							$plugin_objs[$pid] = new $plugin->classname($pid);
+							$plugin_objs[$pid]->init();
+						}
+					}
+					catch(DoesNotExistError $e)
+					{
+						continue;
+					}
+				}
+				
+				$ste->vars["success"] = $translation[$newstatus ? "plugins_activated" : "plugins_deactivated"];
+			}
+			
+			$stream_ctx = stream_context_create(array("http" => array("timeout" => 5)));
+			
+			/* Update plugins? */
+			if(isset($_POST["update"]) and (!empty($_POST["plugins_multiselect"])))
+			{
+				$updated = array();
+				foreach($_POST["plugins_multiselect"] as $pid)
+				{
+					try
+					{
+						$plugin = Plugin::by_id($pid);
+						if(!empty($plugin->updatepath))
+						{
+							$update_info = @unserialize(@file_get_contents($plugin->updatepath, False, $stream_ctx));
+							if(is_array($update_info) and ($update_info["current-version"] > $plugin->versioncount))
+							{
+								$pkg = PluginPackage::load(@file_get_contents($update_info["dl-path"], False, $stream_ctx));
+								$plugin->fill_from_pluginpackage($pkg);
+								$plugin->update = True;
+								$plugin->save();
+								$updated[] = $plugin->name;
+							}
+						}
+					}
+					catch(DoesNotExistError $e)
+					{
+						continue;
+					}
+					catch(InvalidPackage $e)
+					{
+						continue;
+					}
+				}
+				
+				if(empty($updated))
+					$ste->vars["success"] = $translation["nothing_to_update"];
+				else
+					$ste->vars["success"] = str_replace("[[PLUGINS]]", implode(", ", $updated), $translation["successfully_updated_plugins"]);
+			}
+			
+			/* Load plugin data */
+			$all_plugins = Plugin::all();
+			$ste->vars["plugins"] = array();
+			foreach($all_plugins as $p)
+			{
+				if(!$p->installed)
+					continue;
+				
+				$ste->vars["plugins"][] = array(
+					"id"          => $p->get_id(),
+					"name"        => $p->name,
+					"versiontext" => $p->versiontext,
+					"active"      => $p->active,
+					"description" => $p->short_description,
+					"web"         => $p->web,
+					"author"      => $p->author,
+					"help"        => !empty($p->help)
+				);
+			}
+			
+			echo $ste->exectemplate("systemtemplates/pluginlist.html");
+		},
+		"help" => function(&$data, $url_now, &$url_next)
+		{
+			global $ste, $translation, $languages, $rel_path_to_root;
+			
+			try
+			{
+				$plugin = Plugin::by_id($url_next[0]);
+				if(empty($plugin->help))
+					throw new NotFoundError();
+			}
+			catch(DoesNotExistError $e)
+			{
+				throw new NotFoundError();
+			}
+			
+			$url_next = array();
+			
+			$ste->vars["section"]   = "plugins";
+			$ste->vars["submenu"]   = "";
+			$ste->vars["pagetitle"] = $plugin->name;
+			$ste->vars["help"]      = $plugin->help;
+			
+			echo $ste->exectemplate("systemtemplates/pluginhelp.html");
+		},
+		"install" => function(&$data, $url_now, &$url_next)
+		{
+			global $ste, $translation, $languages, $rel_path_to_root, $api_compat;
+			
+			$url_next = array();
+			
+			$ste->vars["section"]   = "plugins";
+			$ste->vars["submenu"]   = "installplugins";
+			$ste->vars["pagetitle"] = $translation["menu_plugininstall"];
+			
+			if(isset($_POST["installpackage"]))
+			{
+				if(is_uploaded_file($_FILES["pluginpackage"]["tmp_name"]))
+				{
+					try
+					{
+						$package = PluginPackage::load(file_get_contents($_FILES["pluginpackage"]["tmp_name"]));
+						unlink($_FILES["pluginpackage"]["tmp_name"]);
+						if(in_array($package->api, $api_compat))
+						{
+							$plugin = Plugin::create();
+							$plugin->fill_from_pluginpackage($package);
+							$plugin->installed = False;
+							$plugin->active = False;
+							$plugin->save();
+							$url_next = array("confirminstall", (string) $plugin->get_id());
+							return;
+						}
+						else
+							$ste->vars["error"] = str_replace("[[API]]", $package->api, $translation["incompatible_plugin"]);
+					}
+					catch(InvalidPackage $e)
+					{
+						$ste->vars["error"] = $translation["invalid_package"];
+						unlink($_FILES["pluginpackage"]["tmp_name"]);
+					}
+				}
+				else
+					$ste->vars["error"] = $translation["upload_failed"];
+			}
+			
+			echo $ste->exectemplate("systemtemplates/plugininstall.html");
+		},
+		"confirminstall" => function(&$data, $url_now, &$url_next)
+		{
+			global $ste, $translation, $languages, $rel_path_to_root;
+			
+			list($plugin_id) = $url_next;
+			$url_next = array();
+			
+			$ste->vars["section"]   = "plugins";
+			$ste->vars["submenu"]   = "installplugins";
+			$ste->vars["pagetitle"] = $translation["menu_plugininstall"];
+			
+			try
+			{
+				$plugin = Plugin::by_id($plugin_id);
+			}
+			catch(DoesNotExistError $e)
+			{
+				throw new NotFoundError();
+			}
+			
+			if($plugin->installed)
+				throw new NotFoundError();
+			
+			$ste->vars["plugin_id"]   = $plugin->get_id();
+			$ste->vars["name"]        = $plugin->name;
+			$ste->vars["description"] = $plugin->short_description;
+			$ste->vars["code"]        = $plugin->code;
+			$ste->vars["license"]     = $plugin->license;
+			
+			if(isset($_POST["yes"]))
+			{
+				$plugin->installed = True;
+				$plugin->save();
+				eval($plugin->code);
+				$plugin_instance = new $plugin->classname($plugin->get_id());
+				$plugin_instance->install();
+				$ste->vars["success"] = $translation["plugin_installed_successfully"];
+				$url_next = array("list");
+				return;
+			}
+			
+			if(isset($_POST["no"]))
+			{
+				$plugin->delete();
+				$url_next = array("install");
+				return;
+			}
+			
+			echo $ste->exectemplate("systemtemplates/confirminstall.html");
+		}
+	)),
+	"pluginpages" => url_action_subactions($pluginpages_handlers)
 ));
 
 ?>

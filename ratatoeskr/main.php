@@ -18,9 +18,11 @@ require_once(dirname(__FILE__) . "/sys/plugin_api.php");
 require_once(dirname(__FILE__) . "/frontend.php");
 require_once(dirname(__FILE__) . "/backend.php");
 
+$plugin_objs = array();
+
 function ratatoeskr()
 {
-	global $backend_subactions, $ste, $url_handlers, $ratatoeskr_settings;
+	global $backend_subactions, $ste, $url_handlers, $ratatoeskr_settings, $plugin_objs;
 	session_start();
 	if(!CONFIG_FILLED_OUT)
 		return setup();
@@ -30,13 +32,18 @@ function ratatoeskr()
 	clean_database();
 	
 	$activeplugins = array_filter(Plugin::all(), function($plugin) { return $plugin->active; });
-	$plugin_objs = array();
 	foreach($activeplugins as $plugin)
 	{
-		eval($plugin->phpcode);
-		$plugin_obj = new $plugin->class;
+		eval($plugin->code);
+		$plugin_obj = new $plugin->classname($plugin->get_id());
+		if($plugin->update)
+		{
+			$plugin_obj->update();
+			$plugin->update = False;
+			$plugin->save();
+		}
 		$plugin_obj->init();
-		$plugin_objs[] = $plugin_obj;
+		$plugin_objs[$plugin->get_id()] = $plugin_obj;
 	}
 	
 	/* Register URL handlers */

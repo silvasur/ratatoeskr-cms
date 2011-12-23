@@ -201,7 +201,30 @@ $translation = array(
 	"mail_address" => "Mail Address",
 	"new_password" => "New password",
 	"successfully_modified_user" => "Successfully modified user.",
-	"successfully_set_new_password" => "Successfully set new password."
+	"successfully_set_new_password" => "Successfully set new password.",
+	"plugin_name" => "Name",
+	"plugin_version" => "Version",
+	"plugin_isactive" => "Active",
+	"plugin_description" => "Description",
+	"plugin_author" => "Author",
+	"plugin_web" => "Web",
+	"plugin_help" => "Help",
+	"plugin_update" => "Update",
+	"plugin_activate" => "Activate",
+	"plugin_deactivate" => "Deactivate",
+	"no_plugins" => "No plugins installed",
+	"install_from_package" => "Install from package",
+	"invalid_package" => "Invalid package",
+	"incompatible_plugin" => "This plugin is not comatible wit this version of Ratatöskr. It requires the API version [[API]] or a compatible one.",
+	"plugin_safety_warning" => "<strong>Never</strong> install plugins you do not trust! Plugins have a lot of power and could potentially destroy your Ratatöskr installation!",
+	"plugin_src" => "Source code",
+	"license" => "License",
+	"plugin_installed_successfully" => "Plugin successfully installed.",
+	"successfully_deleted_plugins" => "Successfully deleted plugins.",
+	"plugins_activated" => "Plugins activated.",
+	"plugins_deactivated" => "Plugins deactivated.",
+	"successfully_updated_plugins" => "These plugins were updated: [[PLUGINS]]",
+	"nothing_to_update" => "Nothing to update."
 );
 
 ?>
