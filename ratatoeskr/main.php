@@ -23,6 +23,10 @@ $plugin_objs = array();
 function ratatoeskr()
 {
 	global $backend_subactions, $ste, $url_handlers, $ratatoeskr_settings, $plugin_objs;
+	global $queries_fired;
+	
+	$ts_start = microtime(True);
+	
 	session_start();
 	if(!CONFIG_FILLED_OUT)
 		return setup();
@@ -67,6 +71,11 @@ function ratatoeskr()
 	$ste->vars["rel_path_to_root"] = $rel_path_to_root;
 	
 	url_process($urlpath, $url_handlers, $data);
+	echo "<!--
+Queries: $queries_fired
+Time: " . (microtime(True) - $ts_start) . "
+Peak Memory: " . memory_get_peak_usage() / 1024 . "kiB
+-->";
 }
 
 ?>
