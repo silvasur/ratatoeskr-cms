@@ -101,6 +101,9 @@ class User
 	 * 
 	 * Returns:
 	 * 	An User object
+	 * 
+	 * Throws:
+	 * 	<AlreadyExistsError>
 	 */
 	public static function create($username, $pwhash)
 	{
@@ -113,7 +116,7 @@ class User
 			global $ratatoeskr_settings;
 			qdb("INSERT INTO `PREFIX_users` (`username`, `pwhash`, `mail`, `fullname`, `language`) VALUES ('%s', '%s', '', '', '%s')",
 				$username, $pwhash, $ratatoeskr_settings["default_language"]);
-			$obj = new self;
+			$obj = new self();
 			
 			$obj->id       = mysql_insert_id();
 			$obj->username = $username;
@@ -127,13 +130,8 @@ class User
 		throw new AlreadyExistsError("\"$name\" is already in database.");
 	}
 	
-	/* DANGER: $result must be valid! The calling function has to check this! */
-	private function populate_by_sqlresult($result)
+	private function populate_by_sqlrow($sqlrow)
 	{
-		$sqlrow = mysql_fetch_assoc($result);
-		if($sqlrow == False)
-			throw new DoesNotExistError();
-		
 		$this->id       = $sqlrow["id"];
 		$this->username = $sqlrow["username"];
 		$this->pwhash   = $sqlrow["pwhash"];
@@ -151,13 +149,19 @@ class User
 	 * 
 	 * Returns:
 	 * 	An User object.
+	 * 
+	 * Throws:
+	 * 	<DoesNotExistError>
 	 */
 	public static function by_id($id)
 	{
 		$result = qdb("SELECT `id`, `username`, `pwhash`, `mail`, `fullname`, `language` FROM `PREFIX_users` WHERE `id` = %d", $id);
+		$sqlrow = mysql_fetch_assoc($result);
+		if(!$sqlrow)
+			throw new DoesNotExistError();
 		
-		$obj = new self;
-		$obj->populate_by_sqlresult($result);
+		$obj = new self();
+		$obj->populate_by_sqlrow($sqlrow);
 		return $obj;
 	}
 	
@@ -170,13 +174,19 @@ class User
 	 * 
 	 * Returns:
 	 * 	An User object.
+	 * 
+	 * Throws:
+	 * 	<DoesNotExistError>
 	 */
 	public static function by_name($username)
 	{
 		$result = qdb("SELECT `id`, `username`, `pwhash`, `mail`, `fullname`, `language` FROM `PREFIX_users` WHERE `username` = '%s'", $username);
+		$sqlrow = mysql_fetch_assoc($result);
+		if(!$sqlrow)
+			throw new DoesNotExistError();
 		
-		$obj = new self;
-		$obj->populate_by_sqlresult($result);
+		$obj = new self();
+		$obj->populate_by_sqlrow($sqlrow);
 		return $obj;
 	}
 	
@@ -188,9 +198,13 @@ class User
 	{
 		$rv = array();
 		
-		$result = qdb("SELECT `id` FROM `PREFIX_users` WHERE 1");
+		$result = qdb("SELECT `id`, `username`, `pwhash`, `mail`, `fullname`, `language` FROM `PREFIX_users` WHERE 1");
 		while($sqlrow = mysql_fetch_assoc($result))
-			$rv[] = self::by_id($sqlrow["id"]);
+		{
+			$obj = new self();
+			$obj->populate_by_sqlrow($sqlrow);
+			$rv[] = $obj;
+		}
 		
 		return $rv;
 	}
@@ -208,6 +222,9 @@ class User
 	/*
 	 * Function: save
 	 * Saves the object to database
+	 * 
+	 * Throws:
+	 * 	AlreadyExistsError
 	 */
 	public function save()
 	{
@@ -300,6 +317,9 @@ class Group
 	 * 
 	 * Returns:
 	 * 	An Group object
+	 * 
+	 * Throws:
+	 * 	<AlreadyExistsError>
 	 */
 	public static function create($name)
 	{
@@ -310,7 +330,7 @@ class Group
 		catch(DoesNotExistError $e)
 		{
 			qdb("INSERT INTO `PREFIX_groups` (`name`) VALUES ('%s')", $name);
-			$obj = new self;
+			$obj = new self();
 			
 			$obj->id   = mysql_insert_id();
 			$obj->name = $name;
@@ -320,12 +340,8 @@ class Group
 		throw new AlreadyExistsError("\"$name\" is already in database.");
 	}
 	
-	private function populate_by_sqlresult($result)
+	private function populate_by_sqlrow($sqlrow)
 	{
-		$sqlrow = mysql_fetch_assoc($result);
-		if($sqlrow == False)
-			throw new DoesNotExistError();
-		
 		$this->id   = $sqlrow["id"];
 		$this->name = $sqlrow["name"];
 	}
@@ -339,13 +355,19 @@ class Group
 	 * 
 	 * Returns:
 	 * 	A Group object.
+	 * 
+	 * Throws:
+	 * 	<DoesNotExistError>
 	 */
 	public static function by_id($id)
 	{
 		$result = qdb("SELECT `id`, `name` FROM `PREFIX_groups` WHERE `id` = %d", $id);
+		$sqlrow = mysql_fetch_assoc($result);
+		if(!$sqlrow)
+			throw new DoesNotExistError();
 		
-		$obj = new self;
-		$obj->populate_by_sqlresult($result);
+		$obj = new self();
+		$obj->populate_by_sqlrow($sqlrow);
 		return $obj;
 	}
 	
@@ -358,13 +380,19 @@ class Group
 	 * 
 	 * Returns:
 	 * 	A Group object.
+	 * 
+	 * Throws:
+	 * 	<DoesNotExistError>
 	 */
 	public static function by_name($name)
 	{
 		$result = qdb("SELECT `id`, `name` FROM `PREFIX_groups` WHERE `name` = '%s'", $name);
+		$sqlrow = mysql_fetch_assoc($result);
+		if(!$sqlrow)
+			throw new DoesNotExistError();
 		
-		$obj = new self;
-		$obj->populate_by_sqlresult($result);
+		$obj = new self();
+		$obj->populate_by_sqlrow($sqlrow);
 		return $obj;
 	}
 	
@@ -376,9 +404,13 @@ class Group
 	{
 		$rv = array();
 		
-		$result = qdb("SELECT `id` FROM `PREFIX_groups` WHERE 1");
+		$result = qdb("SELECT `id`, `name` FROM `PREFIX_groups` WHERE 1");
 		while($sqlrow = mysql_fetch_assoc($result))
-			$rv[] = self::by_id($sqlrow["id"]);
+		{
+			$obj = new self();
+			$obj->populate_by_sqlrow($sqlrow);
+			$rv[] = $obj;
+		}
 		
 		return $rv;
 	}
@@ -396,7 +428,6 @@ class Group
 	/*
 	 * Function: delete
 	 * Deletes the group from the database.
-	 * WARNING: Do NOT use this object any longer after you called this function!
 	 */
 	public function delete()
 	{
@@ -423,7 +454,7 @@ class Group
 			}
 			catch(DoesNotExistError $e)
 			{
-				/* WTF?!? This should be fixed!*/
+				/* Database inconsistence detected. This will "fix" it (read: delete the entry). */
 				qdb("DELETE FROM `PREFIX_group_members` WHERE `user` = %d AND `group` = %d", $sqlrow["user"], $this->id);
 			}
 		}
@@ -530,7 +561,7 @@ class Multilingual implements Countable, ArrayAccess, IteratorAggregate
 	 */
 	public static function create()
 	{
-		$obj = new self;
+		$obj = new self();
 		qdb("INSERT INTO `PREFIX_multilingual` () VALUES ()");
 		$obj->id = mysql_insert_id();
 		return $obj;
@@ -545,10 +576,13 @@ class Multilingual implements Countable, ArrayAccess, IteratorAggregate
 	 * 
 	 * Returns:
 	 * 	An Multilingual object.
+	 * 
+	 * Throws:
+	 * 	<DoesNotExistError>
 	 */
 	public static function by_id($id)
 	{
-		$obj = new self;
+		$obj = new self();
 		$result = qdb("SELECT `id` FROM `PREFIX_multilingual` WHERE `id` = %d", $id);
 		$sqlrow = mysql_fetch_assoc($result);
 		if($sqlrow == False)
@@ -863,7 +897,7 @@ class Comment
 	public static function create($article, $language)
 	{
 		global $ratatoeskr_settings;
-		$obj = new self;
+		$obj = new self();
 		
 		qdb("INSERT INTO `PREFIX_comments` (`article`, `language`, `author_name`, `author_mail`, `text`, `timestamp`, `visible`, `read_by_admin`) VALUES (%d, '%s', '', '', '', UNIX_TIMESTAMP(NOW()), %d, 0)",
 			$article->get_id(), $language, $ratatoeskr_settings["comment_visible_default"] ? 1 : 0);
@@ -881,16 +915,32 @@ class Comment
 		return $obj;
 	}
 	
+	private function populate_by_sqlrow($sqlrow)
+	{
+		$this->id            = $sqlrow["id"];
+		$this->article       = Article::by_id($sqlrow["article"]);
+		$this->language      = $sqlrow["language"];
+		$this->author_name   = $sqlrow["author_name"];
+		$this->author_mail   = $sqlrow["author_mail"];
+		$this->text          = $sqlrow["text"];
+		$this->timestamp     = $sqlrow["timestamp"];
+		$this->visible       = $sqlrow["visible"] == 1;
+		$this->read_by_admin = $sqlrow["read_by_admin"] == 1;
+	}
+	
 	/*
 	 * Constructor: by_id
 	 * Gets a Comment by ID.
 	 * 
 	 * Parameters:
 	 * 	$id - The comments ID.
+	 * 
+	 * Throws:
+	 * 	<DoesNotExistError>
 	 */
 	public static function by_id($id)
 	{
-		$obj = new self;
+		$obj = new self();
 		
 		$result = qdb("SELECT `id`, `article`, `language`, `author_name`, `author_mail`, `text`, `timestamp`, `visible`, `read_by_admin` FROM `PREFIX_comments` WHERE `id` = %d",
 			$id);
@@ -898,15 +948,7 @@ class Comment
 		if($sqlrow === False)
 			throw new DoesNotExistError();
 		
-		$obj->id            = $sqlrow["id"];
-		$obj->article       = Article::by_id($sqlrow["article"]);
-		$obj->language      = $sqlrow["language"];
-		$obj->author_name   = $sqlrow["author_name"];
-		$obj->author_mail   = $sqlrow["author_mail"];
-		$obj->text          = $sqlrow["text"];
-		$obj->timestamp     = $sqlrow["timestamp"];
-		$obj->visible       = $sqlrow["visible"] == 1;
-		$obj->read_by_admin = $sqlrow["read_by_admin"] == 1;
+		$obj->populate_by_sqlrow($sqlrow);
 		
 		return $obj;
 	}
@@ -921,9 +963,13 @@ class Comment
 	public static function all()
 	{
 		$rv = array();
-		$result = qdb("SELECT `id` FROM `PREFIX_comments` WHERE 1");
+		$result = qdb("SELECT `id`, `article`, `language`, `author_name`, `author_mail`, `text`, `timestamp`, `visible`, `read_by_admin` WHERE 1");
 		while($sqlrow = mysql_fetch_assoc($result))
-			$rv[] = self::by_id($sqlrow["id"]);
+		{
+			$obj = new self();
+			$obj->populate_by_sqlrow($sqlrow);
+			$rv[] = $obj;
+		}
 		return $rv;
 	}
 	
@@ -1042,12 +1088,8 @@ class Style
 	/* Should not be constructed manually */
 	private function __construct() { }
 	
-	private function populate_by_sqlresult($result)
+	private function populate_by_sqlrow($sqlrow)
 	{
-		$sqlrow = mysql_fetch_assoc($result);
-		if($sqlrow === False)
-			throw new DoesNotExistError();
-		
 		$this->id   = $sqlrow["id"];
 		$this->name = $sqlrow["name"];
 		$this->code = $sqlrow["code"];
@@ -1064,6 +1106,9 @@ class Style
 	 * 
 	 * Parameters:
 	 * 	$name - A name for the new style.
+	 * 
+	 * Throws:
+	 * 	<AlreadyExistsError>
 	 */
 	public static function create($name)
 	{
@@ -1073,7 +1118,7 @@ class Style
 		}
 		catch(DoesNotExistError $e)
 		{
-			$obj = new self;
+			$obj = new self();
 			$obj->name = $name;
 			$obj->code = "";
 		
@@ -1089,29 +1134,45 @@ class Style
 	
 	/*
 	 * Constructor: by_id
-	 * Gets a style object by ID.
+	 * Gets a Style object by ID.
 	 * 
 	 * Parameters:
 	 * 	$id - The ID
+	 * 
+	 * Throws:
+	 * 	<DoesNotExistError>
 	 */
 	public static function by_id($id)
 	{
-		$obj = new self;
-		$obj->populate_by_sqlresult(qdb("SELECT `id`, `name`, `code` FROM `PREFIX_styles` WHERE `id` = %d", $id));
+		$result = qdb("SELECT `id`, `name`, `code` FROM `PREFIX_styles` WHERE `id` = %d", $id);
+		$sqlrow = mysql_fetch_assoc($result);
+		if(!$sqlrow)
+			throw new DoesNotExistError();
+		
+		$obj = new self();
+		$obj->populate_by_sqlrow($sqlrow);
 		return $obj;
 	}
 	
 	/*
 	 * Constructor: by_name
-	 * Gets a style object by name.
+	 * Gets a Style object by name.
 	 * 
 	 * Parameters:
 	 * 	$name - The name.
+	 * 
+	 * Throws:
+	 * 	<DoesNotExistError>
 	 */
 	public static function by_name($name)
 	{
-		$obj = new self;
-		$obj->populate_by_sqlresult(qdb("SELECT `id`, `name`, `code` FROM `PREFIX_styles` WHERE `name` = '%s'", $name));
+		$result = qdb("SELECT `id`, `name`, `code` FROM `PREFIX_styles` WHERE `name` = '%s'", $name);
+		$sqlrow = mysql_fetch_assoc($result);
+		if(!$sqlrow)
+			throw new DoesNotExistError();
+		
+		$obj = new self();
+		$obj->populate_by_sqlrow($sqlrow);
 		return $obj;
 	}
 	
@@ -1125,15 +1186,22 @@ class Style
 	public static function all()
 	{
 		$rv = array();
-		$result = qdb("SELECT `id` FROM `PREFIX_styles` WHERE 1");
+		$result = qdb("SELECT `id`, `name`, `code` FROM `PREFIX_styles` WHERE 1");
 		while($sqlrow = mysql_fetch_assoc($result))
-			$rv[] = self::by_id($sqlrow["id"]);
+		{
+			$obj = new self();
+			$obj->populate_by_sqlrow($sqlrow);
+			$rv[] = $obj;
+		}
 		return $rv;
 	}
 	
 	/*
 	 * Function: save
 	 * Save changes to database.
+	 * 
+	 * Throws:
+	 * 	<AlreadyExistsError>
 	 */
 	public function save()
 	{
@@ -1219,7 +1287,7 @@ class Plugin
 	 */
 	public static function create()
 	{
-		$obj = new self;
+		$obj = new self();
 		qdb("INSERT INTO `PREFIX_plugins` (`added`) VALUES (%d)", time());
 		$obj->id = mysql_insert_id();
 		return $obj;
@@ -1254,37 +1322,45 @@ class Plugin
 			array2dir($pkg->tpls, dirname(__FILE__) . "/../templates/srv/plugintemplates/" . $this->get_id());
 	}
 	
+	private function populate_by_sqlrow($sqlrow)
+	{
+		$this->id                = $sqlrow["id"];
+		$this->name              = $sqlrow["name"];
+		$this->code              = $sqlrow["code"];
+		$this->classname         = $sqlrow["classname"];
+		$this->active            = ($sqlrow["active"] == 1);
+		$this->author            = $sqlrow["author"];
+		$this->versiontext       = $sqlrow["versiontext"];
+		$this->versioncount      = $sqlrow["versioncount"];
+		$this->short_description = $sqlrow["short_description"];
+		$this->updatepath        = $sqlrow["updatepath"];
+		$this->web               = $sqlrow["web"];
+		$this->help              = $sqlrow["help"];
+		$this->license           = $sqlrow["license"];
+		$this->installed         = ($sqlrow["installed"] == 1);
+		$this->update            = ($sqlrow["update"] == 1);
+	}
+	
 	/*
 	 * Constructor: by_id
 	 * Gets plugin by ID.
 	 * 
 	 * Parameters:
 	 * 	$id - The ID
+	 * 
+	 * Throws:
+	 * 	<DoesNotExistError>
 	 */
 	public static function by_id($id)
 	{
-		$obj = new self;
+		$obj = new self();
 		
-		$result = qdb("SELECT `name`, `author`, `versiontext`, `versioncount`, `short_description`, `updatepath`, `web`, `help`, `code`, `classname`, `active`, `license`, `installed`, `update` FROM `PREFIX_plugins` WHERE `id` = %d", $id);
+		$result = qdb("SELECT `id`, `name`, `author`, `versiontext`, `versioncount`, `short_description`, `updatepath`, `web`, `help`, `code`, `classname`, `active`, `license`, `installed`, `update` FROM `PREFIX_plugins` WHERE `id` = %d", $id);
 		$sqlrow = mysql_fetch_assoc($result);
 		if($sqlrow === False)
 			throw new DoesNotExistError();
 		
-		$obj->id                = $id;
-		$obj->name              = $sqlrow["name"];
-		$obj->code              = $sqlrow["code"];
-		$obj->classname         = $sqlrow["classname"];
-		$obj->active            = ($sqlrow["active"] == 1);
-		$obj->author            = $sqlrow["author"];
-		$obj->versiontext       = $sqlrow["versiontext"];
-		$obj->versioncount      = $sqlrow["versioncount"];
-		$obj->short_description = $sqlrow["short_description"];
-		$obj->updatepath        = $sqlrow["updatepath"];
-		$obj->web               = $sqlrow["web"];
-		$obj->help              = $sqlrow["help"];
-		$obj->license           = $sqlrow["license"];
-		$obj->installed         = ($sqlrow["installed"] == 1);
-		$obj->update            = ($sqlrow["update"] == 1);
+		$obj->populate_by_sqlrow($sqlrow);
 		
 		return $obj;
 	}
@@ -1299,9 +1375,13 @@ class Plugin
 	public static function all()
 	{
 		$rv = array();
-		$result = qdb("SELECT `id` FROM `PREFIX_plugins` WHERE 1");
+		$result = qdb("SELECT `id`, `name`, `author`, `versiontext`, `versioncount`, `short_description`, `updatepath`, `web`, `help`, `code`, `classname`, `active`, `license`, `installed`, `update` FROM `PREFIX_plugins` WHERE 1");
 		while($sqlrow = mysql_fetch_assoc($result))
-			$rv[] = self::by_id($sqlrow["id"]);
+		{
+			$obj = new self();
+			$obj->populate_by_sqlrow($sqlrow);
+			$rv[] = $obj;
+		}
 		return $rv;
 	}
 	
@@ -1365,12 +1445,8 @@ class Section
 	
 	private function __construct() {}
 	
-	private function populate_by_sqlresult($result)
+	private function populate_by_sqlrow($sqlrow)
 	{
-		$sqlrow = mysql_fetch_assoc($result);
-		if($sqlrow === False)
-			throw new DoesNotExistError();
-		
 		$this->id       = $sqlrow["id"];
 		$this->name     = $sqlrow["name"];
 		$this->title    = Multilingual::by_id($sqlrow["title"]);
@@ -1400,6 +1476,9 @@ class Section
 	 * 
 	 * Parameters:
 	 * 	$name - The name of the new section.
+	 * 
+	 * Throws:
+	 * 	<AlreadyExistsError>
 	 */
 	public static function create($name)
 	{
@@ -1409,7 +1488,7 @@ class Section
 		}
 		catch(DoesNotExistError $e)
 		{
-			$obj           = new self;
+			$obj           = new self();
 			$obj->name     = $name;
 			$obj->title    = Multilingual::create();
 			$obj->template = "";
@@ -1432,11 +1511,22 @@ class Section
 	 * 
 	 * Parameters:
 	 * 	$id - The ID.
+	 * 
+	 * Returns: 
+	 * 	A <Section> object.
+	 * 
+	 * Throws:
+	 * 	<DoesNotExistError>
 	 */
 	public static function by_id($id)
 	{
-		$obj = new self;
-		$obj->populate_by_sqlresult(qdb("SELECT `id`, `name`, `title`, `template`, `styles` FROM `PREFIX_sections` WHERE `id` = %d", $id));
+		$result = qdb("SELECT `id`, `name`, `title`, `template`, `styles` FROM `PREFIX_sections` WHERE `id` = %d", $id);
+		$sqlrow = mysql_fetch_assoc($result);
+		if($sqlrow === False)
+			throw new DoesNotExistError();
+		
+		$obj = new self();
+		$obj->populate_by_sqlrow($sqlrow);
 		return $obj;
 	}
 	
@@ -1446,11 +1536,22 @@ class Section
 	 * 
 	 * Parameters:
 	 * 	$name - The name.
+	 * 
+	 * Returns: 
+	 * 	A <Section> object.
+	 * 
+	 * Throws:
+	 * 	<DoesNotExistError>
 	 */
 	public static function by_name($name)
 	{
-		$obj = new self;
-		$obj->populate_by_sqlresult(qdb("SELECT `id`, `name`, `title`, `template`, `styles` FROM `PREFIX_sections` WHERE `name` = '%s'", $name));
+		$result = qdb("SELECT `id`, `name`, `title`, `template`, `styles` FROM `PREFIX_sections` WHERE `name` = '%s'", $name);
+		$sqlrow = mysql_fetch_assoc($result);
+		if($sqlrow === False)
+			throw new DoesNotExistError();
+		
+		$obj = new self();
+		$obj->populate_by_sqlrow($sqlrow);
 		return $obj;
 	}
 	
@@ -1464,14 +1565,21 @@ class Section
 	public static function all()
 	{
 		$rv = array();
-		$result = qdb("SELECT `id` FROM `PREFIX_sections` WHERE 1");
+		$result = qdb("SELECT `id`, `name`, `title`, `template`, `styles` FROM `PREFIX_sections` WHERE 1");
 		while($sqlrow = mysql_fetch_assoc($result))
-			$rv[] = self::by_id($sqlrow["id"]);
+		{
+			$obj = new self();
+			$obj->populate_by_sqlrow($sqlrow);
+			$rv[] = $obj;
+		}
 		return $rv;
 	}
 	
 	/*
 	 * Function: save
+	 * 
+	 * Throws:
+	 * 	<AlreadyExistsError>
 	 */
 	public function save()
 	{
@@ -1544,12 +1652,8 @@ class Tag
 	
 	private function __construct() {}
 	
-	private function populate_by_sqlresult($result)
+	private function populate_by_sqlrow($sqlrow)
 	{
-		$sqlrow = mysql_fetch_assoc($result);
-		if($sqlrow === False)
-			throw new DoesNotExistError();
-		
 		$this->id    = $sqlrow["id"];
 		$this->name  = $sqlrow["name"];
 		$this->title = Multilingual::by_id($sqlrow["title"]);
@@ -1561,6 +1665,9 @@ class Tag
 	 * 
 	 * Parameters:
 	 * 	$name - The name
+	 * 
+	 * Throws:
+	 * 	<AlreadyExistsError>
 	 */
 	public static function create($name)
 	{
@@ -1570,7 +1677,7 @@ class Tag
 		}
 		catch(DoesNotExistError $e)
 		{
-			$obj = new self;
+			$obj = new self();
 			
 			$obj->name  = $name;
 			$obj->title = Multilingual::create();
@@ -1590,11 +1697,19 @@ class Tag
 	 * 
 	 * Parameters:
 	 * 	$id - The ID
+	 * 
+	 * Throws:
+	 * 	<DoesNotExistError>
 	 */
 	public static function by_id($id)
 	{
-		$obj = new self;
-		$obj->populate_by_sqlresult(qdb("SELECT `id`, `name`, `title` FROM `PREFIX_tags` WHERE `id` = %d", $id));
+		$result = qdb("SELECT `id`, `name`, `title` FROM `PREFIX_tags` WHERE `id` = %d", $id);
+		$sqlrow = mysql_fetch_assoc($result);
+		if($sqlrow === False)
+			throw new DoesNotExistError();
+		
+		$obj = new self();
+		$obj->populate_by_sqlrow($sqlrow);
 		return $obj;
 	}
 	
@@ -1604,11 +1719,19 @@ class Tag
 	 * 
 	 * Parameters:
 	 * 	$name - The name
+	 * 
+	 * Throws:
+	 * 	<DoesNotExistError>
 	 */
 	public static function by_name($name)
 	{
-		$obj = new self;
-		$obj->populate_by_sqlresult(qdb("SELECT `id`, `name`, `title` FROM `PREFIX_tags` WHERE `name` = '%s'", $name));
+		$result = qdb("SELECT `id`, `name`, `title` FROM `PREFIX_tags` WHERE `name` = '%s'", $name);
+		$sqlrow = mysql_fetch_assoc($result);
+		if($sqlrow === False)
+			throw new DoesNotExistError();
+		
+		$obj = new self();
+		$obj->populate_by_sqlrow($sqlrow);
 		return $obj;
 	}
 	
@@ -1622,9 +1745,13 @@ class Tag
 	public static function all()
 	{
 		$rv = array();
-		$result = qdb("SELECT `id` FROM `PREFIX_tags` WHERE 1");
+		$result = qdb("SELECT `id`, `name`, `title` FROM `PREFIX_tags` WHERE 1");
 		while($sqlrow = mysql_fetch_assoc($result))
-			$rv[] = self::by_id($sqlrow["id"]);
+		{
+			$obj = new self();
+			$obj->populate_by_sqlrow($sqlrow);
+			$rv[] = $obj;
+		}
 		return $rv;
 	}
 	
@@ -1647,7 +1774,7 @@ class Tag
 	/*
 	 * Function: count_articles
 	 * 
-	 * Retutrns:
+	 * Returns:
 	 * 	The number of articles that are tagged with this tag.
 	 */
 	public function count_articles()
@@ -1659,6 +1786,9 @@ class Tag
 	
 	/*
 	 * Function: save
+	 * 
+	 * Throws:
+	 * 	<AlreadyExistsError>
 	 */
 	public function save()
 	{
@@ -1716,12 +1846,8 @@ class Image
 	
 	private function __construct() { }
 	
-	private function populate_by_sqlresult($result)
+	private function populate_by_sqlrow($sqlrow)
 	{
-		$sqlrow = mysql_fetch_assoc($result);
-		if($sqlrow === False)
-			throw new DoesNotExistError();
-		
 		$this->id   = $sqlrow["id"];
 		$this->name = $sqlrow["name"];
 		$this->file = $sqlrow["file"];
@@ -1743,10 +1869,13 @@ class Image
 	 * Parameters:
 	 * 	$name - The name for the image
 	 * 	$file - An uploaded image file (move_uploaded_file must be able to move the file!).
+	 * 
+	 * Throws:
+	 * 	<IOError>, <UnknownFileFormat>
 	 */
 	public static function create($name, $file)
 	{
-		$obj = new self;
+		$obj = new self();
 		$obj->name = $name;
 		$obj->file = "0";
 		
@@ -1772,11 +1901,19 @@ class Image
 	 * 
 	 * Parameters:
 	 * 	$id - The ID
+	 * 
+	 * Throws:
+	 * 	<DoesNotExistError>
 	 */
 	public static function by_id($id)
 	{
-		$obj = new self;
-		$obj->populate_by_sqlresult(qdb("SELECT `id`, `name`, `file` FROM `PREFIX_images` WHERE `id` = %d", $id));
+		$result = qdb("SELECT `id`, `name`, `file` FROM `PREFIX_images` WHERE `id` = %d", $id);
+		$sqlrow = mysql_fetch_assoc($result);
+		if($sqlrow === False)
+			throw new DoesNotExistError();
+		
+		$obj = new self();
+		$obj->populate_by_sqlrow($sqlrow);
 		return $obj;
 	}
 	
@@ -1792,7 +1929,11 @@ class Image
 		$rv = array();
 		$result = qdb("SELECT `id` FROM `PREFIX_images` WHERE 1");
 		while($sqlrow = mysql_fetch_assoc($result))
-			$rv[] = self::by_id($sqlrow["id"]);
+		{
+			$obj = new self();
+			$obj->populate_by_sqlrow($sqlrow);
+			$rv[] = $obj;
+		}
 		return $rv;
 	}
 	
@@ -1802,6 +1943,9 @@ class Image
 	 * 
 	 * Parameters:
 	 * 	$file - Location of new image.(move_uploaded_file must be able to move the file!)
+	 * 
+	 * Throws:
+	 * 	<IOError>, <UnknownFileFormat>
 	 */
 	public function exchange_image($file)
 	{
@@ -1926,9 +2070,6 @@ class Repository
 	 * 
 	 * Throws:
 	 * 	Could throw a <RepositoryUnreachableOrInvalid> exception. In this case, nothing will be written to the database.
-	 * 
-	 * Returns:
-	 * 	A <Repository> object.
 	 */
 	public static function create($baseurl)
 	{
@@ -1937,13 +2078,23 @@ class Repository
 		if(preg_match('/^(http[s]?:\\/\\/.*?)[\\/]?$/', $baseurl, $matches) == 0)
 			throw new RepositoryUnreachableOrInvalid();
 		
-		$obj->baseurl = $$matches[1];
+		$obj->baseurl = $matches[1];
 		$obj->refresh(True);
 		
 		qdb("INSERT INTO `ratatoeskr_repositories` () VALUES ()");
 		$obj->id = mysql_insert_id();
 		$obj->save();
 		return $obj;
+	}
+	
+	private function populate_by_sqlrow($sqlrow)
+	{
+		$this->id          = $sqlrow["id"];
+		$this->name        = $sqlrow["name"];
+		$this->description = $sqlrow["description"];
+		$this->baseurl     = $sqlrow["baseurl"];
+		$this->packages    = unserialize(base64_decode($sqlrow["pkgcache"]));
+		$this->lastrefresh = $sqlrow["lastrefresh"];
 	}
 	
 	/*
@@ -1953,30 +2104,44 @@ class Repository
 	 * Parameters:
 	 * 	$id - ID.
 	 * 
-	 * Returns:
-	 * 	A <Repository> object.
+	 * Throws:
+	 * 	<DoesNotExistError>
 	 */
 	public static function by_id($id)
 	{
-		$result = qdb("SELECT `name`, `description`, `baseurl`, `pkgcache`, `lastrefresh` WHERE  id` = %d", $this->id);
+		$result = qdb("SELECT `id`, `name`, `description`, `baseurl`, `pkgcache`, `lastrefresh` WHERE  id` = %d", $this->id);
 		$sqlrow = mysql_fetch_assoc($result);
 		if(!$sqlrow)
 			throw new DoesNotExistError();
 		
 		$obj = new self();
-		$obj->id          = $id;
-		$obj->name        = $sqlrow["name"];
-		$obj->description = $sqlrow["description"];
-		$obj->baseurl     = $sqlrow["baseurl"];
-		$obj->packages    = unserialize(base64_decode($sqlrow["pkgcache"]));
-		$obj->lastrefresh = $sqlrow["lastrefresh"];
-		
+		$obj->populate_by_sqlrow($sqlrow);
 		return $obj;
+	}
+	
+	/*
+	 * Constructor: all
+	 * Gets all available repositories.
+	 * 
+	 * Returns:
+	 * 	Array of <Repository> objects.
+	 */
+	public static function all()
+	{
+		$rv = array();
+		$result = qdb("SELECT `id`, `name`, `description`, `baseurl`, `pkgcache`, `lastrefresh` WHERE 1");
+		while($sqlrow = mysql_fetch_assoc($result))
+		{
+			$obj = new self();
+			$obj->populate_by_sqlrow($sqlrow);
+			$rv[] = $obj;
+		}
+		return $rv;
 	}
 	
 	private function save()
 	{
-		qdb("UPDATE `PREFIX_repositories` SET `baseurl` => '%s', `name` = '%s', `description` = '%s', `pkgcache` = '%s', `lastrefresh` = %d WHERE `id` = %d",
+		qdb("UPDATE `PREFIX_repositories` SET `baseurl` = '%s', `name` = '%s', `description` = '%s', `pkgcache` = '%s', `lastrefresh` = %d WHERE `id` = %d",
 		    $this->baseurl,
 		    $this->name,
 		    $this->description,
@@ -2108,18 +2273,18 @@ class Article
 	/*
 	 * Variables: Public class variables
 	 * 
-	 * $urlname - URL name
-	 * $title - Title (an <Multilingual> object)
-	 * $text - The text (an <Multilingual> object)
-	 * $excerpt - Excerpt (an <Multilingual> object)
-	 * $meta - Keywords, comma seperated
-	 * $custom - Custom fields, is an array
-	 * $article_image - The article <Image>. If none: NULL
-	 * $status - One of the ARTICLE_STATUS_* constants
-	 * $section - <Section>
-	 * $timestamp - Timestamp
+	 * $urlname        - URL name
+	 * $title          - Title (an <Multilingual> object)
+	 * $text           - The text (an <Multilingual> object)
+	 * $excerpt        - Excerpt (an <Multilingual> object)
+	 * $meta           - Keywords, comma seperated
+	 * $custom         - Custom fields, is an array
+	 * $article_image  - The article <Image>. If none: NULL
+	 * $status         - One of the ARTICLE_STATUS_* constants
+	 * $section        - <Section>
+	 * $timestamp      - Timestamp
 	 * $allow_comments - Are comments allowed?
-	 * $tags - Arrray of <Tag> objects
+	 * $tags           - Arrray of <Tag> objects
 	 */
 	public $urlname;
 	public $title;
@@ -2139,12 +2304,8 @@ class Article
 		$this->tags = array();
 	}
 	
-	private function populate_by_sqlresult($result)
+	private function populate_by_sqlrow($sqlrow)
 	{
-		$sqlrow = mysql_fetch_assoc($result);
-		if($sqlrow === False)
-			throw new DoesNotExistError();
-		
 		$this->id             = $sqlrow["id"];
 		$this->urlname        = $sqlrow["urlname"];
 		$this->title          = Multilingual::by_id($sqlrow["title"]);
@@ -2174,6 +2335,9 @@ class Article
 	 * 
 	 * Parameters:
 	 * 	urlname - A unique URL name
+	 * 
+	 * Throws:
+	 * 	<AlreadyExistsError>
 	 */
 	public static function create($urlname)
 	{
@@ -2185,7 +2349,7 @@ class Article
 		}
 		catch(DoesNotExistError $e)
 		{
-			$obj = new self;
+			$obj = new self();
 			$obj->urlname        = $urlname;
 			$obj->title          = Multilingual::create();
 			$obj->text           = Multilingual::create();
@@ -2220,13 +2384,19 @@ class Article
 	 * 
 	 * Parameters:
 	 * 	$id - The ID.
+	 * 
+	 * Throws:
+	 * 	<DoesNotExistError>
 	 */
 	public static function by_id($id)
 	{
-		$obj = new self;
-		$obj ->populate_by_sqlresult(qdb(
-			"SELECT `id`, `urlname`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments` FROM `PREFIX_articles` WHERE `id` = %d", $id
-		));
+		$result = qdb("SELECT `id`, `urlname`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments` FROM `PREFIX_articles` WHERE `id` = %d", $id);
+		$sqlrow = mysql_fetch_assoc($result);
+		if($sqlrow === False)
+			throw new DoesNotExistError();
+		
+		$obj = new self();
+		$obj ->populate_by_sqlrow($sqlrow);
 		return $obj;
 	}
 	
@@ -2236,13 +2406,19 @@ class Article
 	 * 
 	 * Parameters:
 	 * 	$urlname - The urlname
+	 * 
+	 * Throws:
+	 * 	<DoesNotExistError>
 	 */
 	public static function by_urlname($urlname)
 	{
-		$obj = new self;
-		$obj ->populate_by_sqlresult(qdb(
-			"SELECT `id`, `urlname`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments` FROM `PREFIX_articles` WHERE `urlname` = '%s'", $urlname
-		));
+		$result = qdb("SELECT `id`, `urlname`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments` FROM `PREFIX_articles` WHERE `urlname` = '%s'", $urlname);
+		$sqlrow = mysql_fetch_assoc($result);
+		if($sqlrow === False)
+			throw new DoesNotExistError();
+		
+		$obj = new self();
+		$obj ->populate_by_sqlrow($sqlrow);
 		return $obj;
 	}
 	
@@ -2274,10 +2450,14 @@ class Article
 		if(empty($subqueries))
 			return self::all(); /* No limiting criterias, so we take them all... */
 		
-		$result = qdb("SELECT `id` FROM `PREFIX_articles` WHERE " . implode(" AND ", $subqueries));
+		$result = qdb("SELECT `id`, `urlname`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments` FROM `PREFIX_articles` WHERE " . implode(" AND ", $subqueries));
 		$rv = array();
 		while($sqlrow = mysql_fetch_assoc($result))
-			$rv[] = self::by_id($sqlrow["id"]);
+		{
+			$obj = new self();
+			$obj->populate_by_sqlrow($sqlrow);
+			$rv[] = $obj;
+		}
 		return $rv;
 	}
 	
@@ -2291,9 +2471,13 @@ class Article
 	public static function all()
 	{
 		$rv = array();
-		$result = qdb("SELECT `id` FROM `PREFIX_articles` WHERE 1");
+		$result = qdb("SELECT `id`, `urlname`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments` FROM `PREFIX_articles` WHERE 1");
 		while($sqlrow = mysql_fetch_assoc($result))
-			$rv[] = self::by_id($sqlrow["id"]);
+		{
+			$obj = new self();
+			$obj->populate_by_sqlrow($sqlrow);
+			$rv[] = $obj;
+		}
 		return $rv;
 	}
 	
