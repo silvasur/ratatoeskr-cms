@@ -65,11 +65,25 @@ class AlreadyExistsError extends Exception { }
  */
 class NotAllowedError extends Exception { }
 
+abstract class BySQLRowEnabled
+{
+	protected function __construct() {  }
+	
+	abstract protected function populate_by_sqlrow($sqlrow);
+	
+	protected static function by_sqlrow($sqlrow)
+	{
+		$obj = new static();
+		$obj->populate_by_sqlrow($sqlrow);
+		return $obj;
+	}
+}
+
 /*
  * Class: User
  * Data model for Users
  */
-class User
+class User extends BySQLRowEnabled
 {
 	private $id;
 	
@@ -87,9 +101,6 @@ class User
 	public $mail;
 	public $fullname;
 	public $language;
-	
-	/* Should not be constructed directly. */
-	private function __construct() {  }
 	
 	/*
 	 * Constructor: create
@@ -130,7 +141,7 @@ class User
 		throw new AlreadyExistsError("\"$name\" is already in database.");
 	}
 	
-	private function populate_by_sqlrow($sqlrow)
+	protected function populate_by_sqlrow($sqlrow)
 	{
 		$this->id       = $sqlrow["id"];
 		$this->username = $sqlrow["username"];
@@ -160,9 +171,7 @@ class User
 		if(!$sqlrow)
 			throw new DoesNotExistError();
 		
-		$obj = new self();
-		$obj->populate_by_sqlrow($sqlrow);
-		return $obj;
+		return self::by_sqlrow($sqlrow);
 	}
 	
 	/*
@@ -185,9 +194,7 @@ class User
 		if(!$sqlrow)
 			throw new DoesNotExistError();
 		
-		$obj = new self();
-		$obj->populate_by_sqlrow($sqlrow);
-		return $obj;
+		return self::by_sqlrow($sqlrow);
 	}
 	
 	/*
@@ -200,11 +207,7 @@ class User
 		
 		$result = qdb("SELECT `id`, `username`, `pwhash`, `mail`, `fullname`, `language` FROM `PREFIX_users` WHERE 1");
 		while($sqlrow = mysql_fetch_assoc($result))
-		{
-			$obj = new self();
-			$obj->populate_by_sqlrow($sqlrow);
-			$rv[] = $obj;
-		}
+			$rv[] = self::by_sqlrow($sqlrow);
 		
 		return $rv;
 	}
@@ -256,19 +259,9 @@ class User
 	public function get_groups()
 	{
 		$rv = array();
-		$result = qdb("SELECT `group` FROM `PREFIX_group_members` WHERE `user` = %d", $this->id);
+		$result = qdb("SELECT `id`, `name` FROM `PREFIX_groups` WHERE `id` = (SELECT `group` FROM `PREFIX_group_members` WHERE `user` = %d)", $this->id);
 		while($sqlrow = mysql_fetch_assoc($result))
-		{
-			try
-			{
-				$rv[] = Group::by_id($sqlrow["group"]);
-			}
-			catch(DoesNotExistError $e)
-			{
-				/* Database inconsistence found. This will "fix" it (read: delete the entry). */
-				qdb("DELETE FROM `PREFIX_group_members` WHERE `user` = %d AND `group` = %d", $this->id, $sqlrow["group"]);
-			}
-		}
+			$rv[] = Group::by_sqlrow($sqlrow);
 		return $rv;
 	}
 	
@@ -294,7 +287,7 @@ class User
  * Class: Group
  * Data model for groups
  */
-class Group
+class Group extends BySQLRowEnabled
 {
 	private $id;
 	
@@ -304,9 +297,6 @@ class Group
 	 * $name - Name of the group.
 	 */
 	public $name;
-	
-	/* Should not be constructed directly. */
-	private function __construct() {  }
 	
 	/*
 	 * Constructor: create
@@ -340,7 +330,7 @@ class Group
 		throw new AlreadyExistsError("\"$name\" is already in database.");
 	}
 	
-	private function populate_by_sqlrow($sqlrow)
+	protected function populate_by_sqlrow($sqlrow)
 	{
 		$this->id   = $sqlrow["id"];
 		$this->name = $sqlrow["name"];
@@ -366,9 +356,7 @@ class Group
 		if(!$sqlrow)
 			throw new DoesNotExistError();
 		
-		$obj = new self();
-		$obj->populate_by_sqlrow($sqlrow);
-		return $obj;
+		return self::by_sqlrow($sqlrow);
 	}
 	
 	/*
@@ -391,9 +379,7 @@ class Group
 		if(!$sqlrow)
 			throw new DoesNotExistError();
 		
-		$obj = new self();
-		$obj->populate_by_sqlrow($sqlrow);
-		return $obj;
+		return self::by_sqlrow($sqlrow);
 	}
 	
 	/*
@@ -406,11 +392,7 @@ class Group
 		
 		$result = qdb("SELECT `id`, `name` FROM `PREFIX_groups` WHERE 1");
 		while($sqlrow = mysql_fetch_assoc($result))
-		{
-			$obj = new self();
-			$obj->populate_by_sqlrow($sqlrow);
-			$rv[] = $obj;
-		}
+			$rv[] = self::by_sqlrow($sqlrow);
 		
 		return $rv;
 	}
@@ -445,19 +427,9 @@ class Group
 	public function get_members()
 	{
 		$rv = array();
-		$result = qdb("SELECT `user` FROM `PREFIX_group_members` WHERE `group` = %d", $this->id);
+		$result = qdb("SELECT `id`, `username`, `pwhash`, `mail`, `fullname`, `language` FROM `PREFIX_users` WHERE `id` = (SELECT `user` FROM `PREFIX_group_members` WHERE `group` = %d)", $this->id);
 		while($sqlrow = mysql_fetch_assoc($result))
-		{
-			try
-			{
-				$rv[] = User::by_id($sqlrow["user"]);
-			}
-			catch(DoesNotExistError $e)
-			{
-				/* Database inconsistence detected. This will "fix" it (read: delete the entry). */
-				qdb("DELETE FROM `PREFIX_group_members` WHERE `user` = %d AND `group` = %d", $sqlrow["user"], $this->id);
-			}
-		}
+			$rv[] = User::by_sqlrow($result);
 		return $rv;
 	}
 	
@@ -847,10 +819,10 @@ class PluginKVStorage implements Countable, ArrayAccess, Iterator
  * Class: Comment
  * Representing a user comment
  */
-class Comment
+class Comment extends BySQLRowEnabled
 {
 	private $id;
-	private $article;
+	private $article_id;
 	private $language;
 	private $timestamp;
 	
@@ -869,9 +841,6 @@ class Comment
 	public $visible;
 	public $read_by_admin;
 	
-	/* Should not be constructed manually. */
-	private function __construct() { }
-	
 	/*
 	 * Functions: Getters
 	 * 
@@ -880,10 +849,10 @@ class Comment
 	 * get_language  - Gets the language.
 	 * get_timestamp - Gets the timestamp.
 	 */
-	public function get_id()        { return $this->id;        }
-	public function get_article()   { return $this->article;   }
-	public function get_language()  { return $this->language;  }
-	public function get_timestamp() { return $this->timestamp; }
+	public function get_id()        { return $this->id;                           }
+	public function get_article()   { return Article::by_id($this->article_id);   }
+	public function get_language()  { return $this->language;                     }
+	public function get_timestamp() { return $this->timestamp;                    }
 	
 	/*
 	 * Constructor: create
@@ -903,7 +872,7 @@ class Comment
 			$article->get_id(), $language, $ratatoeskr_settings["comment_visible_default"] ? 1 : 0);
 		
 		$obj->id            = mysql_insert_id();
-		$obj->article       = $article;
+		$obj->article_id    = $article->get_id();
 		$obj->language      = $language;
 		$obj->author_name   = "";
 		$obj->author_mail   = "";
@@ -915,7 +884,7 @@ class Comment
 		return $obj;
 	}
 	
-	private function populate_by_sqlrow($sqlrow)
+	protected function populate_by_sqlrow($sqlrow)
 	{
 		$this->id            = $sqlrow["id"];
 		$this->article       = Article::by_id($sqlrow["article"]);
@@ -940,17 +909,12 @@ class Comment
 	 */
 	public static function by_id($id)
 	{
-		$obj = new self();
-		
-		$result = qdb("SELECT `id`, `article`, `language`, `author_name`, `author_mail`, `text`, `timestamp`, `visible`, `read_by_admin` FROM `PREFIX_comments` WHERE `id` = %d",
-			$id);
+		$result = qdb("SELECT `id`, `article`, `language`, `author_name`, `author_mail`, `text`, `timestamp`, `visible`, `read_by_admin` FROM `PREFIX_comments` WHERE `id` = %d", $id);
 		$sqlrow = mysql_fetch_assoc($result);
 		if($sqlrow === False)
 			throw new DoesNotExistError();
 		
-		$obj->populate_by_sqlrow($sqlrow);
-		
-		return $obj;
+		return self::by_sqlrow($sqlrow);
 	}
 	
 	/*
@@ -965,11 +929,7 @@ class Comment
 		$rv = array();
 		$result = qdb("SELECT `id`, `article`, `language`, `author_name`, `author_mail`, `text`, `timestamp`, `visible`, `read_by_admin` WHERE 1");
 		while($sqlrow = mysql_fetch_assoc($result))
-		{
-			$obj = new self();
-			$obj->populate_by_sqlrow($sqlrow);
-			$rv[] = $obj;
-		}
+			$rv[] = self::by_sqlrow($sqlrow);
 		return $rv;
 	}
 	
@@ -1072,7 +1032,7 @@ class Comment
  * Class: Style
  * Represents a Style
  */
-class Style
+class Style extends BySQLRowEnabled
 {
 	private $id;
 	
@@ -1085,10 +1045,7 @@ class Style
 	public $name;
 	public $code;
 	
-	/* Should not be constructed manually */
-	private function __construct() { }
-	
-	private function populate_by_sqlrow($sqlrow)
+	protected function populate_by_sqlrow($sqlrow)
 	{
 		$this->id   = $sqlrow["id"];
 		$this->name = $sqlrow["name"];
@@ -1149,9 +1106,7 @@ class Style
 		if(!$sqlrow)
 			throw new DoesNotExistError();
 		
-		$obj = new self();
-		$obj->populate_by_sqlrow($sqlrow);
-		return $obj;
+		return self::by_sqlrow($sqlrow);
 	}
 	
 	/*
@@ -1171,9 +1126,7 @@ class Style
 		if(!$sqlrow)
 			throw new DoesNotExistError();
 		
-		$obj = new self();
-		$obj->populate_by_sqlrow($sqlrow);
-		return $obj;
+		return self::by_sqlrow($sqlrow);
 	}
 	
 	/*
@@ -1188,11 +1141,7 @@ class Style
 		$rv = array();
 		$result = qdb("SELECT `id`, `name`, `code` FROM `PREFIX_styles` WHERE 1");
 		while($sqlrow = mysql_fetch_assoc($result))
-		{
-			$obj = new self();
-			$obj->populate_by_sqlrow($sqlrow);
-			$rv[] = $obj;
-		}
+			$rv[] = self::by_sqlrow($sqlrow);
 		return $rv;
 	}
 	
@@ -1227,7 +1176,7 @@ class Style
  * Class: Plugin
  * The representation of a plugin in the database.
  */
-class Plugin
+class Plugin extends BySQLRowEnabled
 {
 	private $id;
 	
@@ -1264,8 +1213,6 @@ class Plugin
 	public $license;
 	public $installed;
 	public $update;
-	
-	private function __construct() { }
 	
 	/*
 	 * Function: clean_db
@@ -1322,7 +1269,7 @@ class Plugin
 			array2dir($pkg->tpls, dirname(__FILE__) . "/../templates/srv/plugintemplates/" . $this->get_id());
 	}
 	
-	private function populate_by_sqlrow($sqlrow)
+	protected function populate_by_sqlrow($sqlrow)
 	{
 		$this->id                = $sqlrow["id"];
 		$this->name              = $sqlrow["name"];
@@ -1353,16 +1300,12 @@ class Plugin
 	 */
 	public static function by_id($id)
 	{
-		$obj = new self();
-		
 		$result = qdb("SELECT `id`, `name`, `author`, `versiontext`, `versioncount`, `short_description`, `updatepath`, `web`, `help`, `code`, `classname`, `active`, `license`, `installed`, `update` FROM `PREFIX_plugins` WHERE `id` = %d", $id);
 		$sqlrow = mysql_fetch_assoc($result);
 		if($sqlrow === False)
 			throw new DoesNotExistError();
 		
-		$obj->populate_by_sqlrow($sqlrow);
-		
-		return $obj;
+		return self::by_sqlrow($sqlrow);
 	}
 	
 	/*
@@ -1377,11 +1320,7 @@ class Plugin
 		$rv = array();
 		$result = qdb("SELECT `id`, `name`, `author`, `versiontext`, `versioncount`, `short_description`, `updatepath`, `web`, `help`, `code`, `classname`, `active`, `license`, `installed`, `update` FROM `PREFIX_plugins` WHERE 1");
 		while($sqlrow = mysql_fetch_assoc($result))
-		{
-			$obj = new self();
-			$obj->populate_by_sqlrow($sqlrow);
-			$rv[] = $obj;
-		}
+			$rv[] = self::by_sqlrow($sqlrow);
 		return $rv;
 	}
 	
@@ -1426,7 +1365,7 @@ class Plugin
  * Class: Section
  * Representing a section
  */
-class Section
+class Section extends BySQLRowEnabled
 {
 	private $id;
 	
@@ -1443,9 +1382,7 @@ class Section
 	public $template;
 	public $styles;
 	
-	private function __construct() {}
-	
-	private function populate_by_sqlrow($sqlrow)
+	protected function populate_by_sqlrow($sqlrow)
 	{
 		$this->id       = $sqlrow["id"];
 		$this->name     = $sqlrow["name"];
@@ -1525,9 +1462,7 @@ class Section
 		if($sqlrow === False)
 			throw new DoesNotExistError();
 		
-		$obj = new self();
-		$obj->populate_by_sqlrow($sqlrow);
-		return $obj;
+		return self::by_sqlrow($sqlrow);
 	}
 	
 	/*
@@ -1550,9 +1485,7 @@ class Section
 		if($sqlrow === False)
 			throw new DoesNotExistError();
 		
-		$obj = new self();
-		$obj->populate_by_sqlrow($sqlrow);
-		return $obj;
+		return self::by_sqlrow($sqlrow);
 	}
 	
 	/*
@@ -1567,11 +1500,7 @@ class Section
 		$rv = array();
 		$result = qdb("SELECT `id`, `name`, `title`, `template`, `styles` FROM `PREFIX_sections` WHERE 1");
 		while($sqlrow = mysql_fetch_assoc($result))
-		{
-			$obj = new self();
-			$obj->populate_by_sqlrow($sqlrow);
-			$rv[] = $obj;
-		}
+			$rv[] = self::by_sqlrow($sqlrow);
 		return $rv;
 	}
 	
@@ -1621,9 +1550,9 @@ class Section
 	public function get_articles()
 	{
 		$rv = array();
-		$result = qdb("SELECT `id` FROM `PREFIX_articles` WHERE `section` = %d", $this->id);
+		$result = qdb("SELECT `id`, `urlname`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments` FROM `PREFIX_articles` FROM `PREFIX_articles` WHERE `section` = %d", $this->id);
 		while($sqlrow = mysql_fetch_assoc($result))
-			$rv[] = Article::by_id($sqlrow["id"]);
+			$rv[] = Article::by_sqlrow($sqlrow);
 		return $rv;
 	}
 }
@@ -1632,7 +1561,7 @@ class Section
  * Class: Tag
  * Representation of a tag
  */
-class Tag
+class Tag extends BySQLRowEnabled
 {
 	private $id;
 	
@@ -1650,9 +1579,7 @@ class Tag
 	 */
 	public function get_id() { return $this->id; }
 	
-	private function __construct() {}
-	
-	private function populate_by_sqlrow($sqlrow)
+	protected function populate_by_sqlrow($sqlrow)
 	{
 		$this->id    = $sqlrow["id"];
 		$this->name  = $sqlrow["name"];
@@ -1708,9 +1635,7 @@ class Tag
 		if($sqlrow === False)
 			throw new DoesNotExistError();
 		
-		$obj = new self();
-		$obj->populate_by_sqlrow($sqlrow);
-		return $obj;
+		return self::by_sqlrow($sqlrow);
 	}
 	
 	/*
@@ -1730,9 +1655,7 @@ class Tag
 		if($sqlrow === False)
 			throw new DoesNotExistError();
 		
-		$obj = new self();
-		$obj->populate_by_sqlrow($sqlrow);
-		return $obj;
+		return self::by_sqlrow($sqlrow);
 	}
 	
 	/*
@@ -1747,11 +1670,7 @@ class Tag
 		$rv = array();
 		$result = qdb("SELECT `id`, `name`, `title` FROM `PREFIX_tags` WHERE 1");
 		while($sqlrow = mysql_fetch_assoc($result))
-		{
-			$obj = new self();
-			$obj->populate_by_sqlrow($sqlrow);
-			$rv[] = $obj;
-		}
+			$rv[] = self::by_sqlrow($sqlrow);
 		return $rv;
 	}
 	
@@ -1765,9 +1684,9 @@ class Tag
 	public function get_articles()
 	{
 		$rv = array();
-		$result = qdb("SELECT `article` FROM `PREFIX_article_tag_relations` WHERE `tag` = %d", $this->id);
+		$result = qdb("SELECT `id`, `urlname`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments` FROM `PREFIX_articles` FROM `PREFIX_articles` WHERE `id` = (SELECT `article` FROM `PREFIX_article_tag_relations` WHERE `tag` = %d)", $this->id);
 		while($sqlrow = mysql_fetch_assoc($result))
-			$rv[] = Article::by_id($sqlrow["id"]);
+			$rv[] = Article::by_sqlrow($sqlrow);
 		return $rv;
 	}
 	
@@ -1829,7 +1748,7 @@ class IOError extends Exception { }
  * Class: Image
  * Representation of an image entry.
  */
-class Image
+class Image extends BySQLRowEnabled
 {
 	private $id;
 	private $filename;
@@ -1844,9 +1763,7 @@ class Image
 	 */
 	public $name;
 	
-	private function __construct() { }
-	
-	private function populate_by_sqlrow($sqlrow)
+	protected function populate_by_sqlrow($sqlrow)
 	{
 		$this->id   = $sqlrow["id"];
 		$this->name = $sqlrow["name"];
@@ -1912,9 +1829,7 @@ class Image
 		if($sqlrow === False)
 			throw new DoesNotExistError();
 		
-		$obj = new self();
-		$obj->populate_by_sqlrow($sqlrow);
-		return $obj;
+		return self::by_sqlrow($sqlrow);
 	}
 	
 	/*
@@ -1929,11 +1844,7 @@ class Image
 		$rv = array();
 		$result = qdb("SELECT `id` FROM `PREFIX_images` WHERE 1");
 		while($sqlrow = mysql_fetch_assoc($result))
-		{
-			$obj = new self();
-			$obj->populate_by_sqlrow($sqlrow);
-			$rv[] = $obj;
-		}
+			$rv[] = self::by_sqlrow($sqlrow);
 		return $rv;
 	}
 	
@@ -2028,7 +1939,7 @@ class RepositoryUnreachableOrInvalid extends Exception { }
  * Class: Repository
  * Representation of an plugin repository.
  */
-class Repository
+class Repository extends BySQLRowEnabled
 {
 	private $id;
 	private $baseurl;
@@ -2044,7 +1955,7 @@ class Repository
 	 */
 	public $packages;
 	
-	private function __construct()
+	protected function __construct()
 	{
 		$this->stream_ctx = stream_context_create(array("http" => array("timeout" => 5)));
 	}
@@ -2087,7 +1998,7 @@ class Repository
 		return $obj;
 	}
 	
-	private function populate_by_sqlrow($sqlrow)
+	protected function populate_by_sqlrow($sqlrow)
 	{
 		$this->id          = $sqlrow["id"];
 		$this->name        = $sqlrow["name"];
@@ -2114,9 +2025,7 @@ class Repository
 		if(!$sqlrow)
 			throw new DoesNotExistError();
 		
-		$obj = new self();
-		$obj->populate_by_sqlrow($sqlrow);
-		return $obj;
+		return self::by_sqlrow($sqlrow);
 	}
 	
 	/*
@@ -2131,11 +2040,7 @@ class Repository
 		$rv = array();
 		$result = qdb("SELECT `id`, `name`, `description`, `baseurl`, `pkgcache`, `lastrefresh` WHERE 1");
 		while($sqlrow = mysql_fetch_assoc($result))
-		{
-			$obj = new self();
-			$obj->populate_by_sqlrow($sqlrow);
-			$rv[] = $obj;
-		}
+			$rv[] = self::by_sqlrow($sqlrow);
 		return $rv;
 	}
 	
@@ -2266,7 +2171,7 @@ class Repository
  * Class: Article
  * Representation of an article
  */
-class Article
+class Article extends BySQLRowEnabled
 {
 	private $id;
 	
@@ -2299,12 +2204,12 @@ class Article
 	public $allow_comments;
 	public $tags;
 	
-	private function __construct()
+	protected function __construct()
 	{
 		$this->tags = array();
 	}
 	
-	private function populate_by_sqlrow($sqlrow)
+	protected function populate_by_sqlrow($sqlrow)
 	{
 		$this->id             = $sqlrow["id"];
 		$this->urlname        = $sqlrow["urlname"];
@@ -2319,9 +2224,9 @@ class Article
 		$this->timestamp      = $sqlrow["timestamp"];
 		$this->allow_comments = $sqlrow["allow_comments"] == 1;
 		
-		$result = qdb("SELECT `tag` FROM `PREFIX_article_tag_relations` WHERE `article` = %d", $this->id);
+		$result = qdb("SELECT `id`, `name`, `title` FROM `PREFIX_tags` WHERE `id` = (SELECT `tag` FROM `PREFIX_article_tag_relations` WHERE `article` = %d)", $this->id);
 		while($sqlrow = mysql_fetch_assoc($result))
-			$this->tags[] = Tag::by_id($sqlrow["tag"]);
+			$this->tags[] = Tag::by_sqlrow($sqlrow);
 	}
 	
 	/*
@@ -2395,9 +2300,7 @@ class Article
 		if($sqlrow === False)
 			throw new DoesNotExistError();
 		
-		$obj = new self();
-		$obj ->populate_by_sqlrow($sqlrow);
-		return $obj;
+		return self::by_sqlrow($sqlrow);
 	}
 	
 	/*
@@ -2417,9 +2320,7 @@ class Article
 		if($sqlrow === False)
 			throw new DoesNotExistError();
 		
-		$obj = new self();
-		$obj ->populate_by_sqlrow($sqlrow);
-		return $obj;
+		return self::by_sqlrow($sqlrow);
 	}
 	
 	/*
@@ -2453,11 +2354,7 @@ class Article
 		$result = qdb("SELECT `id`, `urlname`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments` FROM `PREFIX_articles` WHERE " . implode(" AND ", $subqueries));
 		$rv = array();
 		while($sqlrow = mysql_fetch_assoc($result))
-		{
-			$obj = new self();
-			$obj->populate_by_sqlrow($sqlrow);
-			$rv[] = $obj;
-		}
+			$rv[] = self::by_sqlrow($sqlrow);
 		return $rv;
 	}
 	
@@ -2473,11 +2370,7 @@ class Article
 		$rv = array();
 		$result = qdb("SELECT `id`, `urlname`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments` FROM `PREFIX_articles` WHERE 1");
 		while($sqlrow = mysql_fetch_assoc($result))
-		{
-			$obj = new self();
-			$obj->populate_by_sqlrow($sqlrow);
-			$rv[] = $obj;
-		}
+			$rv[] = self::by_sqlrow($sqlrow);
 		return $rv;
 	}
 	
@@ -2502,9 +2395,9 @@ class Article
 		if($only_visible)
 			$conditions[] = "`visible` = 1";
 		
-		$result = qdb("SELECT `id` FROM `PREFIX_comments` WHERE " . implode(" AND ", $conditions));
+		$result = qdb("SELECT `id`, `article`, `language`, `author_name`, `author_mail`, `text`, `timestamp`, `visible`, `read_by_admin` FROM `PREFIX_comments` WHERE " . implode(" AND ", $conditions));
 		while($sqlrow = mysql_fetch_assoc($result))
-			$rv[] = Comment::by_id($sqlrow["id"]);
+			$rv[] = Comment::by_sqlrow($sqlrow);
 		return $rv;
 	}
 	
