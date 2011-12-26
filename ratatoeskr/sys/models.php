@@ -638,106 +638,122 @@ class Multilingual implements Countable, ArrayAccess, IteratorAggregate
 	public function getIterator() { return new ArrayIterator($this->translations); }
 }
 
-/*
- * Buffer for settings keys.
- * NEVER(!) MODIFY DIRECTLY!
- */
-$global_settings_keys_buffer = NULL;
-
-/* DO NOT CONSTRUCT THIS YOURSELF! */
 class SettingsIterator implements Iterator
 {
-	private $iter_keys_buffer;
+	private $index;
+	private $keys;
 	private $settings_obj;
-	private $position = 0;
 	
-	public function __construct($settings_obj)
+	public function __construct($settings_obj, $keys)
 	{
-		global $global_settings_keys_buffer;
+		$this->index = 0;
 		$this->settings_obj = $settings_obj;
-		$this->iter_keys_buffer = array_slice($global_settings_keys_buffer, 0); /* a.k.a. copying */
+		$this->keys = $keys;
 	}
 	
-	function rewind()  { return $this->position = 0; }
-	function current() { return $this->settings_obj->offsetGet($this->iter_keys_buffer[$this->position]); }
-	function key()     { return $this->iter_keys_buffer[$this->position]; }
-	function next()    { ++$this->position; }
-	function valid()   { return isset($this->iter_keys_buffer[$this->position]); }
+	/* Iterator implementation */
+	public function current() { return $this->settings_obj[$this->keys[$this->index]]; }
+	public function key()     { return $this->keys[$this->index]; }
+	public function next()    { ++$this->index; }
+	public function rewind()  { $this->index = 0; }
+	public function valid()   { return $this->index < count($this->keys); }
 }
 
 /*
  * Class: Settings
- * Representing the settings.
- * You can access them like an array.
+ * A class that holds the Settings of Ratatöskr.
+ * You can access settings like an array.
  */
-class Settings implements Countable, ArrayAccess, IteratorAggregate
+class Settings implements ArrayAccess, IteratorAggregate, Countable
 {
-	private $rw;
-	
+	/* Singleton implementation */
+	private function __copy() {}
+	private static $instance = NULL;
 	/*
-	 * Constructor: __construct
-	 * Creates a new Settings object.
-	 *
-	 * Parameters:
-	 * 	$mode - "rw" for read-write access, "r" for read-only access (default)
+	 * Constructor: get_instance
+	 * Get an instance of this class.
+	 * All instances are equal (ie. this is a singleton), so you can also use
+	 * the global <$ratatoeskr_settings> instance.
 	 */
-	public function __construct($mode="r")
+	public static function get_instance()
 	{
-		global $global_settings_keys_buffer;
-		if($global_settings_keys_buffer === NULL)
-		{
-			$global_settings_keys_buffer = array();
-			$result = qdb("SELECT `key` FROM `PREFIX_settings_kvstorage` WHERE 1");
-			while($sqlrow = mysql_fetch_assoc($result))
-				$global_settings_keys_buffer[] = $sqlrow["key"];
-		}
-		$this->rw = ($mode == "rw");
+		if(self::$instance === NULL)
+			self::$instance = new self;
+		return self::$instance;
 	}
 	
-	/* Countable interface implementation */
-	public function count() { global $global_settings_keys_buffer; return count($global_settings_keys_buffer); }
+	private $buffer;
+	private $to_be_deleted;
+	private $to_be_created;
+	private $to_be_updated;
 	
-	/* ArrayAccess interface implementation */
-	public function offsetExists($offset) { global $global_settings_keys_buffer; return in_array($offset, $global_settings_keys_buffer); }
+	private function __construct()
+	{
+		$this->buffer = array();
+		$result = qdb("SELECT `key`, `value` FROM `PREFIX_settings_kvstorage` WHERE 1");
+		while($sqlrow = mysql_fetch_assoc($result))
+			$this->buffer[$sqlrow["key"]] = unserialize(base64_decode($sqlrow["value"]));
+		
+		$this->to_be_created = array();
+		$this->to_be_deleted = array();
+		$this->to_be_updated = array();
+	}
+	
+	public function save()
+	{
+		foreach($this->to_be_deleted as $k)
+			qdb("DELETE FROM `PREFIX_settings_kvstorage` WHERE `key` = '%s'", $k);
+		foreach($this->to_be_updated as $k)
+			qdb("UPDATE `PREFIX_settings_kvstorage` SET `value` = '%s' WHERE `key` = '%s'", base64_encode(serialize($this->buffer[$k])), $k);
+		foreach($this->to_be_created as $k)
+			qdb("INSERT INTO `PREFIX_settings_kvstorage` (`key`, `value`) VALUES ('%s', '%s')", $k, base64_encode(serialize($this->buffer[$k])));
+		$this->to_be_created = array();
+		$this->to_be_deleted = array();
+		$this->to_be_updated = array();
+	}
+	
+	/* ArrayAccess implementation */
+	public function offsetExists($offset)
+	{
+		return isset($this->buffer[$offset]);
+	}
 	public function offsetGet($offset)
 	{
-		global $global_settings_keys_buffer;
-		if($this->offsetExists($offset))
+		return $this->buffer[$offset];
+	}
+	public function offsetSet ($offset, $value)
+	{
+		if(!$this->offsetExists($offset))
 		{
-			$result = qdb("SELECT `value` FROM `PREFIX_settings_kvstorage` WHERE `key` = '%s'", $offset);
-			$sqlrow = mysql_fetch_assoc($result);
-			return unserialize(base64_decode($sqlrow["value"]));
+			if(in_array($offset, $this->to_be_deleted))
+			{
+				$this->to_be_updated[] = $offset;
+				unset($this->to_be_deleted[array_search($offset, $this->to_be_deleted)]);
+			}
+			else
+				$this->to_be_created[] = $offset;
 		}
-		else
-			throw new DoesNotExistError();
+		elseif((!in_array($offset, $this->to_be_created)) and (!in_array($offset, $this->to_be_updated)))
+			$this->to_be_updated[] = $offset;
+		$this->buffer[$offset] = $value;
 	}
 	public function offsetUnset($offset)
 	{
-		global $global_settings_keys_buffer;
-		if(!$this->rw)
-			throw new NotAllowedError();
-		unset($global_settings_keys_buffer[array_search($offset, $global_settings_keys_buffer)]);
-		qdb("DELETE FROM `PREFIX_settings_kvstorage` WHERE `key` = '%s'", $offset);
-	}
-	public function offsetSet($offset, $value)
-	{
-		global $global_settings_keys_buffer;
-		if(!$this->rw)
-			throw new NotAllowedError();
-		if(in_array($offset, $global_settings_keys_buffer))
-			qdb("UPDATE `PREFIX_settings_kvstorage` SET `value` = '%s' WHERE `key` = '%s'",  base64_encode(serialize($value)), $offset);
+		if(in_array($offset, $this->to_be_created))
+			unset($this->to_be_created[array_search($offset, $this->to_be_created)]);
 		else
-		{
-			$global_settings_keys_buffer[] = $offset;
-			qdb("INSERT INTO `PREFIX_settings_kvstorage` (`key`, `value`) VALUES ('%s', '%s')", $offset, base64_encode(serialize($value)));
-		}
+			$this->to_be_deleted[] = $offset;
+		unset($this->buffer[$offset]);
 	}
 	
-	/* IteratorAggregate interface implementation */
-	public function getIterator() { return new SettingsIterator($this); }
+	/* IteratorAggregate implementation */
+	public function getIterator() { return new SettingsIterator($this, array_keys($this->buffer)); }
+	
+	/* Countable implementation */
+	public function count() { return count($this->buffer); }
 }
 
-$ratatoeskr_settings = new Settings("rw");
+$ratatoeskr_settings = Settings::get_instance();
 
 /*
  * Class: PluginKVStorage
@@ -2470,7 +2486,7 @@ class Article extends BySQLRowEnabled
 function clean_database()
 {
 	global $ratatoeskr_settings;
-	if((!isset($ratatoeskr_settings["last_db_cleanup"])) or ($ratatoeskr_repositories["last_db_cleanup"] < (time() - 86400)))
+	if((!isset($ratatoeskr_settings["last_db_cleanup"])) or ($ratatoeskr_settings["last_db_cleanup"] < (time() - 86400)))
 	{
 		Plugin::clean_db();
 		$ratatoeskr_settings["last_db_cleanup"] = time();

@@ -15,15 +15,15 @@ require_once(dirname(__FILE__) . "/../frontend.php");
 
 /*
  * Constant: APIVERSION
- * The current API version (1).
+ * The current API version (2).
  */
-define("APIVERSION", 1);
+define("APIVERSION", 2);
 
 /*
  * Array: $api_compat
  * Array of API versions, this version is compatible to (including itself).
  */
-$api_compat = array(1);
+$api_compat = array(1, 2);
 
 $url_handlers = array();
 /*
@@ -184,12 +184,14 @@ abstract class RatatoeskrPlugin
 	/*
 	 * Functions: Functions that are called at special events
 	 * 
-	 * init - Will be called after plugin is loaded. You should register your stuff here.
-	 * install - Will be called after installation. If your plugin needs to initialize some database stuff or generate files, this is the right function.
+	 * init      - Will be called after plugin is loaded. You should register your stuff here.
+	 * atexit    - Will be called, when Ratatöskr will exit.
+	 * install   - Will be called after installation. If your plugin needs to initialize some database stuff or generate files, this is the right function.
 	 * uninstall - Will be called during uninstallation. If you used the install function you should undo your custom installation stuff.
-	 * update - Will be called after your plugin was updated to a new version.
+	 * update    - Will be called after your plugin was updated to a new version.
 	 */
 	public function init() {}
+	public function atexit() {}
 	public function install() {}
 	public function uninstall() {}
 	public function update() {}

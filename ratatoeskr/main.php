@@ -71,6 +71,11 @@ function ratatoeskr()
 	$ste->vars["rel_path_to_root"] = $rel_path_to_root;
 	
 	url_process($urlpath, $url_handlers, $data);
+	
+	foreach($plugin_objs as $plugin_obj)
+		$plugin_obj->atexit();
+	$ratatoeskr_settings->save();
+	
 	echo "<!--
 Queries: $queries_fired
 Time: " . (microtime(True) - $ts_start) . "
