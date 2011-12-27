@@ -15,15 +15,15 @@ require_once(dirname(__FILE__) . "/../frontend.php");
 
 /*
  * Constant: APIVERSION
- * The current API version (2).
+ * The current API version (3).
  */
-define("APIVERSION", 2);
+define("APIVERSION", 3);
 
 /*
  * Array: $api_compat
  * Array of API versions, this version is compatible to (including itself).
  */
-$api_compat = array(1, 2);
+$api_compat = array(3);
 
 $url_handlers = array();
 /*

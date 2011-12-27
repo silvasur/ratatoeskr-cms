@@ -76,7 +76,6 @@ function qdb_fmt()
 	return qdb_vfmt(func_get_args());
 }
 
-$queries_fired = 0;
 
 /*
  * Function: qdb
@@ -91,12 +90,10 @@ $queries_fired = 0;
  */
 function qdb()
 {
-	global $queries_fired;
 	$query = qdb_vfmt(func_get_args());
 	$rv = mysql_query($query);
 	if($rv === false)
 		throw new MySQLException(mysql_errno() . ': ' . mysql_error() . (__DEBUG__ ? ("[[FULL QUERY: " . $query . "]]") : "" ));
-	$queries_fired++;
 	return $rv;
 }
 

@@ -23,7 +23,6 @@ $plugin_objs = array();
 function ratatoeskr()
 {
 	global $backend_subactions, $ste, $url_handlers, $ratatoeskr_settings, $plugin_objs;
-	global $queries_fired;
 	
 	$ts_start = microtime(True);
 	
@@ -75,12 +74,6 @@ function ratatoeskr()
 	foreach($plugin_objs as $plugin_obj)
 		$plugin_obj->atexit();
 	$ratatoeskr_settings->save();
-	
-	echo "<!--
-Queries: $queries_fired
-Time: " . (microtime(True) - $ts_start) . "
-Peak Memory: " . memory_get_peak_usage() / 1024 . "kiB
--->";
 }
 
 ?>
