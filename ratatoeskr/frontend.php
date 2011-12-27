@@ -89,21 +89,22 @@ function article_transform_ste($article, $lang)
 	global $rel_path_to_root;
 	
 	$languages = array();
+	$a_section = $article->get_section();
 	foreach($article->title as $language => $_)
-		$languages[$language] = "$rel_path_to_root/$language/{$article->section->name}/{$article->urlname}";
+		$languages[$language] = "$rel_path_to_root/$language/{$a_section->name}/{$article->urlname}";
 	
 	return array(
 		"id"               => $article->get_id(),
 		"urlname"          => $article->urlname,
-		"fullurl"          => htmlesc("$rel_path_to_root/$lang/{$article->section->name}/{$article->urlname}"),
+		"fullurl"          => htmlesc("$rel_path_to_root/$lang/{$a_section->name}/{$article->urlname}"),
 		"title"            => htmlesc($article->title[$lang]->text),
 		"text"             => textprocessor_apply(str_replace("%root%", $rel_path_to_root, $article->text[$lang]->text), $article->text[$lang]->texttype),
 		"excerpt"          => textprocessor_apply(str_replace("%root%", $rel_path_to_root, $article->excerpt[$lang]->text), $article->excerpt[$lang]->texttype),
 		"custom"           => $article->custom,
 		"status"           => $article->status,
-		"section"          => section_transform_ste($article->section, $lang),
+		"section"          => section_transform_ste($a_section, $lang),
 		"timestamp"        => $article->timestamp,
-		"tags"             => array_map(function($tag) use ($lang) { return tag_transform_ste($tag, $lang); }, $article->tags),
+		"tags"             => array_map(function($tag) use ($lang) { return tag_transform_ste($tag, $lang); }, $article->get_tags()),
 		"languages"        => $languages,
 		"comments_allowed" => $article->comments_allowed
 	);
@@ -181,12 +182,14 @@ $ste->register_tag("articles_get", function($ste, $params, $sub)
 	
 	$result = Article::by_multi($params);
 	
+	/*
+	FIXME: 
 	if(isset($params["tag"]))
 	{
 		if(!isset($result))
 			$result = Article::all();
 		$result = array_filter($result, function($article) use ($params) { return isset($article->tags[$params["tag"]]); });
-	}
+	}*/
 	
 	/* Now filter out the articles, where the current language does not exist */
 	$result = array_filter($result, function($article) use ($lang) { return isset($article->title[$lang]); });

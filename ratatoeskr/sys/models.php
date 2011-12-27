@@ -2218,6 +2218,9 @@ class Article extends BySQLRowEnabled
 {
 	private $id;
 	
+	private $section_id;
+	private $section_obj;
+	
 	/*
 	 * Variables: Public class variables
 	 * 
@@ -2229,10 +2232,8 @@ class Article extends BySQLRowEnabled
 	 * $custom         - Custom fields, is an array
 	 * $article_image  - The article <Image>. If none: NULL
 	 * $status         - One of the ARTICLE_STATUS_* constants
-	 * $section        - <Section>
 	 * $timestamp      - Timestamp
 	 * $allow_comments - Are comments allowed?
-	 * $tags           - Arrray of <Tag> objects
 	 */
 	public $urlname;
 	public $title;
@@ -2242,14 +2243,12 @@ class Article extends BySQLRowEnabled
 	public $custom;
 	public $article_image;
 	public $status;
-	public $section;
 	public $timestamp;
 	public $allow_comments;
-	public $tags;
 	
 	protected function __construct()
 	{
-		$this->tags = array();
+		$this->section_obj = NULL;
 	}
 	
 	protected function populate_by_sqlrow($sqlrow)
@@ -2263,13 +2262,9 @@ class Article extends BySQLRowEnabled
 		$this->custom         = unserialize(base64_decode($sqlrow["custom"]));
 		$this->article_image  = $sqlrow["article_image"] == 0 ? NULL : Image::by_id($sqlrow["article_image"]);
 		$this->status         = $sqlrow["status"];
-		$this->section        = Section::by_id($sqlrow["section"]);
+		$this->section_id     = $sqlrow["section"];
 		$this->timestamp      = $sqlrow["timestamp"];
 		$this->allow_comments = $sqlrow["allow_comments"] == 1;
-		
-		$result = qdb("SELECT `a`.`id` AS `id`, `a`.`name` AS `name`, `a`.`title` AS `title` FROM `PREFIX_tags` `a` INNER JOIN `PREFIX_article_tag_relations` `b` ON `a`.`id` = `b`.`tag` WHERE `b`.`article` = %d", $this->id);
-		while($sqlrow = mysql_fetch_assoc($result))
-			$this->tags[] = Tag::by_sqlrow($sqlrow);
 	}
 	
 	/*
@@ -2306,7 +2301,7 @@ class Article extends BySQLRowEnabled
 			$obj->custom         = array();
 			$obj->article_image  = NULL;
 			$obj->status         = ARTICLE_STATUS_HIDDEN;
-			$obj->section        = Section::by_id($ratatoeskr_settings["default_section"]);
+			$obj->section_id     = $ratatoeskr_settings["default_section"];
 			$obj->timestamp      = time();
 			$obj->allow_comments = $ratatoeskr_settings["allow_comments_default"];
 		
@@ -2316,7 +2311,7 @@ class Article extends BySQLRowEnabled
 				$obj->excerpt->get_id(),
 				base64_encode(serialize($obj->custom)),
 				$obj->status,
-				$obj->section->get_id(),
+				$obj->section_id,
 				$obj->timestamp,
 				$obj->allow_comments ? 1 : 0);
 			$obj->id = mysql_insert_id();
@@ -2445,6 +2440,72 @@ class Article extends BySQLRowEnabled
 	}
 	
 	/*
+	 * Function: get_tags
+	 * Get all Tags of this Article.
+	 * 
+	 * Returns:
+	 * 	Array of <Tag> objects.
+	 */
+	public function get_tags()
+	{
+		$rv = array();
+		$result = qdb("SELECT `a`.`id` AS `id`, `a`.`name` AS `name`, `a`.`title` AS `title` FROM `PREFIX_tags` `a` INNER JOIN `PREFIX_article_tag_relations` `b` ON `a`.`id` = `b`.`tag` WHERE `b`.`article` = %d", $this->id);
+		while($sqlrow = mysql_fetch_assoc($result))
+			$rv[] = Tag::by_sqlrow($sqlrow);
+		return $rv;
+	}
+	
+	/*
+	 * Function: set_tags
+	 * Set the Tags that should be associated with this Article.
+	 * 
+	 * Parameters:
+	 * 	$tags - Array of <Tag> objects.
+	 */
+	public function set_tags($tags)
+	{
+		foreach($tags as $tag)
+			$tag->save();
+		
+		qdb("DELETE FROM `PREFIX_article_tag_relations` WHERE `article`= %d", $this->id);
+		
+		$articleid = $this->id;
+		/* So we just need to fire one query instead of count($this->tags) queries. */
+		if(!empty($this->tags))
+			qdb(
+				"INSERT INTO `PREFIX_article_tag_relations` (`article`, `tag`) VALUES " .
+				implode(",", array_map(function($tag) use ($articleid){ return qdb_fmt("(%d, %d)", $articleid, $tag->get_id()); }, $tags))
+			);
+	}
+	
+	/*
+	 * Function: get_section
+	 * Get the section of this article.
+	 * 
+	 * Returns:
+	 * 	A <Section> object.
+	 */
+	public function get_section()
+	{
+		if($this->section_obj === NULL)
+			$this->section_obj = Section::by_id($this->section_id);
+		return $this->section_obj;
+	}
+	
+	/*
+	 * Function: set_section
+	 * Set the section of this article.
+	 * 
+	 * Parameters:
+	 * 	$section - A <Section> object.
+	 */
+	public function set_section($section)
+	{
+		$this->section_id  = $section->get_id();
+		$this->section_obj = $section;
+	}
+	
+	/*
 	 * Function: save
 	 */
 	public function save()
@@ -2457,21 +2518,6 @@ class Article extends BySQLRowEnabled
 		$this->title->save();
 		$this->text->save();
 		$this->excerpt->save();
-		foreach($this->tags as $tag)
-			$tag->save();
-		
-		qdb("DELETE FROM `PREFIX_article_tag_relations` WHERE `article`= %d", $this->id);
-		
-		$articleid = $this->id;
-		/* So we just need to fire one query instead of count($this->tags) queries. */
-		if(!empty($this->tags))
-			qdb(
-				"INSERT INTO `PREFIX_article_tag_relations` (`article`, `tag`) VALUES " .
-				implode(",",
-					array_map(function($tag) use ($articleid){ return qdb_fmt("(%d, %d)", $articleid, $tag->get_id()); },
-					$this->tags)
-				)
-			);
 		
 		qdb("UPDATE `PREFIX_articles` SET `urlname` = '%s', `title` = %d, `text` = %d, `excerpt` = %d, `meta` = '%s', `custom` = '%s', `article_image` = %d, `status` = %d, `section` = %d, `timestamp` = %d, `allow_comments` = %d WHERE `id` = %d",
 			$this->urlname,
@@ -2482,7 +2528,7 @@ class Article extends BySQLRowEnabled
 			base64_encode(serialize($this->custom)),
 			$this->article_image === NULL ? 0 : $this->article_image->get_id(),
 			$this->status,
-			$this->section->get_id(),
+			$this->section_id,
 			$this->timestamp,
 			$this->allow_comments ? 1 : 0,
 			$this->id

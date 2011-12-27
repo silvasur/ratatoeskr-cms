@@ -236,11 +236,11 @@ $backend_subactions = url_action_subactions(array(
 				$article->urlname   = $inputs["urlname"];
 				$article->status    = $inputs["article_status"];
 				$article->timestamp = $inputs["date"];
-				$article->section   = $inputs["section"];
-				$article->tags      = maketags($inputs["tags"], $editlang);
 				$article->title  [$editlang] = new Translation($inputs["title"],   ""       );
 				$article->text   [$editlang] = new Translation($inputs["content"], $inputs["content_txtproc"]);
 				$article->excerpt[$editlang] = new Translation($inputs["excerpt"], $inputs["excerpt_txtproc"]);
+				$article->set_tags(maketags($inputs["tags"], $editlang));
+				$article->set_section($inputs["section"]);
 			}
 			
 			if(empty($article))
@@ -316,7 +316,7 @@ $backend_subactions = url_action_subactions(array(
 					$inputs["excerpt_txtproc"] = $translation_obj->texttype;
 				}
 				if(!isset($inputs["tags"]))
-					$inputs["tags"] = array_map(function($tag) use ($editlang) { return $tag->name; }, $article->tags);
+					$inputs["tags"] = array_map(function($tag) use ($editlang) { return $tag->name; }, $article->get_tags());
 				$ste->vars["morelangs"] = array();
 				$ste->vars["pagetitle"] = $article->title[$editlang]->text;
 				foreach($article->title as $lang => $_)
@@ -330,7 +330,7 @@ $backend_subactions = url_action_subactions(array(
 			if(isset($inputs["tags"]))
 				$ste->vars["tags"] = implode(", ", $inputs["tags"]);
 			if(isset($inputs["article_section"]))
-				$ste->section["article_section"] = $inputs["article_section"]->name;
+				$ste->vars["article_section"] = $inputs["article_section"]->name;
 			$ste->vars["editlang"] = $editlang;
 			foreach(array(
 				"urlname"         => "urlname",
@@ -542,14 +542,14 @@ $backend_subactions = url_action_subactions(array(
 			if(!empty($_GET["filter_tag"]))
 			{
 				$searchfor = $_GET["filter_tag"];
-				$articles = array_filter($articles, function($a) use ($searchfor) { foreach($a->tags as $t) { if($t->name==$searchfor) return True; } return False; });
+				$articles = array_filter($articles, function($a) use ($searchfor) { foreach($a->get_tags() as $t) { if($t->name==$searchfor) return True; } return False; });
 				$filterquery[] = "filter_tag=" . urlencode($searchfor);
 				$ste->vars["filter_tag"] = $searchfor;
 			}
 			if(!empty($_GET["filter_section"]))
 			{
 				$searchfor = $_GET["filter_section"];
-				$articles = array_filter($articles, function($a) use ($searchfor) { return $a->section->name == $searchfor; });
+				$articles = array_filter($articles, function($a) use ($searchfor) { return $a->get_section()->name == $searchfor; });
 				$filterquery[] = "filter_section=" . urlencode($searchfor);
 				$ste->vars["filter_section"] = $searchfor;
 			}
@@ -570,7 +570,7 @@ $backend_subactions = url_action_subactions(array(
 						$ste->vars["sortquery"] = "sort_asc=section";
 						$ste->vars["sort_asc_section"] = True;
 						$ste->vars["sorting"] = array("dir" => "asc", "by" => "section");
-						usort($articles, function($a, $b) { return strcmp($a->section->name, $b->section->name); });
+						usort($articles, function($a, $b) { return strcmp($a->get_section()->name, $b->get_section()->name); });
 						break;
 					case "urlname":
 						$ste->vars["sortquery"] = "sort_asc=urlname";
@@ -595,7 +595,7 @@ $backend_subactions = url_action_subactions(array(
 						$ste->vars["sortquery"] = "sort_desc=section";
 						$ste->vars["sort_desc_section"] = True;
 						$ste->vars["sorting"] = array("dir" => "desc", "by" => "section");
-						usort($articles, function($a, $b) { return strcmp($b->section->name, $a->section->name); });
+						usort($articles, function($a, $b) { return strcmp($b->get_section()->name, $a->get_section()->name); });
 						break;
 					case "urlname":
 						$ste->vars["sortquery"] = "sort_desc=urlname";
@@ -622,12 +622,13 @@ $backend_subactions = url_action_subactions(array(
 				foreach($article->title as $lang => $_)
 					$avail_langs[] = $lang;
 				sort($avail_langs);
+				$a_section = $article->get_section();
 				return array(
 					"urlname"   => $article->urlname,
 					"languages" => $avail_langs,
 					"date"      => $article->timestamp,
-					"tags"      => array_map(function($tag) { return $tag->name; }, $article->tags),
-					"section"   => array("id" => $article->section->get_id(), "name" => $article->section->name)
+					"tags"      => array_map(function($tag) { return $tag->name; }, $article->get_tags()),
+					"section"   => array("id" => $a_section->get_id(), "name" => $a_section->name)
 				);
 			}, $articles);
 			
@@ -1119,7 +1120,7 @@ $backend_subactions = url_action_subactions(array(
 						$default_section = Section::by_id($ratatoeskr_settings["default_section"]);
 						foreach($section->get_articles() as $article)
 						{
-							$article->section = $default_section;
+							$article->set_section($default_section);
 							$article->save();
 						}
 						$section->delete();
