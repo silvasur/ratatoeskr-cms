@@ -2366,33 +2366,69 @@ class Article extends BySQLRowEnabled
 	 * Get Articles by multiple criterias
 	 *
 	 * Parameters:
-	 * 	$criterias - Array that can have these keys: id (int) , urlname (string), section (<Section> object), status (int)
+	 * 	$criterias - Array that can have these keys: id (int) , urlname (string), section (<Section> object), status (int), onlyvisible, langavail(string), tag (<Tag> object)
+	 * 	$sortby    - Sort by this field (id, urlname, timestamp or title)
+	 * 	$sortdir   - Sorting directory (ASC or DESC)
+	 * 	$count     - How many entries (NULL for unlimited)
+	 * 	$offset    - How many entries should be skipped (NULL for none)
+	 * 	$perpage   - How many entries per page (NULL for no paging)
+	 * 	$page      - Page number (starting at 1, NULL for no paging)
+	 * 	&$maxpage  - Number of pages will be written here, if paging is activated.
 	 * 
 	 * Returns:
 	 * 	Array of Article objects
 	 */
-	public function by_multi($criterias)
+	public function by_multi($criterias, $sortby, $sortdir, $count, $offset, $perpage, $page, &$maxpage)
 	{
 		$subqueries = array();
 		foreach($criterias as $k => $v)
 		{
 			switch($k)
 			{
-				case "id":       $subqueries[] = qdb_fmt("`id`       =  %d",  $v);           break;
-				case "urlname":  $subqueries[] = qdb_fmt("`urlname`  = '%s'", $v);           break;
-				case "section":  $subqueries[] = qdb_fmt("`section`  =  %d",  $v->get_id()); break;
-				case "status":   $subqueries[] = qdb_fmt("`status`   =  %d",  $v);           break;
+				case "id":          $subqueries[] = qdb_fmt("`a`.`id`       =  %d",  $v);           break;
+				case "urlname":     $subqueries[] = qdb_fmt("`a`.`urlname`  = '%s'", $v);           break;
+				case "section":     $subqueries[] = qdb_fmt("`a`.`section`  =  %d",  $v->get_id()); break;
+				case "status":      $subqueries[] = qdb_fmt("`a`.`status`   =  %d",  $v);           break;
+				case "onlyvisible": $subqueries[] = "`a`.`status` != 0";                            break;
+				case "langavail":   $subqueries[] = qdb_fmt("`b`.`language` = '%s'", $v);           break;
+				case "tag":         $subqueries[] = qdb_fmt("`c`.`tag`      =  %d",  $v->get_id()); break;
 				default: continue;
 			}
 		}
 		
-		if(empty($subqueries))
-			return self::all(); /* No limiting criterias, so we take them all... */
+		if(($sortdir != "ASC") and ($sortdir != "DESC"))
+			$sortdir = "ASC";
+		$sorting = "";
+		switch($sortby)
+		{
+			case "id":        $sorting = "ORDER BY `a`.`id` $sortdir";        break;
+			case "urlname":   $sorting = "ORDER BY `a`.`urlname` $sortdir";   break;
+			case "timestamp": $sorting = "ORDER BY `a`.`timestamp` $sortdir"; break;
+			case "title":     $sorting = "ORDER BY `b`.`text` $sortdir";      break;
+		}
 		
-		$result = qdb("SELECT `id`, `urlname`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments` FROM `PREFIX_articles` WHERE " . implode(" AND ", $subqueries));
-		$rv = array();
+		$result = qdb("SELECT `a`.`id` AS `id`, `a`.`urlname` AS `urlname`, `a`.`title` AS `title`, `a`.`text` AS `text`, `a`.`excerpt` AS `excerpt`, `a`.`meta` AS `meta`, `a`.`custom` AS `custom`, `a`.`article_image` AS `article_image`, `a`.`status` AS `status`, `a`.`section` AS `section`, `a`.`timestamp` AS `timestamp`, `a`.`allow_comments` AS `allow_comments` FROM `PREFIX_articles` `a`
+INNER JOIN `PREFIX_translations` `b` ON `a`.`title` = `b`.`multilingual`
+LEFT OUTER JOIN `PREFIX_article_tag_relations` `c` ON `a`.`id` = `c`.`article`
+WHERE " . implode(" AND ", $subqueries) . " $sorting");
+		
+		$rows = array();
 		while($sqlrow = mysql_fetch_assoc($result))
-			$rv[] = self::by_sqlrow($sqlrow);
+			$rows[] = $sqlrow;
+		
+		if($count !== NULL)
+			$rows = array_slice($rows, 0, $count);
+		if($offset !== NULL)
+			$rows = array_slice($rows, $offset);
+		if(($perpage !== NULL) and ($page !== NULL))
+		{
+			$maxpage = ceil(count($rows) / $perpage);
+			$rows = array_slice($rows, $perpage * ($page - 1), $perpage);
+		}
+		
+		$rv = array();
+		foreach($rows as $r)
+			$rv[] = self::by_sqlrow($r);
 		return $rv;
 	}
 	

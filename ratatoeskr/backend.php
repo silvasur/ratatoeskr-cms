@@ -14,7 +14,7 @@ require_once(dirname(__FILE__) . "/sys/pwhash.php");
 require_once(dirname(__FILE__) . "/sys/textprocessors.php");
 require_once(dirname(__FILE__) . "/languages.php");
 
-$admin_grp = Group::by_name("admins");
+$admin_grp = NULL;
 
 /* Mass creation of tags. */
 function maketags($tagnames, $lang)
@@ -64,6 +64,9 @@ $backend_subactions = url_action_subactions(array(
 	"_prelude" => function(&$data, $url_now, &$url_next)
 	{
 		global $ratatoeskr_settings, $admin_grp, $ste, $languages;
+		
+		if($admin_grp === NULL)
+			$admin_grp = Group::by_name("admins");
 		
 		$ste->vars["all_languages"] = array();
 		$ste->vars["all_langcodes"] = array();

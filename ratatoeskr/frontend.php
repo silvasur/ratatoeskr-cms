@@ -34,7 +34,8 @@ function section_transform_ste($section, $lang)
 	return array(
 		"id"    => $section->get_id(),
 		"name"  => $section->name,
-		"title" => $section->title[$lang]->text
+		"title" => $section->title[$lang]->text,
+		"__obj" => $section
 	);
 }
 
@@ -57,7 +58,8 @@ function tag_transform_ste($tag, $lang)
 	return array(
 		"id"    => $tag->get_id(),
 		"name"  => $tag->name,
-		"title" => $tag->title[$lang]->text
+		"title" => $tag->title[$lang]->text,
+		"__obj" => $tag
 	);
 }
 
@@ -106,7 +108,8 @@ function article_transform_ste($article, $lang)
 		"timestamp"        => $article->timestamp,
 		"tags"             => array_map(function($tag) use ($lang) { return tag_transform_ste($tag, $lang); }, $article->get_tags()),
 		"languages"        => $languages,
-		"comments_allowed" => $article->comments_allowed
+		"comments_allowed" => $article->comments_allowed,
+		"__obj"            => $article
 	);
 }
 
@@ -132,7 +135,8 @@ function comment_transform_ste($comment)
 		"id"        => $comment->get_id(),
 		"text"      => $comment->create_html(),
 		"author"    => htmlesc($comment->author_name),
-		"timestamp" => $comment->get_timestamp()
+		"timestamp" => $comment->get_timestamp(),
+		"__obj"     => $comment
 	);
 }
 
@@ -180,66 +184,40 @@ $ste->register_tag("articles_get", function($ste, $params, $sub)
 		}
 	}
 	
-	$result = Article::by_multi($params);
-	
-	/*
-	FIXME: 
+	$criterias = array("langavail" => $lang, "onlyvisible" => True);
+	if(isset($params["id"]))
+		$criterias["id"] = $params["id"];
+	if(isset($params["urlname"]))
+		$criterias["urlname"];
+	if(isset($params["section"]))
+		$criterias["section"] = $params["section"];
+	if(isset($params["status"]))
+		$criterias["status"] = $params["status"];
 	if(isset($params["tag"]))
 	{
-		if(!isset($result))
-			$result = Article::all();
-		$result = array_filter($result, function($article) use ($params) { return isset($article->tags[$params["tag"]]); });
-	}*/
-	
-	/* Now filter out the articles, where the current language does not exist */
-	$result = array_filter($result, function($article) use ($lang) { return isset($article->title[$lang]); });
-	
-	/* Also filter the hidden ones out */
-	$result = array_filter($result, function($article) { return $article->status != ARTICLE_STATUS_HIDDEN; });
-	
-	/* Convert articles to arrays */
-	$result = array_map(function($article) use ($lang) { return article_transform_ste($article, $lang); }, $result);
-	
-	function sort_fx_factory($cmpfx, $field, $direction)
-	{
-		return function($a, $b) use ($cmpfx, $field, $direction) { return $cmpfx($a[$field], $b[$field]) * $direction; };
+		try
+		{
+			$criterias["tag"] = Tag::by_name($params["tag"]);
+		}
+		catch(DoesNotExistError $e) {}
 	}
 	
+	$field     = NULL;
+	$direction = NULL;
 	if(isset($params["sort"]))
 	{
 		list($field, $direction) = explode(" ", $params["sort"]);
-		if((@$direction != "asc") and (@$direction != "desc"))
-			$direction = "asc";
-		$direction = ($direction == "asc") ? 1 : -1;
-		$sort_fx = NULL;
-		
-		switch($field)
-		{
-			case "id":        $sort_fx = sort_fx_factory("intcmp", "id",        $direction); break;
-			case "urlname":   $sort_fx = sort_fx_factory("strcmp", "urlname",   $direction); break;
-			case "title":     $sort_fx = sort_fx_factory("strcmp", "title",     $direction); break;
-			case "timestamp": $sort_fx = sort_fx_factory("intcmp", "timestamp", $direction); break;
-		}
-		
-		if($sort_fx !== NULL)
-			usort($result, $sort_fx);
+		if($direction === NULL)
+			$field = NULL;
+		$direction = strtoupper($direction);
 	}
-	if(isset($params["perpage"]))
-	{
-		if(isset($params["maxpage"]))
-		{
-			$maxpage = ceil(count($result) / $params["perpage"]);
-			$ste->set_var_by_name($params["maxpage"], $maxpage == 0 ? 1 : $maxpage);
-		}
-		$page = isset($params["page"]) ? $params["page"] : 1;
-		$result = array_slice($result, ($page - 1) * $params["perpage"], $params["perpage"]);
-	}
-	else if(isset($params["skip"]) and isset($params["count"]))
-		$result = array_slice($result, $params["skip"], $params["count"]);
-	else if(isset($params["skip"]))
-		$result = array_slice($result, $params["skip"]);
-	else if(isset($params["count"]))
-		$result = array_slice($result, 0, $params["count"]);
+	
+	$result = Article::by_multi($criterias, $field, $direction, @$params["count"], @$params["skip"], @$params["perpage"], @$params["page"], $maxpage);
+	
+	$result = array_map(function($article) use ($lang) { return article_transform_ste($article, $lang); }, $result);
+	
+	if(isset($params["perpage"]) and isset($params["maxpage"]))
+		$ste->set_var_by_name($params["maxpage"], $maxpage == 0 ? 1 : $maxpage);
 	
 	$output = "";
 	foreach($result as $article)
@@ -315,18 +293,25 @@ $ste->register_tag("article_comments_count", function($ste, $params, $sub)
 {
 	if(!isset($params["article"]))
 		throw new Exception("Need parameter 'article' in ste:article_comments_count.");
-	$tpl_article = $ste->get_var_by_name($params["article"]);
+	$tpl_article = $ste->get_var_reference($params["article"], False);
 	$lang = $ste->vars["language"];
 	
-	try
+	if(isset($tpl_article["__obj"]))
+		$article = $tpl_article["__obj"];
+	else
 	{
-		$article = Article::by_id(@$tpl_article["id"]);
-		return count($article->get_comments($lang, True));
+		try
+		{
+			$article = Article::by_id(@$tpl_article["id"]);
+		}
+		catch(DoesNotExistError $e)
+		{
+			return 0;
+		}
 	}
-	catch(DoesNotExistError $e)
-	{
-		return 0;
-	}
+	$comments = $article->get_comments($lang, True);
+	$tpl_article["__comments"] = $comments;
+	return count($comments);
 });
 
 /*
@@ -351,19 +336,30 @@ $ste->register_tag("article_comments", function($ste, $params, $sub)
 		throw new Exception("Need parameter 'var' in ste:article_comments.");
 	if(!isset($params["article"]))
 		throw new Exception("Need parameter 'article' in ste:article_comments.");
-	$tpl_article = $ste->get_var_by_name($params["article"]);
+	$tpl_article = $ste->get_var_reference($params["article"], False);
 	$lang = $ste->vars["language"];
 	
-	try
+	if(isset($tpl_article["__comments"]))
+		$comments = $tpl_article["__comments"];
+	else
 	{
-		$article = Article::by_id(@$tpl_article["id"]);
-	}
-	catch(DoesNotExistError $e)
-	{
-		return "";
+		if(isset($tpl_article["__obj"]))
+			$article = $tpl_article["__obj"];
+		else
+		{
+			try
+			{
+				$article = Article::by_id(@$tpl_article["id"]);
+			}
+			catch(DoesNotExistError $e)
+			{
+				return "";
+			}
+		}
+		
+		$comments = $article->get_comments($lang, True);
 	}
 	
-	$comments = $article->get_comments($lang, True);
 	$sortdir = (@$params["sort"] == "desc") ? -1 : 1;
 	usort($comments, function($a,$b) use ($sortdir) { return intcmp($a->get_timestamp(), $b->get_timestamp()) * $sortdir; });
 	
@@ -412,15 +408,20 @@ $ste->register_tag("comment_form", function($ste, $params, $sub)
 	global $translation;
 	if(!isset($params["article"]))
 		throw new Exception("Need parameter 'article' in ste:comment_form.");
-	$tpl_article = $ste->get_var_by_name($params["article"]);
+	$tpl_article = $ste->get_var_reference($params["article"], False);
 	
-	try
+	if(isset($tpl_article["__obj"]))
+			$article = $tpl_article["__obj"];
+	else
 	{
-		$article = Article::by_id($tpl_article["id"]);
-	}
-	catch (DoesNotExistError $e)
-	{
-		return "";
+		try
+		{
+			$article = Article::by_id(@$tpl_article["id"]);
+		}
+		catch(DoesNotExistError $e)
+		{
+			return "";
+		}
 	}
 	
 	if(!$article->allow_comments)
@@ -532,13 +533,18 @@ $ste->register_tag("languages", function($ste, $params, $sub)
 	$langs = array();
 	if(isset($ste->vars["current"]["article"]))
 	{
-		try
+		if(isset($ste->vars["current"]["article"]["__obj"]))
+			$article = $ste->vars["current"]["article"]["__obj"];
+		else
 		{
-			$article = Article::by_id($ste->vars["current"]["article"]["id"]);
-			foreach($article->title as $lang => $_)
-				$langs[] = $lang;
+			try
+			{
+				$article = Article::by_id($ste->vars["current"]["article"]["id"]);
+			}
+			catch(DoesNotExistError $e) {}
 		}
-		catch(DoesNotExistError $e) {}
+		foreach($article->title as $lang => $_)
+			$langs[] = $lang;
 	}
 	else
 	{
@@ -581,16 +587,24 @@ $ste->register_tag("styles_load", function($ste, $params, $sub)
 	if($mode == "embed")
 	{
 		$output = "";
-		foreach($ste->vars["current"]["styles"] as $stylename)
+		if(isset($ste->vars["current"]["__style_objs"]))
 		{
-			try
+			foreach($ste->vars["current"]["__style_objs"] as $style)
+				$output .= "/* Style: {$style->name} */\n" . $style->code . "\n";
+		}
+		else
+		{
+			foreach($ste->vars["current"]["styles"] as $stylename)
 			{
-				$style = Style::by_name($stylename);
-				$output .= "/* Style: $stylename */\n" . $style->code . "\n";
-			}
-			catch(DoesNotExistError $e)
-			{
-				$output .= "/* Warning: Failed to load style: $stylename */\n";
+				try
+				{
+					$style = Style::by_name($stylename);
+					$output .= "/* Style: $stylename */\n" . $style->code . "\n";
+				}
+				catch(DoesNotExistError $e)
+				{
+					$output .= "/* Warning: Failed to load style: $stylename */\n";
+				}
 			}
 		}
 		$output = "<style type=\"text/css\">\n" . htmlesc($output) . "</style>";
@@ -599,17 +613,7 @@ $ste->register_tag("styles_load", function($ste, $params, $sub)
 	{
 		$output = "";
 		foreach($ste->vars["current"]["styles"] as $stylename)
-		{
-			try
-			{
-				$style = Style::by_name($stylename);
-				$output .= "<link rel=\"stylesheet\" type=\"text/css\" href=\"" . htmlesc($rel_path_to_root . "/css.php?name=" . urlencode($style->name)) . "\" />\n";
-			}
-			catch(DoesNotExistError $e)
-			{
-				$output .= "<!-- Warning: Failed to load style: $stylename */ -->\n";
-			}
-		}
+			$output .= "<link rel=\"stylesheet\" type=\"text/css\" href=\"" . htmlesc($stylename) . "\" />\n";
 	}
 	return $output;
 });
@@ -690,9 +694,7 @@ function frontend_url_handler(&$data, $url_now, &$url_next)
 {
 	global $ste, $ratatoeskr_settings, $languages, $metasections, $comment_validators;
 	$path = array_merge(array($url_now), $url_next);
-	$url_next  = array();
-	
-	$default_section = Section::by_id($ratatoeskr_settings["default_section"]);
+	$url_next = array();
 	
 	/* If no language or an invalid language was given, fix it. */
 	if((count($path) == 0) or (!isset($languages[$path[0]])))
@@ -708,10 +710,10 @@ function frontend_url_handler(&$data, $url_now, &$url_next)
 	$ste->vars["language"] = $lang;
 	load_language($languages[$lang]["translation_exist"] ? $lang : "en"); /* English is always available */
 	
-	if(count($path) == 0)
-		array_unshift($path, $default_section->name);
-	
-	$section_name = array_shift($path);
+	if(count($path) != 0)
+		$section_name = array_shift($path);
+	else
+		$section_name = NULL;
 	
 	if($section_name == "_tags")
 	{
@@ -727,13 +729,18 @@ function frontend_url_handler(&$data, $url_now, &$url_next)
 	}
 	else
 	{
-		try
+		if($section_name === NULL)
+			$section = Section::by_id($ratatoeskr_settings["default_section"]);
+		else
 		{
-			$section = Section::by_name($section_name);
-		}
-		catch(DoesNotExistError $e)
-		{
-			throw new NotFoundError();
+			try
+			{
+				$section = Section::by_name($section_name);
+			}
+			catch(DoesNotExistError $e)
+			{
+				throw new NotFoundError();
+			}
 		}
 		
 		if(count($path)== 0)
@@ -787,7 +794,10 @@ function frontend_url_handler(&$data, $url_now, &$url_next)
 		$section = $default_section;
 	
 	foreach($section->get_styles() as $style)
+	{
 		$ste->vars["current"]["styles"][] = $style->name;
+		$ste->vars["current"]["__style_objs"][] = $style;
+	}
 	echo $ste->exectemplate("/usertemplates/" . $section->template);
 }
 
