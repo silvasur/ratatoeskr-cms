@@ -783,7 +783,7 @@ function frontend_url_handler(&$data, $url_now, &$url_next)
 	if(!isset($section))
 		$section = $default_section;
 	
-	foreach($section->styles as $style)
+	foreach($section->get_styles() as $style)
 		$ste->vars["current"]["styles"][] = $style->name;
 	echo $ste->exectemplate("/usertemplates/" . $section->template);
 }

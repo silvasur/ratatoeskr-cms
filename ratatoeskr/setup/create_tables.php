@@ -92,7 +92,6 @@ CREATE TABLE `PREFIX_sections` (
   `name` text COLLATE utf8_unicode_ci NOT NULL,
   `title` int(11) NOT NULL,
   `template` text COLLATE utf8_unicode_ci NOT NULL,
-  `styles` text COLLATE utf8_unicode_ci NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
@@ -106,6 +105,11 @@ CREATE TABLE `PREFIX_styles` (
   `name` text COLLATE utf8_unicode_ci NOT NULL,
   `code` text COLLATE utf8_unicode_ci NOT NULL,
   PRIMARY KEY (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+CREATE TABLE `PREFIX_section_style_relations` (
+  `section` int(11) NOT NULL,
+  `style` int(11) NOT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 CREATE TABLE `PREFIX_tags` (

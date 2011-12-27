@@ -1095,8 +1095,8 @@ $backend_subactions = url_action_subactions(array(
 				try
 				{
 					$section = Section::by_name($_GET["rmfrom"]);
-					$style   = $_GET["rmstyle"];
-					$section->styles = array_filter($section->styles, function($s) use ($style) { return $s->name != $style; });
+					$style   = Style::by_name($_GET["rmstyle"]);
+					$section->remove_style($style);
 					$section->save();
 					$ste->vars["success"] = $translation["style_removed"];
 				}
@@ -1175,11 +1175,7 @@ $backend_subactions = url_action_subactions(array(
 				{
 					$section = Section::by_name($_POST["section_select"]);
 					$style   = Style::by_name($_POST["style_to_add"]);
-					if(!in_array($style, $section->styles))
-					{
-						$section->styles[] = $style;
-						$section->save();
-					}
+					$section->add_style($style);
 					$ste->vars["success"] = $translation["successfully_added_style"];
 				}
 				catch(DoesNotExistError $e)
@@ -1236,7 +1232,7 @@ $backend_subactions = url_action_subactions(array(
 					"name"     => $section->name,
 					"title"    => $titles,
 					"template" => $section->template,
-					"styles"   => array_map(function($style) { return $style->name; }, $section->styles),
+					"styles"   => array_map(function($style) { return $style->name; }, $section->get_styles()),
 					"default"  => ($section->get_id() == $ratatoeskr_settings["default_section"])
 				);
 			}, $sections);

@@ -259,7 +259,7 @@ class User extends BySQLRowEnabled
 	public function get_groups()
 	{
 		$rv = array();
-		$result = qdb("SELECT `id`, `name` FROM `PREFIX_groups` WHERE `id` = (SELECT `group` FROM `PREFIX_group_members` WHERE `user` = %d)", $this->id);
+		$result = qdb("SELECT `a`.`id` AS `id`, `a`.`name` AS `name` FROM `PREFIX_groups` `a` INNER JOIN `PREFIX_group_members` `b` ON `a`.`id` = `b`.`group` WHERE `b`.`user` = %d", $this->id);
 		while($sqlrow = mysql_fetch_assoc($result))
 			$rv[] = Group::by_sqlrow($sqlrow);
 		return $rv;
@@ -427,9 +427,11 @@ class Group extends BySQLRowEnabled
 	public function get_members()
 	{
 		$rv = array();
-		$result = qdb("SELECT `id`, `username`, `pwhash`, `mail`, `fullname`, `language` FROM `PREFIX_users` WHERE `id` = (SELECT `user` FROM `PREFIX_group_members` WHERE `group` = %d)", $this->id);
+		$result = qdb("SELECT `a`.`id` AS `id`, `a`.`username` AS `username`, `a`.`pwhash` AS `pwhash`, `a`.`mail` AS `mail`, `a`.`fullname` AS `fullname`, `a`.`language` AS `language`
+FROM `PREFIX_users` `a` INNER JOIN `PREFIX_group_members` `b` ON `a`.`id` = `b`.`user`
+WHERE `b`.`group` = %d", $this->id);
 		while($sqlrow = mysql_fetch_assoc($result))
-			$rv[] = User::by_sqlrow($result);
+			$rv[] = User::by_sqlrow($sqlrow);
 		return $rv;
 	}
 	
@@ -1185,6 +1187,7 @@ class Style extends BySQLRowEnabled
 	public function delete()
 	{
 		qdb("DELETE FROM `PREFIX_styles` WHERE `id` = %d", $this->id);
+		qdb("DELETE FROM `PREFIX_section_style_relations` WHERE `style` = %d", $this->id);
 	}
 }
 
@@ -1391,12 +1394,10 @@ class Section extends BySQLRowEnabled
 	 * $name     - The name of the section.
 	 * $title    - The title of the section (a <Multilingual> object).
 	 * $template - Name of the template.
-	 * $styles   - List of <Style> objects.
 	 */
 	public $name;
 	public $title;
 	public $template;
-	public $styles;
 	
 	protected function populate_by_sqlrow($sqlrow)
 	{
@@ -1404,18 +1405,6 @@ class Section extends BySQLRowEnabled
 		$this->name     = $sqlrow["name"];
 		$this->title    = Multilingual::by_id($sqlrow["title"]);
 		$this->template = $sqlrow["template"];
-		$this->styles   = array();
-		foreach(explode("+", $sqlrow["styles"]) as $style_id)
-		{
-			if(!empty($style_id))
-			{
-				try
-				{
-					$this->styles[] = Style::by_id($style_id);
-				}
-				catch(DoesNotExistError $e) { }
-			}
-		}
 	}
 	
 	/*
@@ -1445,9 +1434,8 @@ class Section extends BySQLRowEnabled
 			$obj->name     = $name;
 			$obj->title    = Multilingual::create();
 			$obj->template = "";
-			$obj->styles   = array();
 			
-			$result = qdb("INSERT INTO `PREFIX_sections` (`name`, `title`, `template`, `styles`) VALUES ('%s', %d, '', '')",
+			$result = qdb("INSERT INTO `PREFIX_sections` (`name`, `title`, `template`) VALUES ('%s', %d, '')",
 				$name, $obj->title->get_id());
 			
 			$obj->id = mysql_insert_id();
@@ -1473,7 +1461,7 @@ class Section extends BySQLRowEnabled
 	 */
 	public static function by_id($id)
 	{
-		$result = qdb("SELECT `id`, `name`, `title`, `template`, `styles` FROM `PREFIX_sections` WHERE `id` = %d", $id);
+		$result = qdb("SELECT `id`, `name`, `title`, `template` FROM `PREFIX_sections` WHERE `id` = %d", $id);
 		$sqlrow = mysql_fetch_assoc($result);
 		if($sqlrow === False)
 			throw new DoesNotExistError();
@@ -1496,7 +1484,7 @@ class Section extends BySQLRowEnabled
 	 */
 	public static function by_name($name)
 	{
-		$result = qdb("SELECT `id`, `name`, `title`, `template`, `styles` FROM `PREFIX_sections` WHERE `name` = '%s'", $name);
+		$result = qdb("SELECT `id`, `name`, `title`, `template` FROM `PREFIX_sections` WHERE `name` = '%s'", $name);
 		$sqlrow = mysql_fetch_assoc($result);
 		if($sqlrow === False)
 			throw new DoesNotExistError();
@@ -1514,10 +1502,53 @@ class Section extends BySQLRowEnabled
 	public static function all()
 	{
 		$rv = array();
-		$result = qdb("SELECT `id`, `name`, `title`, `template`, `styles` FROM `PREFIX_sections` WHERE 1");
+		$result = qdb("SELECT `id`, `name`, `title`, `template` FROM `PREFIX_sections` WHERE 1");
 		while($sqlrow = mysql_fetch_assoc($result))
 			$rv[] = self::by_sqlrow($sqlrow);
 		return $rv;
+	}
+	
+	/*
+	 * Function: get_styles
+	 * Get all styles associated with this section.
+	 * 
+	 * Returns:
+	 * 	List of <Style> objects.
+	 */
+	public function get_styles()
+	{
+		$rv = array();
+		$result = qdb("SELECT `a`.`id` AS `id`, `a`.`name` AS `name`, `a`.`code` AS `code` FROM `PREFIX_styles` `a` INNER JOIN `PREFIX_section_style_relations` `b` ON `a`.`id` = `b`.`style` WHERE `b`.`section` = %d", $this->id);
+		while($sqlrow = mysql_fetch_assoc($result))
+			$rv[] = Style::by_sqlrow($sqlrow);
+		return $rv;
+	}
+	
+	/*
+	 * Function: add_style
+	 * Add a style to this section.
+	 * 
+	 * Parameters:
+	 * 	$style - A <Style> object.
+	 */
+	public function add_style($style)
+	{
+		$result = qdb("SELECT COUNT(*) AS `n` FROM `PREFIX_section_style_relations` WHERE `style` = %d AND `section` = %d", $style->get_id(), $this->id);
+		$sqlrow = mysql_fetch_assoc($result);
+		if($sqlrow["n"] == 0)
+			qdb("INSERT INTO `PREFIX_section_style_relations` (`section`, `style`) VALUES (%d, %d)", $this->id, $style->get_id());
+	}
+	
+	/*
+	 * Function: remove_style
+	 * Remove a style from this section.
+	 * 
+	 * Parameters:
+	 * 	$style - A <Style> object.
+	 */
+	public function remove_style($style)
+	{
+		qdb("DELETE FROM `PREFIX_section_style_relations` WHERE `section` = %d AND `style` = %d", $this->id, $style->get_id());
 	}
 	
 	/*
@@ -1533,18 +1564,9 @@ class Section extends BySQLRowEnabled
 		if($sqlrow["n"] > 0)
 			throw new AlreadyExistsError();
 		
-		$styles = "+";
-		foreach($this->styles as $style)
-		{
-			$style->save();
-			$styles .= $style->get_id() . "+";
-		}
-		if($styles == "+")
-			$styles = "";
-		
 		$this->title->save();
-		qdb("UPDATE `PREFIX_sections` SET `name` = '%s', `title` = %d, `template` = '%s', `styles` = '%s' WHERE `id` = %d",
-			$this->name, $this->title->get_id(), $this->template, $styles, $this->id);
+		qdb("UPDATE `PREFIX_sections` SET `name` = '%s', `title` = %d, `template` = '%s' WHERE `id` = %d",
+			$this->name, $this->title->get_id(), $this->template, $this->id);
 	}
 	
 	/*
@@ -1554,6 +1576,7 @@ class Section extends BySQLRowEnabled
 	{
 		$this->title->delete();
 		qdb("DELETE FROM `PREFIX_sections` WHERE `id` = %d", $this->id);
+		qdb("DELETE FROM `PREFIX_section_style_relations` WHERE `section` = %d", $this->id);
 	}
 	
 	/*
@@ -1700,7 +1723,11 @@ class Tag extends BySQLRowEnabled
 	public function get_articles()
 	{
 		$rv = array();
-		$result = qdb("SELECT `id`, `urlname`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments` FROM `PREFIX_articles` FROM `PREFIX_articles` WHERE `id` = (SELECT `article` FROM `PREFIX_article_tag_relations` WHERE `tag` = %d)", $this->id);
+		$result = qdb(
+"SELECT `a`.`id` AS `id`, `a`.`urlname` AS `urlname`, `a`.`title` AS `title`, `a`.`text` AS `text`, `a`.`excerpt` AS `excerpt`, `a`.`meta` AS `meta`, `a`.`custom` AS `custom`, `a`.`article_image` AS `article_image`, `a`.`status` AS `status`, `a`.`section` AS `section`, `a`.`timestamp` AS `timestamp`, `a`.`allow_comments` AS `allow_comments`
+FROM `PREFIX_articles` `a`
+INNER JOIN `PREFIX_article_tag_relations` `b` ON `a`.`id` = `b`.`article`
+WHERE `b`.`tag` = '%d'" , $this->id);
 		while($sqlrow = mysql_fetch_assoc($result))
 			$rv[] = Article::by_sqlrow($sqlrow);
 		return $rv;
@@ -2240,7 +2267,7 @@ class Article extends BySQLRowEnabled
 		$this->timestamp      = $sqlrow["timestamp"];
 		$this->allow_comments = $sqlrow["allow_comments"] == 1;
 		
-		$result = qdb("SELECT `id`, `name`, `title` FROM `PREFIX_tags` WHERE `id` = (SELECT `tag` FROM `PREFIX_article_tag_relations` WHERE `article` = %d)", $this->id);
+		$result = qdb("SELECT `a`.`id` AS `id`, `a`.`name` AS `name`, `a`.`title` AS `title` FROM `PREFIX_tags` `a` INNER JOIN `PREFIX_article_tag_relations` `b` ON `a`.`id` = `b`.`tag` WHERE `b`.`article` = %d", $this->id);
 		while($sqlrow = mysql_fetch_assoc($result))
 			$this->tags[] = Tag::by_sqlrow($sqlrow);
 	}
