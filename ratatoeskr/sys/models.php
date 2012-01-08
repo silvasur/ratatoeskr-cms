@@ -1349,7 +1349,7 @@ class Plugin extends BySQLRowEnabled
 	public function save()
 	{
 		qdb("UPDATE `PREFIX_plugins` SET `name` = '%s', `author` = '%s', `code` = '%s', `classname` = '%s', `active` = %d, `versiontext` = '%s', `versioncount` = %d, `short_description` = '%s', `updatepath` = '%s', `web` = '%s', `help` = '%s', `installed` = %d, `update` = %d, `license` = '%s' WHERE `id` = %d",
-			$this->name, $this>author, $this->code, $this->classname, ($this->active ? 1 : 0), $this->versiontext, $this->versioncount, $this->short_description, $this->updatepath, $this->web, $this->help, ($this->installed ? 1 : 0), ($this->update ? 1 : 0), $this->license, $this->id);
+			$this->name, $this->author, $this->code, $this->classname, ($this->active ? 1 : 0), $this->versiontext, $this->versioncount, $this->short_description, $this->updatepath, $this->web, $this->help, ($this->installed ? 1 : 0), ($this->update ? 1 : 0), $this->license, $this->id);
 	}
 	
 	/*
@@ -1973,7 +1973,7 @@ class Image extends BySQLRowEnabled
 }
 
 /*
- * Class RepositoryUnreachableOrInvalid
+ * Class: RepositoryUnreachableOrInvalid
  * A Exception that will be thrown, if the repository is aunreachable or seems to be an invalid repository.
  */
 class RepositoryUnreachableOrInvalid extends Exception { }
@@ -2063,7 +2063,7 @@ class Repository extends BySQLRowEnabled
 	 */
 	public static function by_id($id)
 	{
-		$result = qdb("SELECT `id`, `name`, `description`, `baseurl`, `pkgcache`, `lastrefresh` WHERE  id` = %d", $this->id);
+		$result = qdb("SELECT `id`, `name`, `description`, `baseurl`, `pkgcache`, `lastrefresh` FROM `PREFIX_repositories` WHERE `id` = %d", $id);
 		$sqlrow = mysql_fetch_assoc($result);
 		if(!$sqlrow)
 			throw new DoesNotExistError();
@@ -2081,7 +2081,7 @@ class Repository extends BySQLRowEnabled
 	public static function all()
 	{
 		$rv = array();
-		$result = qdb("SELECT `id`, `name`, `description`, `baseurl`, `pkgcache`, `lastrefresh` WHERE 1");
+		$result = qdb("SELECT `id`, `name`, `description`, `baseurl`, `pkgcache`, `lastrefresh` FROM `PREFIX_repositories` WHERE 1");
 		while($sqlrow = mysql_fetch_assoc($result))
 			$rv[] = self::by_sqlrow($sqlrow);
 		return $rv;

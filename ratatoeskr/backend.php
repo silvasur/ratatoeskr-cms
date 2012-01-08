@@ -1543,7 +1543,80 @@ $backend_subactions = url_action_subactions(array(
 			$ste->vars["submenu"]   = "repos";
 			$ste->vars["pagetitle"] = $translation["menu_plugin_repos"];
 			
+			/* Add a repo? */
+			if(isset($_POST["add_repo"]))
+			{
+				try
+				{
+					$repo = Repository::create($_POST["repo_baseurl"]);
+					$ste->vars["success"] = $translation["successfully_added_repo"];
+				}
+				catch(RepositoryUnreachableOrInvalid $e)
+				{
+					$ste->vars["error"] = $translation["repository_unreachable_or_invalid"];
+				}
+			}
 			
+			/* Delete repos? */
+			if(isset($_POST["delete_repos"]) and ($_POST["really_delete"] == "yes"))
+			{
+				foreach($_POST["repos_multiselect"] as $repo_id)
+				{
+					try
+					{
+						$repo = Repository::by_id($repo_id);
+						$repo->delete();
+					}
+					catch(DoesNotExistError $e)
+					{
+						continue;
+					}
+				}
+				$ste->vars["success"] = $translation["repos_deleted"];
+			}
+			
+			/* Force refresh? */
+			if(isset($_POST["force_repo_refresh"]))
+			{
+				$failed = array();
+				foreach($_POST["repos_multiselect"] as $repo_id)
+				{
+					try
+					{
+						$repo = Repository::by_id($repo_id);
+						$repo->refresh(True);
+					}
+					catch(DoesNotExistError $e)
+					{
+						continue;
+					}
+					catch(RepositoryUnreachableOrInvalid $e)
+					{
+						$failed[] = $repo->get_name();
+					}
+				}
+				$ste->vars["success"] = $translation["successfully_refreshed_repos"];
+				if(!empty($failed))
+					$ste->vars["error"] = str_replace("[[REPOS]]", implode(", ", $failed), $translation["repo_refresh_failed_on"]);
+			}
+			
+			/* Fill data */
+			$all_repos = Repository::all();
+			$ste->vars["repos"] = array_map(
+			function($r)
+			{
+				try
+				{
+					$r->refresh();
+				}
+				catch(RepositoryUnreachableOrInvalid $e){}
+				return array(
+					"id"          => $r->get_id(),
+					"name"        => $r->get_name(),
+					"description" => $r->get_description(),
+					"baseurl"     => $r->get_baseurl()
+				);
+			}, $all_repos);
 			
 			echo $ste->exectemplate("systemtemplates/repos.html");
 		}
@@ -1627,7 +1700,7 @@ $backend_subactions = url_action_subactions(array(
 						if(!empty($plugin->updatepath))
 						{
 							$update_info = @unserialize(@file_get_contents($plugin->updatepath, False, $stream_ctx));
-							if(is_array($update_info) and ($update_info["current-version"] > $plugin->versioncount))
+							if(is_array($update_info) and (($update_info["current-version"]+0) > ($plugin->versioncount+0)))
 							{
 								$pkg = PluginPackage::load(@file_get_contents($update_info["dl-path"], False, $stream_ctx));
 								$plugin->fill_from_pluginpackage($pkg);
@@ -1709,6 +1782,19 @@ $backend_subactions = url_action_subactions(array(
 			$ste->vars["submenu"]   = "installplugins";
 			$ste->vars["pagetitle"] = $translation["menu_plugininstall"];
 			
+			$all_repos = Repository::all();
+			foreach($all_repos as $repo)
+			{
+				try
+				{
+					$repo->refresh();
+				}
+				catch(RepositoryUnreachableOrInvalid $e)
+				{
+					continue;
+				}
+			}
+			
 			if(isset($_POST["installpackage"]))
 			{
 				if(is_uploaded_file($_FILES["pluginpackage"]["tmp_name"]))
@@ -1740,7 +1826,60 @@ $backend_subactions = url_action_subactions(array(
 					$ste->vars["error"] = $translation["upload_failed"];
 			}
 			
+			if(isset($_POST["search_in_repos"]))
+			{
+				$ste->vars["searchresults"] = array();
+				$repos_to_scan = ($_POST["searchin"] == "*") ? $all_repos : Repository::by_id($_POST["searchin"]);
+				$searchfor = strtolower($_POST["searchfor"]);
+				foreach($repos_to_scan as $repo)
+				{
+					foreach($repo->packages as $pkg)
+					{
+						if(empty($searchfor) or (strpos(strtolower($pkg[0]), $searchfor) !== False) or (strpos(strtolower($pkg[2]), $searchfor) !== False))
+							$ste->vars["searchresults"][] = array(
+								"name"        => $pkg[0],
+								"description" => $pkg[2],
+								"reponame"    => $repo->get_name(),
+								"repoid"      => $repo->get_id()
+							);
+					}
+				}
+			}
+			
+			$ste->vars["repos"] = array_map(function($r) { return array(
+				"id"   => $r->get_id(),
+				"name" => $r->get_name()
+			); }, $all_repos);
+			
 			echo $ste->exectemplate("systemtemplates/plugininstall.html");
+		},
+		"repoinstall" => function(&$data, $url_now, &$url_next)
+		{
+			global $ste, $translation, $rel_path_to_root;
+			
+			$stream_ctx = stream_context_create(array("http" => array("timeout" => 5)));
+			
+			try
+			{
+				$repo = Repository::by_id($_GET["repo"]);
+				$pkg = $repo->download_package($_GET["pkg"]);
+				$plugin = Plugin::create();
+				$plugin->fill_from_pluginpackage($pkg);
+				$plugin->installed = False;
+				$plugin->active = False;
+				$plugin->save();
+				$url_next = array("confirminstall", (string) $plugin->get_id());
+			}
+			catch(DoesNotExistError $e)
+			{
+				$ste->vars["error"] = $translation["package_or_repo_not_found"];
+				$url_next = array("install");
+			}
+			catch(InvalidPackage $e)
+			{
+				$ste->vars["error"] = $translation["invalid_package"];
+				$url_next = array("install");
+			}
 		},
 		"confirminstall" => function(&$data, $url_now, &$url_next)
 		{

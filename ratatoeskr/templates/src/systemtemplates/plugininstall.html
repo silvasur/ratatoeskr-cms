@@ -15,4 +15,53 @@
 	<form action="$rel_path_to_root/backend/plugin/install" method="POST" accept-charset="UTF-8" enctype="multipart/form-data">
 		<input type="file" name="pluginpackage" /> <input type="submit" name="installpackage" />
 	</form>
+	
+	<h2><ste:get_translation for="install_from_repo" /></h2>
+	<ste:set var="repos_n"><ste:arraylen array="repos" /></ste:set>
+	<ste:if>
+		~{$repos_n|gt|0}
+		<ste:then>
+			<form action="$rel_path_to_root/backend/plugin/install" method="POST" accept-charset="UTF-8">
+				<ste:get_translation for="search" />: <input type="text" name="searchfor" />
+				<ste:get_translation for="repo_plugin_search_in" />:
+				<select name="searchin">
+					<option value="*" selected="selected"><ste:get_translation for="search_in_all_repos" /></option>
+					<option value="*">-----------</option>
+					<ste:foreach array="repos" value="repo">
+						<option value="$repo[id]"><ste:escape>$repo[name]</ste:escape></option>
+					</ste:foreach>
+				</select>
+				<input type="submit" name="search_in_repos" />
+			</form>
+		</ste:then>
+		<ste:else>
+			<ste:l10n_replace URL="$rel_path_to_root/backend/admin/repos"><ste:get_translation for="no_repos_add_some" raw="y" /></ste:l10n_replace>
+		</ste:else>
+	</ste:if>
+	
+	<ste:if>
+		$searchresults
+		<ste:then>
+			<table class="listtab fullwidth">
+				<thead>
+					<tr>
+						<th><ste:get_translation for="plugin_name" /></th>
+						<th><ste:get_translation for="plugin_description" /></th>
+						<th><ste:get_translation for="repo" /></th>
+						<th>&nbsp;</th>
+					</tr>
+				</thead>
+				<tbody>
+					<ste:foreach array="searchresults" value="searchresult">
+						<tr>
+							<td><ste:escape>$searchresult[name]</ste:escape></td>
+							<td><ste:escape>$searchresult[description]</ste:escape></td>
+							<td><ste:escape>$searchresult[reponame]</ste:escape></td>
+							<td><a href="$rel_path_to_root/backend/plugin/repoinstall?repo=$searchresult[repoid]&pkg=$searchresult[name]"><ste:get_translation for="install" /></a></td>
+						</tr>
+					</ste:foreach>
+				</tbody>
+			</table>
+		</ste:then>
+	</ste:if>
 </ste:block>

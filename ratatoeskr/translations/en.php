@@ -224,7 +224,27 @@ $translation = array(
 	"plugins_activated" => "Plugins activated.",
 	"plugins_deactivated" => "Plugins deactivated.",
 	"successfully_updated_plugins" => "These plugins were updated: [[PLUGINS]]",
-	"nothing_to_update" => "Nothing to update."
+	"nothing_to_update" => "Nothing to update.",
+	"add_repo" => "Add a repository",
+	"repo_baseurl" => "Repository base URL",
+	"repo_list" => "Repository List",
+	"repo_name" => "Name",
+	"repo_description" => "Description",
+	"no_repos" => "No repositories found.",
+	"force_repo_refresh" => "Force refresh",
+	"successfully_added_repo" => "Successfully added repository.",
+	"repository_unreachable_or_invalid" => "Repository is unreachable or is invalid.",
+	"repos_deleted" => "Repositories deleted.",
+	"successfully_refreshed_repos" => "Successfully refreshed.",
+	"repo_refresh_failed_on" => "Repository refresh failed on these repositories: [[REPOS]]",
+	"no_repos_add_some" => "No repositories found. You should <a href=\"[[URL]]\">add some repositories</a>.",
+	"install_from_repo" => "Install from repository",
+	"search" => "Search",
+	"repo_plugin_search_in" => "Search in",
+	"search_in_all_repos" => "all repositories",
+	"repo" => "Repository",
+	"install" => "Install",
+	"package_or_repo_not_found" => "Package or repository not found."
 );
 
 ?>
