@@ -168,13 +168,13 @@ abstract class RatatoeskrPlugin
 		global $pluginpages_handlers;
 		
 		$this->ste->vars["pluginpages"][$this->id] = $label;
-		sort($this->ste->vars["pluginpages"]);
+		asort($this->ste->vars["pluginpages"]);
 		$pluginid = $this->id;
 		$pluginpages_handlers["p{$this->id}"] = function(&$data, $url_now, &$url_next) use($pluginid, $fx)
 		{
 			global $ste, $rel_path_to_root;
 			$ste->vars["rel_path_to_pluginpage"] = "$rel_path_to_root/backend/pluginpages/p$pluginid";
-			$rv = $fx($data, $url_now, $url_next);
+			$rv = call_user_func_array($fx, array(&$data, $url_now, &$url_next));
 			unset($ste->vars["rel_path_to_pluginpage"]);
 			return $rv;
 		};

@@ -57,6 +57,12 @@ function askyesno($ste, $callback, $question, $yes=NULL, $no=NULL, $moredetails=
 	return $ste->exectemplate("systemtemplates/areyousure.html");
 }
 
+$backend_subactions = NULL;
+
+function build_backend_subactions()
+{
+global $backend_subactions, $pluginpages_handlers;
+
 $backend_subactions = url_action_subactions(array(
 	"_index" => url_action_alias(array("login")),
 	"index" => url_action_alias(array("login")),
@@ -1932,7 +1938,9 @@ $backend_subactions = url_action_subactions(array(
 			echo $ste->exectemplate("systemtemplates/confirminstall.html");
 		}
 	)),
-	"pluginpages" => url_action_subactions($pluginpages_handlers)
+	"pluginpages" => url_action_subactions(&$pluginpages_handlers)
 ));
+
+}
 
 ?>

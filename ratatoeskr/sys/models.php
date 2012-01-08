@@ -1285,7 +1285,7 @@ class Plugin extends BySQLRowEnabled
 		if(!empty($pkg->custompriv))
 			array2dir($pkg->custompriv, dirname(__FILE__) . "/../plugin_extradata/private/" . $this->get_id());
 		if(!empty($pkg->tpls))
-			array2dir($pkg->tpls, dirname(__FILE__) . "/../templates/srv/plugintemplates/" . $this->get_id());
+			array2dir($pkg->tpls, dirname(__FILE__) . "/../templates/src/plugintemplates/" . $this->get_id());
 	}
 	
 	protected function populate_by_sqlrow($sqlrow)

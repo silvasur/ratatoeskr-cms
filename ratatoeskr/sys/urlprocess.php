@@ -124,7 +124,7 @@ function url_process($url, $actions, &$data)
 		
 		try
 		{
-			$cb($data, $url_now, $url_next);
+			call_user_func_array($cb, array(&$data, $url_now, &$url_next));
 		}
 		catch(NotFoundError $e)
 		{

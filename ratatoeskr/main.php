@@ -50,6 +50,7 @@ function ratatoeskr()
 	}
 	
 	/* Register URL handlers */
+	build_backend_subactions();
 	register_url_handler("_default", "frontend_url_handler");
 	register_url_handler("_index", "frontend_url_handler");
 	register_url_handler("index", "frontend_url_handler");
