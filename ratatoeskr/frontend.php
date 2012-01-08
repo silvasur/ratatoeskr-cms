@@ -618,14 +618,24 @@ $ste->register_tag("styles_load", function($ste, $params, $sub)
 	return $output;
 });
 
+/*
+ * STETag: title
+ * Generate a HTML title tag for your site.
+ * 
+ * Tag Content:
+ * 	The name of your site.
+ * 
+ * Returns:
+ * 	A HTML title tag that describes the current (sub)page.
+ */
 $ste->register_tag("title", function($ste, $params, $sub)
 {
 	$pagetitle = $sub($ste);
 	if(isset($ste->vars["current"]["article"]))
-		return $ste->vars["current"]["article"]["title"] . " – $pagetitle";
+		return "<title>" . htmlesc($ste->vars["current"]["article"]["title"]) . " – $pagetitle" . "</title>";
 	if(isset($ste->vars["current"]["section"]))
-		return $ste->vars["current"]["section"]["title"] . " – $pagetitle";
-	return $pagetitle;
+		return "<title>" . htmlesc($ste->vars["current"]["section"]["title"]) . " – $pagetitle" . "</title>";
+	return "<title>$pagetitle</title>";
 });
 
 /*
