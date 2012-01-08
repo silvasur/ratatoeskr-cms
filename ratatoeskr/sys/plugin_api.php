@@ -15,15 +15,15 @@ require_once(dirname(__FILE__) . "/../frontend.php");
 
 /*
  * Constant: APIVERSION
- * The current API version (3).
+ * The current API version (4).
  */
-define("APIVERSION", 3);
+define("APIVERSION", 4);
 
 /*
  * Array: $api_compat
  * Array of API versions, this version is compatible to (including itself).
  */
-$api_compat = array(3);
+$api_compat = array(3, 4);
 
 $url_handlers = array();
 /*
@@ -158,6 +158,8 @@ abstract class RatatoeskrPlugin
 	 * 
 	 * Your $fx should output output the result of a STE template, which should load "/systemtemplates/master.html" and overwrite the "content" section.
 	 * 
+	 * If you need a URL to your pluginpage, you can use <get_backend_pluginpage_url> and the STE variable $rel_path_to_pluginpage.
+	 * 
 	 * See also:
 	 * 	<prepare_backend_pluginpage>
 	 */
@@ -167,7 +169,28 @@ abstract class RatatoeskrPlugin
 		
 		$this->ste->vars["pluginpages"][$this->id] = $label;
 		sort($this->ste->vars["pluginpages"]);
-		$pluginpages_handlers["p{$this->id}"] = $fx;
+		$pluginid = $this->id;
+		$pluginpages_handlers["p{$this->id}"] = function(&$data, $url_now, &$url_next) use($pluginid, $fx)
+		{
+			global $ste, $rel_path_to_root;
+			$ste->vars["rel_path_to_pluginpage"] = "$rel_path_to_root/backend/pluginpages/p$pluginid";
+			$rv = $fx($data, $url_now, $url_next);
+			unset($ste->vars["rel_path_to_pluginpage"]);
+			return $rv;
+		};
+	}
+	
+	/*
+	 * Function: get_backend_pluginpage_url
+	 * Get the URL to your backend plugin page.
+	 * 
+	 * Returns:
+	 * 	The URL to your backend plugin page.
+	 */
+	final protected function get_backend_pluginpage_url()
+	{
+		global $rel_path_to_root;
+		return "$rel_path_to_root/backend/pluginpages/p{$this->id}";
 	}
 	
 	/*
