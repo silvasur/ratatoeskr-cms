@@ -249,6 +249,8 @@ $ste->register_tag("section_list", function($ste, $params, $sub)
 	global $ratatoeskr_settings;
 	$lang = $ste->vars["language"];
 	
+	$default_section = $ratatoeskr_settings["default_section"];
+	
 	if(!isset($params["var"]))
 		throw new Exception("Parameter var is needed in article_get!");
 	
@@ -266,7 +268,7 @@ $ste->register_tag("section_list", function($ste, $params, $sub)
 	
 	if($ste->evalbool($params["include_default"]))
 	{
-		$default = section_transform_ste(Section::by_id($ratatoeskr_settings["default_section"]));
+		$default = section_transform_ste(Section::by_id($default_section), $lang);
 		array_unshift($result, $default);
 	}
 	
@@ -613,7 +615,7 @@ $ste->register_tag("styles_load", function($ste, $params, $sub)
 	{
 		$output = "";
 		foreach($ste->vars["current"]["styles"] as $stylename)
-			$output .= "<link rel=\"stylesheet\" type=\"text/css\" href=\"" . htmlesc($stylename) . "\" />\n";
+			$output .= "<link rel=\"stylesheet\" type=\"text/css\" href=\"$rel_path_to_root/css.php?name=" . htmlesc($stylename) . "\" />\n";
 	}
 	return $output;
 });
