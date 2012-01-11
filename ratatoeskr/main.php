@@ -34,19 +34,22 @@ function ratatoeskr()
 	
 	clean_database();
 	
-	$activeplugins = array_filter(Plugin::all(), function($plugin) { return $plugin->active; });
-	foreach($activeplugins as $plugin)
+	if(PLUGINS_ENABLED)
 	{
-		eval($plugin->code);
-		$plugin_obj = new $plugin->classname($plugin->get_id());
-		if($plugin->update)
+		$activeplugins = array_filter(Plugin::all(), function($plugin) { return $plugin->active; });
+		foreach($activeplugins as $plugin)
 		{
-			$plugin_obj->update();
-			$plugin->update = False;
-			$plugin->save();
+			eval($plugin->code);
+			$plugin_obj = new $plugin->classname($plugin->get_id());
+			if($plugin->update)
+			{
+				$plugin_obj->update();
+				$plugin->update = False;
+				$plugin->save();
+			}
+			$plugin_obj->init();
+			$plugin_objs[$plugin->get_id()] = $plugin_obj;
 		}
-		$plugin_obj->init();
-		$plugin_objs[$plugin->get_id()] = $plugin_obj;
 	}
 	
 	/* Register URL handlers */
@@ -72,8 +75,11 @@ function ratatoeskr()
 	
 	url_process($urlpath, $url_handlers, $data);
 	
-	foreach($plugin_objs as $plugin_obj)
-		$plugin_obj->atexit();
+	if(PLUGINS_ENABLED)
+	{
+		foreach($plugin_objs as $plugin_obj)
+			$plugin_obj->atexit();
+	}
 	$ratatoeskr_settings->save();
 }
 
