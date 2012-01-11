@@ -108,7 +108,7 @@ function article_transform_ste($article, $lang)
 		"timestamp"        => $article->timestamp,
 		"tags"             => array_map(function($tag) use ($lang) { return tag_transform_ste($tag, $lang); }, $article->get_tags()),
 		"languages"        => $languages,
-		"comments_allowed" => $article->comments_allowed,
+		"comments_allowed" => $article->allow_comments,
 		"__obj"            => $article
 	);
 }
