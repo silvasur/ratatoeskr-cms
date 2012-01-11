@@ -803,7 +803,7 @@ function frontend_url_handler(&$data, $url_now, &$url_next)
 	$ste->vars["current"]["page"] = (isset($_GET["page"]) and is_numeric($_GET["page"])) ? $_GET["page"] : 1;
 	
 	if(!isset($section))
-		$section = $default_section;
+		$section = Section::by_id($ratatoeskr_settings["default_section"]);
 	
 	foreach($section->get_styles() as $style)
 	{
