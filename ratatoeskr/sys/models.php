@@ -905,7 +905,7 @@ class Comment extends BySQLRowEnabled
 	protected function populate_by_sqlrow($sqlrow)
 	{
 		$this->id            = $sqlrow["id"];
-		$this->article       = Article::by_id($sqlrow["article"]);
+		$this->article_id    = $sqlrow["article"];
 		$this->language      = $sqlrow["language"];
 		$this->author_name   = $sqlrow["author_name"];
 		$this->author_mail   = $sqlrow["author_mail"];
@@ -945,7 +945,7 @@ class Comment extends BySQLRowEnabled
 	public static function all()
 	{
 		$rv = array();
-		$result = qdb("SELECT `id`, `article`, `language`, `author_name`, `author_mail`, `text`, `timestamp`, `visible`, `read_by_admin` WHERE 1");
+		$result = qdb("SELECT `id`, `article`, `language`, `author_name`, `author_mail`, `text`, `timestamp`, `visible`, `read_by_admin` FROM `PREFIX_comments` WHERE 1");
 		while($sqlrow = mysql_fetch_assoc($result))
 			$rv[] = self::by_sqlrow($sqlrow);
 		return $rv;
