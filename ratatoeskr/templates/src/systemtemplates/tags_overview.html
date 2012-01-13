@@ -1,15 +1,7 @@
 <ste:load name="master.html" />
 <ste:block name="content">
-	<ste:if>$error
-		<ste:then>
-			<div class="error">$error</div>
-		</ste:then>
-	</ste:if>
-	<ste:if>$success
-		<ste:then>
-			<div class="success">$success</div>
-		</ste:then>
-	</ste:if>
+	<ste:default_error />
+	<ste:default_success />
 	
 	<form action="$rel_path_to_root/backend/content/tags" method="POST" accept-charset="UTF-8">
 		<table class="listtab">

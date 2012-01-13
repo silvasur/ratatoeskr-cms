@@ -1,16 +1,8 @@
 <ste:comment>This template looks very boring/ugly, too much empty space, should be fixed some day...</ste:comment>
 <ste:load name="master.html" />
 <ste:block name="content">
-	<ste:if>$error
-		<ste:then>
-			<div class="error"><ste:escape>$error</ste:escape></div>
-		</ste:then>
-	</ste:if>
-	<ste:if>$success
-		<ste:then>
-			<div class="success"><ste:escape>$success</ste:escape></div>
-		</ste:then>
-	</ste:if>
+	<ste:default_error />
+	<ste:default_success />
 	
 	<form action="$rel_path_to_root/backend/admin/users/u/$u[id]" method="POST" accept-charset="UTF-8">
 		<p>
