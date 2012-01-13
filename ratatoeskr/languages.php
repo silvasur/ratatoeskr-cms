@@ -1,5 +1,22 @@
 <?php
-/* Source: http://en.wikipedia.org/wiki/List_of_ISO_639-1_codes */
+
+/*
+ * File: ratatoeskr/languages.php
+ */
+
+/*
+ * Array: $languages
+ * Information about a lot of languages.
+ * 
+ * $languages is a global array. The array keys represent the ISO 639-1 code of the language.
+ * The values are arrays with these keys:
+ * 
+ * "language"          - The Name of the language in this language (UTF-8 encoded)
+ * "translation_exist" - True, if there is a translation file for this language.
+ *
+ * Source:
+ * 	http://en.wikipedia.org/wiki/List_of_ISO_639-1_codes
+ */
 $languages = array(
 	"ab" => array("language" => "аҧсуа", "translation_exist" => False),
 	"aa" => array("language" => "Afaraf", "translation_exist" => False),
