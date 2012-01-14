@@ -1474,6 +1474,7 @@ $backend_subactions = url_action_subactions(array(
 				{
 					$user->fullname = $_POST["fullname"];
 					$user->mail     = $_POST["mail"];
+					$user->language = $_POST["lang"];
 					
 					$current_groups = array_map(function($g) { return $g->get_id(); }, $user->get_groups());
 					$new_groups     = empty($_POST[groups_multiselect]) ? array() : $_POST["groups_multiselect"];
@@ -1528,7 +1529,8 @@ $backend_subactions = url_action_subactions(array(
 					"id"       => $user->get_id(),
 					"name"     => $user->username,
 					"fullname" => $user->fullname,
-					"mail"     => $user->mail
+					"mail"     => $user->mail,
+					"lang"     => $user->language
 				);
 				$ste->vars["groups"] = array_map(function($g) use ($user) { return array(
 					"id"     => $g->get_id(),

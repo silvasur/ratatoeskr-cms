@@ -13,6 +13,14 @@
 			<strong><ste:get_translation for="mail_address" />:</strong><br />
 			<input type="text" name="mail" value="$u[mail]" />
 		</p>
+		<p>
+			<strong><ste:get_translation for="language" />:</strong><br />
+			<select name="lang">
+				<ste:foreach array="all_languages" key="langcode" value="langname">
+					<option value="$langcode"?{~{$langcode|eq|$u[lang]}| selected="selected"|}>$langcode: <ste:escape>$langname</ste:escape></option>
+				</ste:foreach>
+			</select>
+		</p>
 		<p><strong><ste:get_translation for="member_of_groups" />:</strong></p>
 		<ul class="bulletfree">
 			<ste:foreach array="groups" value="group">
