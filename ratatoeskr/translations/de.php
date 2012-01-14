@@ -244,7 +244,90 @@ $translation = array(
 	"search_in_all_repos" => "allen Sammlungen",
 	"repo" => "Sammlung",
 	"install" => "Installieren",
-	"package_or_repo_not_found" => "Paket oder Sammlung nicht gefunden."
+	"package_or_repo_not_found" => "Paket oder Sammlung nicht gefunden.",
+	/* Very long texts here */
+	"content_write_cheatsheet" => <<<CHEATSHEET
+<h2>Verlinken auf die Seitenwurzel</h2>
+<p>Der Text <code>%root%</code> wird mit einem Pfad ersetzt, der auf die Wurzel deiner Ratatöskr Seite verweist.</p>
+
+<h2>Markdown Spickzettel</h2>
+
+<h3>Betonung / Kräftig</h3>
+<p>
+	<code>*<em>Betonung</em>*</code><br />
+	<code>_<em>Betonung</em>_</code><br />
+	<code>**<strong>Kräftig</strong>**</code><br />
+	<code>__<strong>Kräftig</strong>__</code>
+</p>
+
+<h3>Absätze und manuelle Zeilenumbrüche.</h3>
+<p>
+	<code>Erster Absatz<br />
+<br />
+Zweiter Paragraph mit<br />
+langem<br />
+Text<br />
+<br />
+Um einenen Zeilenumbruch&nbsp;&nbsp;<br />
+zu erzwingen, schließe eine Zeile&nbsp;&nbsp;<br />
+mit zweil Leerzeichen ab.</code>
+</p>
+
+<h3>Überschriften</h3>
+<p>
+	<code>Überschrift 1<br />
+=============<br />
+<br />
+Überschrift 2<br />
+-------------<br />
+<br />
+# Überschrift 1<br />
+<br />
+## Überschrift 2<br />
+<br />
+...<br />
+<br />
+###### Überschrift 6<br /></code>
+</p>
+
+<h3>Verlinken</h3>
+<p>
+	<code>[Linktext](http://url/zur/resource "Optionaler Titel")</code>
+</p>
+<p>
+	<code>[Linktext][id]. Irgendwo anders:<br />
+&nbsp;<br />
+[id]: http://url/zur/resource "Optionaler Titel"</code>
+</p>
+
+<h3>Bilder</h3>
+<p>
+	<code>![alt text](/pfad/zum/bild "Optionaler Titel")</code>
+</p>
+
+<h3>Sortierte / Unsortierte Liste</h3>
+<p>
+	<code>* Element A<br />
+* Element B<br />
+&nbsp;&nbsp;<br />
+&nbsp;&nbsp;Mit zweitem Absatz.<br />
+&nbsp;<br />
+* Element C<br />
+&nbsp;&nbsp;* Element C1<br />
+&nbsp;&nbsp;* Element C2<br /></code>
+</p>
+<p>
+	<code>1. Erstes Element<br />
+2. Zweites Element
+</code>
+</p>
+
+<h3>Erfahre mehr</h3>
+<p>
+	<a href="http://daringfireball.net/projects/markdown/syntax">Komplette Syntax</a><br />
+	<a href="http://daringfireball.net/projects/markdown/dingus">Markdown testen</a>
+</p>
+CHEATSHEET
 );
 
 ?>
