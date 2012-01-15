@@ -32,7 +32,16 @@ $imagetype_file_extensions = array(
 
 /*
  * Variable: $ratatoeskr_settings
- * The global <Settings> object. For internal use.
+ * The global <Settings> object. Can be accessed like an array.
+ * Has these fields:
+ * 
+ * "default_language"        - The Language code of the default language.
+ * "comment_visible_default" - True, if comments should be visible by default.
+ * "allow_comments_default"  - True, if comments should be allowed by default.
+ * "default_section"         - The id of the default <Section>.
+ * "comment_textprocessor"   - The textprocessor to be used for comments.
+ * "languages"               - Array of activated languages.
+ * "last_db_cleanup"         - Timestamp of the last database cleanup.
  */
 $ratatoeskr_settings = NULL;
 
