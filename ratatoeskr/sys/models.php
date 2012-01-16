@@ -2387,7 +2387,7 @@ class Article extends BySQLRowEnabled
 	 * Returns:
 	 * 	Array of Article objects
 	 */
-	public function by_multi($criterias, $sortby, $sortdir, $count, $offset, $perpage, $page, &$maxpage)
+	public static function by_multi($criterias, $sortby, $sortdir, $count, $offset, $perpage, $page, &$maxpage)
 	{
 		$subqueries = array();
 		foreach($criterias as $k => $v)
