@@ -299,6 +299,14 @@ $backend_subactions = url_action_subactions(array(
 					}
 				}
 				
+				if(!isset($article->title[$editlang]))
+				{
+					$langs_available = array();
+					foreach($article->title as $lang => $_)
+						$langs_available[] = $lang;
+					$editlang = $langs_available[0];
+				}
+				
 				foreach(array(
 					"urlname"        => "urlname",
 					"section"        => "article_section",
