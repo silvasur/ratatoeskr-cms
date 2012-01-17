@@ -76,7 +76,7 @@
 				<ste:get_translation for="save_texts_as_lang" />: <select name="saveaslang">
 					<ste:set var="default_langsel">?{$editlang|$editlang|$user[lang]}</ste:set>
 					<ste:foreach array="all_languages" key="code" value="name">
-						<option value="$code"?{~{$default_langsel|eq|$code}| selected="selected"|}>($code) $name</option>
+						<option value="$code"?{~{$default_langsel|eq|$code}| selected="selected"|}>$code: $name</option>
 					</ste:foreach>
 				</select><br />
 				<input type="submit" name="save_article" />
