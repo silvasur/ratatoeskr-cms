@@ -22,6 +22,23 @@ $plugin_objs = array();
 
 function ratatoeskr()
 {
+	global $ste;
+	try
+	{
+		_ratatoeskr();
+	}
+	catch(Exception $e)
+	{
+		header("HTTP/1.1 500 Internal Server Error");
+		$ste->vars["title"] = "500 Internal Server Error";
+		if(__DEBUG__)
+			$ste->vars["details"] = $e->__toString();
+		echo $ste->exectemplate("/systemtemplates/error.html");
+	}
+}
+
+function _ratatoeskr()
+{
 	global $backend_subactions, $ste, $url_handlers, $ratatoeskr_settings, $plugin_objs;
 	
 	$ts_start = microtime(True);
