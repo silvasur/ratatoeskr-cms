@@ -54,7 +54,7 @@ function askyesno($ste, $callback, $question, $yes=NULL, $no=NULL, $moredetails=
 		$ste->vars["notext"] = $no;
 	if($moredetails !== NULL)
 		$ste->vars["moredetails"] = $moredetails;
-	return $ste->exectemplate("systemtemplates/areyousure.html");
+	return $ste->exectemplate("/systemtemplates/areyousure.html");
 }
 
 $backend_subactions = NULL;
@@ -147,7 +147,7 @@ $backend_subactions = url_action_subactions(array(
 				throw new Redirect(array("content", "write"));
 		}
 		
-		echo $ste->exectemplate("systemtemplates/backend_login.html");
+		echo $ste->exectemplate("/systemtemplates/backend_login.html");
 	}),
 	"logout" => url_action_simple(function($data)
 	{
@@ -368,7 +368,7 @@ $backend_subactions = url_action_subactions(array(
 			if(!empty($fail_reasons))
 				$ste->vars["failed"] = $fail_reasons;
 			
-			echo $ste->exectemplate("systemtemplates/content_write.html");
+			echo $ste->exectemplate("/systemtemplates/content_write.html");
 		},
 		"tags" => function(&$data, $url_now, &$url_next)
 		{
@@ -406,7 +406,7 @@ $backend_subactions = url_action_subactions(array(
 							if($yesnoresp)
 							{
 								$tag->delete();
-								echo $ste->exectemplate("systemtemplates/tag_deleted.html");
+								echo $ste->exectemplate("/systemtemplates/tag_deleted.html");
 							}
 							else
 								goto backend_content_tags_overview; /* Hopefully no dinosaur will attack me: http://xkcd.com/292/ :-) */
@@ -431,7 +431,7 @@ $backend_subactions = url_action_subactions(array(
 								else
 									$ste->vars["errors"] = $errors;
 							}
-							echo $ste->exectemplate("systemtemplates/tag_addtranslation.html");
+							echo $ste->exectemplate("/systemtemplates/tag_addtranslation.html");
 							break;
 					}
 				}
@@ -514,7 +514,7 @@ $backend_subactions = url_action_subactions(array(
 					}
 					$ste->vars["alltags"][] = $tag_pre;
 				}
-				echo $ste->exectemplate("systemtemplates/tags_overview.html");
+				echo $ste->exectemplate("/systemtemplates/tags_overview.html");
 			}
 		},
 		"articles" => function(&$data, $url_now, &$url_next)
@@ -649,7 +649,7 @@ $backend_subactions = url_action_subactions(array(
 				);
 			}, $articles);
 			
-			echo $ste->exectemplate("systemtemplates/articles.html");
+			echo $ste->exectemplate("/systemtemplates/articles.html");
 		},
 		"images" => function(&$data, $url_now, &$url_next)
 		{
@@ -691,7 +691,7 @@ $backend_subactions = url_action_subactions(array(
 								$ste->vars["embed_code"] = "<img src=\"%root%/images/" . htmlesc(urlencode($image->get_filename())) . "\" alt=\"" . htmlesc($_POST["img_alt"]) . "\" />";
 						}
 						
-						echo $ste->exectemplate("systemtemplates/image_embed.html");
+						echo $ste->exectemplate("/systemtemplates/image_embed.html");
 					}
 					else
 						throw new NotFoundError();
@@ -745,7 +745,7 @@ $backend_subactions = url_action_subactions(array(
 				"file" => $img->get_filename()
 			); }, $images);
 			
-			echo $ste->exectemplate("systemtemplates/image_list.html");
+			echo $ste->exectemplate("/systemtemplates/image_list.html");
 		},
 		"comments" => function(&$data, $url_now, &$url_next)
 		{
@@ -808,7 +808,7 @@ $backend_subactions = url_action_subactions(array(
 				$ste->vars["comment_text"] = $comment->create_html();
 				$ste->vars["comment_raw"] = $comment->text;
 				
-				echo $ste->exectemplate("systemtemplates/single_comment.html");
+				echo $ste->exectemplate("/systemtemplates/single_comment.html");
 				return;
 			}
 			
@@ -919,7 +919,7 @@ $backend_subactions = url_action_subactions(array(
 				"author" => "\"{$c->author_name}\" <{$c->author_mail}>"
 			); }, $comments);
 			
-			echo $ste->exectemplate("systemtemplates/comments_list.html");
+			echo $ste->exectemplate("/systemtemplates/comments_list.html");
 		}
 	)),
 	"design" => url_action_subactions(array(
@@ -992,7 +992,7 @@ $backend_subactions = url_action_subactions(array(
 			}
 			sort($ste->vars["templates"]);
 			
-			echo $ste->exectemplate("systemtemplates/templates.html");
+			echo $ste->exectemplate("/systemtemplates/templates.html");
 		},
 		"styles" => function(&$data, $url_now, &$url_next)
 		{
@@ -1068,7 +1068,7 @@ $backend_subactions = url_action_subactions(array(
 			$ste->vars["styles"] = array_map(function($s) { return $s->name; }, Style::all());
 			sort($ste->vars["styles"]);
 			
-			echo $ste->exectemplate("systemtemplates/styles.html");
+			echo $ste->exectemplate("/systemtemplates/styles.html");
 		},
 		"sections" => function(&$data, $url_now, &$url_next)
 		{
@@ -1255,7 +1255,7 @@ $backend_subactions = url_action_subactions(array(
 				);
 			}, $sections);
 			
-			echo $ste->exectemplate("systemtemplates/sections.html");
+			echo $ste->exectemplate("/systemtemplates/sections.html");
 		}
 	)),
 	"admin" => url_action_subactions(array(
@@ -1334,7 +1334,7 @@ $backend_subactions = url_action_subactions(array(
 				"default" => ($l == $ratatoeskr_settings["default_language"])
 			);}, $ratatoeskr_settings["languages"]);
 			
-			echo $ste->exectemplate("systemtemplates/settings.html");
+			echo $ste->exectemplate("/systemtemplates/settings.html");
 		},
 		"users" => url_action_subactions(array(
 			"_index" => function(&$data, $url_now, &$url_next)
@@ -1456,7 +1456,7 @@ $backend_subactions = url_action_subactions(array(
 					"mail"     => $u->mail
 				); }, User::all());
 			
-				echo $ste->exectemplate("systemtemplates/users.html");
+				echo $ste->exectemplate("/systemtemplates/users.html");
 			},
 			"u" => function(&$data, $url_now, &$url_next)
 			{
@@ -1546,7 +1546,7 @@ $backend_subactions = url_action_subactions(array(
 					"member" => $user->member_of($g)
 				); }, Group::all());
 				
-				echo $ste->exectemplate("systemtemplates/user.html");
+				echo $ste->exectemplate("/systemtemplates/user.html");
 			}
 		)),
 		"repos" => function(&$data, $url_now, &$url_next)
@@ -1634,7 +1634,7 @@ $backend_subactions = url_action_subactions(array(
 				);
 			}, $all_repos);
 			
-			echo $ste->exectemplate("systemtemplates/repos.html");
+			echo $ste->exectemplate("/systemtemplates/repos.html");
 		}
 	)),
 	"plugin" => url_action_subactions(array(
@@ -1762,7 +1762,7 @@ $backend_subactions = url_action_subactions(array(
 				);
 			}
 			
-			echo $ste->exectemplate("systemtemplates/pluginlist.html");
+			echo $ste->exectemplate("/systemtemplates/pluginlist.html");
 		},
 		"help" => function(&$data, $url_now, &$url_next)
 		{
@@ -1786,7 +1786,7 @@ $backend_subactions = url_action_subactions(array(
 			$ste->vars["pagetitle"] = $plugin->name;
 			$ste->vars["help"]      = $plugin->help;
 			
-			echo $ste->exectemplate("systemtemplates/pluginhelp.html");
+			echo $ste->exectemplate("/systemtemplates/pluginhelp.html");
 		},
 		"install" => function(&$data, $url_now, &$url_next)
 		{
@@ -1867,7 +1867,7 @@ $backend_subactions = url_action_subactions(array(
 				"name" => $r->get_name()
 			); }, $all_repos);
 			
-			echo $ste->exectemplate("systemtemplates/plugininstall.html");
+			echo $ste->exectemplate("/systemtemplates/plugininstall.html");
 		},
 		"repoinstall" => function(&$data, $url_now, &$url_next)
 		{
@@ -1945,7 +1945,7 @@ $backend_subactions = url_action_subactions(array(
 				return;
 			}
 			
-			echo $ste->exectemplate("systemtemplates/confirminstall.html");
+			echo $ste->exectemplate("/systemtemplates/confirminstall.html");
 		}
 	)),
 	"pluginpages" => url_action_subactions(&$pluginpages_handlers)

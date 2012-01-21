@@ -64,7 +64,7 @@ function ratatoeskr()
 		header("HTTP/1.1 404 Not Found");
 		$ste->vars["title"]   = "404 Not Found";
 		$ste->vars["details"] = str_replace("[[URL]]", $_SERVER["REQUEST_URI"], (isset($translation) ? $translation["e404_details"] : "The page [[URL]] could not be found. Sorry."));
-		echo $ste->exectemplate("systemtemplates/error.html");
+		echo $ste->exectemplate("/systemtemplates/error.html");
 	}));
 	
 	$urlpath = explode("/", $_GET["action"]);
