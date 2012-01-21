@@ -1,0 +1,14 @@
+<ste:load name="setup_master.html" />
+<ste:block name="content">
+	<h2><ste:get_translation for="setup_almost_done" /></h2>
+	
+	<p><ste:get_translation for="setup_configfile_instructions" /></p>
+	<textarea cols="80" rows="15" readonly="readonly"><ste:escape>$config</ste:escape></textarea>
+	
+	<p><ste:get_translation for="setup_delete_setup_instructions_and_pointers" /></p>
+	
+	<p>
+		<a href="$rel_path_to_root"><ste:get_translation for="setup_link_yourpage" /></a><br />
+		<a href="$rel_path_to_root/backend"><ste:get_translation for="setup_link_backend" /></a></a>
+	</p>
+</ste:block>

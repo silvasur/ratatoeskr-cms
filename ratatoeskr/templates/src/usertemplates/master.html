@@ -1,0 +1,43 @@
+<ste:load name="some_useful_tags" />
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta http-equiv="Content-Style-Type" content="text/css" />
+	<ste:title>Your Website</ste:title>
+	<ste:styles_load />
+</head>
+<body>
+	<div id="maincontainer">
+		<div id="heading">
+			<h1>Your Website</h1>
+			<span id="subheading">A slogan for your website.</span>
+		</div>
+		<ul id="mainmenu">
+			<ste:set var="current_section"><ste:current_section /></ste:set><!-- $current[section][name] -->
+			<ste:section_list var="section" include_default="y">
+				<ste:menu_elem section="$section[name]" current_section="$current_section"><ste:escape>$section[title]</ste:escape></ste:menu_elem>
+			</ste:section_list>
+		</ul>
+		<div id="contentwrapper">
+			<div id="metabar">
+				<ste:block name="additional_metabar_modules" />
+				<div class="metabar_module">
+					<h2><ste:get_translation for="language" /></h2>
+					<ul>
+						<ste:languages var="lang">
+							<li><a href="$lang[url]"><ste:escape>$lang[fullname]</ste:escape></a></li>
+						</ste:languages>
+					</ul>
+				</div>
+			</div>
+			<div id="content">
+				<ste:block name="content" />
+			</div>
+		</div>
+		<div id="footer">
+			&copy; Your Copyright informations
+		</div>
+	</div>
+</body>
+</html>

@@ -245,6 +245,19 @@ $translation = array(
 	"repo" => "Repository",
 	"install" => "Install",
 	"package_or_repo_not_found" => "Package or repository not found.",
+	"dbsetup_mysql_host" => "MySQL host (usually 'localhost')",
+	"dbsetup_mysql_user" => "MySQL Username",
+	"dbsetup_mysql_passwd" => "MySQL Password",
+	"dbsetup_mysql_database" => "MySQL Database name",
+	"dbsetup_table_prefix" => "Table prefix",
+	"dbsetup" => "Database setup",
+	"admin_setup" => "Administrator data",
+	"setup_almost_done" => "Almost done",
+	"setup_configfile_instructions" => "You need to change the contents of the file '/ratatoeskr/config.php' in your Ratatöskr installation to this:",
+	"setup_delete_setup_instructions_and_pointers" => "Also you really should delete the '/setup.php' in your Ratatöskr installation. If you have done that, you can go to your new Ratatöskr installation:",
+	"setup_link_yourpage" => "Your new Webpage",
+	"setup_link_backend" => "The backend of your Webpage",
+	"admin_data_must_be_filled_out" => "Administrator data must be filled out",
 	/* Very long texts here */
 	"content_write_cheatsheet" => <<<CHEATSHEET
 <h2>Linking back</h2>

@@ -245,6 +245,19 @@ $translation = array(
 	"repo" => "Sammlung",
 	"install" => "Installieren",
 	"package_or_repo_not_found" => "Paket oder Sammlung nicht gefunden.",
+	"dbsetup_mysql_host" => "MySQL Host (normalerweise 'localhost')",
+	"dbsetup_mysql_user" => "MySQL Benutzername",
+	"dbsetup_mysql_passwd" => "MySQL Passwort",
+	"dbsetup_mysql_database" => "MySQL Datenbank-Name",
+	"dbsetup_table_prefix" => "Tabellenpräfix",
+	"dbsetup" => "Datenbank Setup",
+	"admin_setup" => "Administrator Daten",
+	"setup_almost_done" => "Fast geschaffft",
+	"setup_configfile_instructions" => "Du musst noch den Inhalt der Datei '/ratatoeskr/config.php' in deiner Ratatöskr Installation mit diesem Text ersetzen:",
+	"setup_delete_setup_instructions_and_pointers" => "Außerdem solltest du wirklich die Datei '/setup.php' in deiner Ratatöskr Installation löschen. Wenn du das gemacht hast, kannst du zu deiner neuen Ratatöskr Installation gehen:",
+	"setup_link_yourpage" => "Deine neuen Webpage",
+	"setup_link_backend" => "Das Backend deiner Webpage",
+	"admin_data_must_be_filled_out" => "Administrator Daten müssen ausgefüllt sein",
 	/* Very long texts here */
 	"content_write_cheatsheet" => <<<CHEATSHEET
 <h2>Verlinken auf die Seitenwurzel</h2>

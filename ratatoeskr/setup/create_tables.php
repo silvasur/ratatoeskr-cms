@@ -1,10 +1,12 @@
 <?php
 
+if(!defined("SETUP"))
+	die();
 
-$sql = <<<SQL
-SET SQL_MODE="NO_AUTO_VALUE_ON_ZERO";
+require_once(dirname(__FILE__) . "/../sys/db.php");
 
-CREATE TABLE `PREFIX_articles` (
+$sql_tables = <<<SQL
+CREATE TABLE IF NOT EXISTS `PREFIX_articles` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `urlname` text COLLATE utf8_unicode_ci NOT NULL,
   `title` int(11) NOT NULL,
@@ -20,12 +22,12 @@ CREATE TABLE `PREFIX_articles` (
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
-CREATE TABLE `PREFIX_article_tag_relations` (
+CREATE TABLE IF NOT EXISTS `PREFIX_article_tag_relations` (
   `tag` int(11) NOT NULL,
   `article` int(11) NOT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
-CREATE TABLE `PREFIX_comments` (
+CREATE TABLE IF NOT EXISTS `PREFIX_comments` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `article` int(11) NOT NULL,
   `language` varchar(10) COLLATE utf8_unicode_ci NOT NULL,
@@ -36,32 +38,32 @@ CREATE TABLE `PREFIX_comments` (
   `visible` tinyint(4) NOT NULL,
   `read_by_admin` tinyint(4) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
-CREATE TABLE `PREFIX_groups` (
+CREATE TABLE IF NOT EXISTS `PREFIX_groups` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` text COLLATE utf8_unicode_ci NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
-CREATE TABLE `PREFIX_group_members` (
+CREATE TABLE IF NOT EXISTS `PREFIX_group_members` (
   `user` int(11) NOT NULL,
   `group` int(11) NOT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
-CREATE TABLE `PREFIX_images` (
+CREATE TABLE IF NOT EXISTS `PREFIX_images` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` text COLLATE utf8_unicode_ci NOT NULL,
   `file` text COLLATE utf8_unicode_ci NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
-CREATE TABLE `PREFIX_multilingual` (
+CREATE TABLE IF NOT EXISTS `PREFIX_multilingual` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
-CREATE TABLE `PREFIX_plugins` (
+CREATE TABLE IF NOT EXISTS `PREFIX_plugins` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` text COLLATE utf8_unicode_ci NOT NULL,
   `author` text COLLATE utf8_unicode_ci NOT NULL,
@@ -81,52 +83,63 @@ CREATE TABLE `PREFIX_plugins` (
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
-CREATE TABLE `PREFIX_plugin_kvstorage` (
+CREATE TABLE IF NOT EXISTS `PREFIX_plugin_kvstorage` (
   `plugin` int(11) NOT NULL,
   `key` text COLLATE utf8_unicode_ci NOT NULL,
   `value` text COLLATE utf8_unicode_ci NOT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
-CREATE TABLE `PREFIX_sections` (
+CREATE TABLE IF NOT EXISTS `PREFIX_repositories` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `baseurl` text COLLATE utf8_unicode_ci NOT NULL,
+  `name` text COLLATE utf8_unicode_ci NOT NULL,
+  `description` text COLLATE utf8_unicode_ci NOT NULL,
+  `pkgcache` text COLLATE utf8_unicode_ci NOT NULL,
+  `lastrefresh` bigint(20) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `PREFIX_sections` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` text COLLATE utf8_unicode_ci NOT NULL,
   `title` int(11) NOT NULL,
   `template` text COLLATE utf8_unicode_ci NOT NULL,
+  `styles` text COLLATE utf8_unicode_ci NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
-CREATE TABLE `PREFIX_settings_kvstorage` (
-  `key` text COLLATE utf8_unicode_ci NOT NULL,
-  `value` text COLLATE utf8_unicode_ci NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-
-CREATE TABLE `PREFIX_styles` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `name` text COLLATE utf8_unicode_ci NOT NULL,
-  `code` text COLLATE utf8_unicode_ci NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-
-CREATE TABLE `PREFIX_section_style_relations` (
+CREATE TABLE IF NOT EXISTS `PREFIX_section_style_relations` (
   `section` int(11) NOT NULL,
   `style` int(11) NOT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
-CREATE TABLE `PREFIX_tags` (
+CREATE TABLE IF NOT EXISTS `PREFIX_settings_kvstorage` (
+  `key` text COLLATE utf8_unicode_ci NOT NULL,
+  `value` text COLLATE utf8_unicode_ci NOT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `PREFIX_styles` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` text COLLATE utf8_unicode_ci NOT NULL,
+  `code` text COLLATE utf8_unicode_ci NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `PREFIX_tags` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` text COLLATE utf8_unicode_ci NOT NULL,
   `title` int(11) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
-CREATE TABLE `PREFIX_translations` (
+CREATE TABLE IF NOT EXISTS `PREFIX_translations` (
   `multilingual` int(11) NOT NULL,
   `language` varchar(10) COLLATE utf8_unicode_ci NOT NULL,
   `text` text COLLATE utf8_unicode_ci NOT NULL,
   `texttype` text COLLATE utf8_unicode_ci NOT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
-CREATE TABLE `PREFIX_users` (
+CREATE TABLE IF NOT EXISTS `PREFIX_users` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `username` text COLLATE utf8_unicode_ci NOT NULL,
   `pwhash` text COLLATE utf8_unicode_ci NOT NULL,
@@ -135,15 +148,18 @@ CREATE TABLE `PREFIX_users` (
   `language` varchar(10) COLLATE utf8_unicode_ci NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-
-CREATE TABLE `s_db_47`.`PREFIX_repositories` (
-`id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
-`baseurl` TEXT CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL ,
-`name` TEXT CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL ,
-`description` TEXT CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL ,
-`pkgcache` TEXT CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL ,
-`lastrefresh` BIGINT NOT NULL 
-) ENGINE = MYISAM CHARACTER SET utf8 COLLATE utf8_unicode_ci;
 SQL;
+
+function create_mysql_tables()
+{
+	global $sql_tables;
+	
+	$queries = explode(";", $sql_tables);
+	foreach($queries as $q)
+	{
+		if(!empty($q))
+			qdb($q);
+	}
+}
 
 ?>

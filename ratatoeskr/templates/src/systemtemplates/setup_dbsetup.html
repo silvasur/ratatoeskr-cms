@@ -1,0 +1,41 @@
+<ste:load name="setup_master.html" />
+<ste:block name="content">
+	<ste:if>$error
+		<ste:then>
+			<div class="error"><ste:escape>$error</ste:escape></div>
+		</ste:then>
+	</ste:if>
+	<form action="setup.php?lang=$lang" method="POST" accept-charset="UTF-8">
+		<h2><ste:get_translation for="dbsetup" /></h2>
+		<p>
+			<ste:get_translation for="dbsetup_mysql_host" /><br />
+			<input type="text" name="mysql_host" value="localhost" />
+		</p>
+		<p>
+			<ste:get_translation for="dbsetup_mysql_user" /><br />
+			<input type="text" name="mysql_user" />
+		</p>
+		<p>
+			<ste:get_translation for="dbsetup_mysql_passwd" /><br />
+			<input type="password" name="mysql_password" />
+		</p>
+		<p>
+			<ste:get_translation for="dbsetup_mysql_database" /><br />
+			<input type="text" name="mysql_database" />
+		</p>
+		<p>
+			<ste:get_translation for="dbsetup_table_prefix" /><br />
+			<input type="text" name="table_prefix" value="ratatoeskr_" />
+		</p>
+		<h2><ste:get_translation for="admin_setup" /></h2>
+		<p>
+			<ste:get_translation for="username" /><br />
+			<input type="text" name="admin_username" />
+		</p>
+		<p>
+			<ste:get_translation for="initial_password" /><br />
+			<input type="password" name="admin_init_password" />
+		</p>
+		<p><input type="submit" name="apply_setup" /></p>
+	</form>
+</ste:block>

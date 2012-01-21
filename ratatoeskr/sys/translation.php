@@ -9,9 +9,11 @@
  * See "ratatoeskr/licenses/ratatoeskr" for more information.
  */
 
-require_once(dirname(__FILE__) . "/models.php");
 require_once(dirname(__FILE__) . "/utils.php");
 require_once(dirname(__FILE__) . "/init_ste.php");
+
+if(!defined("SETUP"))
+	require_once(dirname(__FILE__) . "/models.php");
 
 if(!defined(TRANSLATION_PLUGIN_LOADED))
 {
@@ -38,9 +40,17 @@ if(!defined(TRANSLATION_PLUGIN_LOADED))
  */
 function load_language($lang=NULL)
 {
-	global $ratatoeskr_settings;
-	if($lang === NULL)
-		$lang = $ratatoeskr_settings["default_language"];
+	if(!defined("SETUP"))
+	{
+		global $ratatoeskr_settings;
+		if($lang === NULL)
+			$lang = $ratatoeskr_settings["default_language"];
+	}
+	else
+	{
+		if($lang === NULL)
+			$lang = "en";
+	}
 	
 	/*
 	 * Because we will include an file defined by the $lang param, we will

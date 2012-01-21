@@ -1,12 +1,13 @@
 <?php
 
-define("__DEBUG__", True);
-define("CONFIG_FILLED_OUT", True);
+define("__DEBUG__", False);
+define("CONFIG_FILLED_OUT", False);
 define("PLUGINS_ENABLED", True);
 
-$config["mysql"]["db"]     = "s_db_47";
-$config["mysql"]["user"]   = "dbuser_47";
-$config["mysql"]["passwd"] = "DfXVQBoVOBPbLlL";
-$config["mysql"]["prefix"] = "ratatoeskr_";
+$config["mysql"]["server"] = 'localhost';
+$config["mysql"]["db"]     = '';
+$config["mysql"]["user"]   = '';
+$config["mysql"]["passwd"] = '';
+$config["mysql"]["prefix"] = 'ratatoeskr_';
 
 ?>

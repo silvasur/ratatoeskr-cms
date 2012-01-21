@@ -10,7 +10,9 @@
  * See "ratatoeskr/licenses/ratatoeskr" for more information.
  */
 
-require_once(dirname(__FILE__) . "/../config.php");
+if(!defined("SETUP"))
+	require_once(dirname(__FILE__) . "/../config.php");
+
 require_once(dirname(__FILE__) . "/utils.php");
 
 /*
@@ -21,16 +23,16 @@ require_once(dirname(__FILE__) . "/utils.php");
 function db_connect()
 {
 	global $config;
-	$db_connection = mysql_pconnect(
+	$db_connection = @mysql_pconnect(
 		$config["mysql"]["server"],
 		$config["mysql"]["user"],
 		$config["mysql"]["passwd"]);
 	if(!$db_connection)
-		die("Could not connect to database server. " . mysql_error());
+		throw new MySQLException("Could not connect to database server. " . mysql_error());
 	
-	if(!mysql_select_db($config["mysql"]["db"], $db_connection))
-		die("Could not open database. " . mysql_error());
-
+	if(!@mysql_select_db($config["mysql"]["db"], $db_connection))
+		throw new MySQLException("Could not open database. " . mysql_error());
+	
 	mysql_query("SET NAMES 'utf8'", $db_connection);
 }
 

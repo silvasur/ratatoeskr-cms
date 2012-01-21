@@ -1,0 +1,20 @@
+<ste:comment>
+<ste:current_section /> returns the current section name. If the current viewed site is a single article it will return the articles section name. If the section could not be determined, nothing will be returned.
+</ste:comment>
+<ste:mktag name="current_section">
+	<ste:if>
+		$current[section]
+		<ste:then>$current[section][name]</ste:then>
+		<ste:else>
+			<ste:if>
+				$current[article]
+				<ste:then>$current[article][section][name]</ste:then>
+			</ste:if>
+		</ste:else>
+	</ste:if>
+</ste:mktag>
+<ste:mktag name="menu_elem" mandatory="section|current_section">
+	<li?{~{$_tag_parameters[current_section]|eq|$_tag_parameters[section]}| class="active"|}>
+		<a href="$rel_path_to_root/$language/<ste:escape>$_tag_parameters[section]</ste:escape>"><ste:tagcontent /></a>
+	</li>
+</ste:mktag>

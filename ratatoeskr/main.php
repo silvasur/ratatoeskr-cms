@@ -9,6 +9,10 @@
  * See "ratatoeskr/licenses/ratatoeskr" for more information.
  */
 
+require_once(dirname(__FILE__) . "/config.php");
+if(!CONFIG_FILLED_OUT)
+	die("Config file not filled out!");
+
 require_once(dirname(__FILE__) . "/sys/db.php");
 require_once(dirname(__FILE__) . "/sys/models.php");
 require_once(dirname(__FILE__) . "/sys/init_ste.php");
