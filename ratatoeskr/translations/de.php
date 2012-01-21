@@ -277,7 +277,7 @@ $translation = array(
 <p>
 	<code>Erster Absatz<br />
 <br />
-Zweiter Paragraph mit<br />
+Zweiter Absatz mit<br />
 langem<br />
 Text<br />
 <br />
