@@ -1894,7 +1894,7 @@ class Image extends BySQLRowEnabled
 	public function all()
 	{
 		$rv = array();
-		$result = qdb("SELECT `id` FROM `PREFIX_images` WHERE 1");
+		$result = qdb("SELECT `id`, `name`, `file` FROM `PREFIX_images` WHERE 1");
 		while($sqlrow = mysql_fetch_assoc($result))
 			$rv[] = self::by_sqlrow($sqlrow);
 		return $rv;
