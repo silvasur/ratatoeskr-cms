@@ -3,7 +3,7 @@
 	<div class="pos_center">
 		<ste:if>$embed_code
 			<ste:then>
-				<p><strong><ste:get_translation for="embed_code" />:</strong> <code>$embed_code</code></p>
+				<p><strong><ste:get_translation for="embed_code" />:</strong> <code><ste:escape>$embed_code</ste:escape></code></p>
 			</ste:then>
 		</ste:if>
 		<form action="$rel_path_to_root/backend/content/images/$image_id/$markup_variant" method="POST">
