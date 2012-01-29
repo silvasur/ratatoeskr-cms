@@ -189,11 +189,6 @@ $backend_subactions = url_action_subactions(array(
 			/* Check Form */
 			$fail_reasons = array();
 			
-			$inputs = array(
-				"date" => time(),
-				"article_status" => ARTICLE_STATUS_LIVE
-			);
-			
 			if(isset($_POST["save_article"]))
 			{
 				if(!preg_match('/^[a-zA-Z0-9-_]+$/', @$_POST["urlname"]))
@@ -256,7 +251,10 @@ $backend_subactions = url_action_subactions(array(
 			{
 				/* New Article */
 				$ste->vars["pagetitle"] = $translation["new_article"];
-				
+				$inputs = array(
+					"date" => time(),
+					"article_status" => ARTICLE_STATUS_LIVE
+				);
 				if(empty($fail_reasons) and isset($_POST["save_article"]))
 				{
 					$article = Article::create($inputs["urlname"]);
