@@ -601,7 +601,7 @@ $ste->register_tag("styles_load", function($ste, $params, $sub)
 				try
 				{
 					$style = Style::by_name($stylename);
-					$output .= "/* Style: $stylename */\n" . $style->code . "\n";
+					$output .= "/* Style: $stylename */\n" . str_replace("%root%", $rel_path_to_root, $style->code) . "\n";
 				}
 				catch(DoesNotExistError $e)
 				{

@@ -259,10 +259,11 @@ $translation = array(
 	"setup_link_backend" => "The backend of your Webpage",
 	"admin_data_must_be_filled_out" => "Administrator data must be filled out",
 	/* Very long texts here */
-	"content_write_cheatsheet" => <<<CHEATSHEET
+	"linking_back_hint" => <<<LINKINGBACK
 <h2>Linking back</h2>
 <p>The text <code>%root%</code> will be replaced with a path, that points to the root of your Ratatöskr page.</p>
-
+LINKINGBACK
+	,"content_write_cheatsheet" => <<<CHEATSHEET
 <h2>Markdown Cheat Sheet</h2>
 
 <h3>Emphasis / Strong</h3>

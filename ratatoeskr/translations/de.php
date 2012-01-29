@@ -259,10 +259,11 @@ $translation = array(
 	"setup_link_backend" => "Das Backend deiner Webpage",
 	"admin_data_must_be_filled_out" => "Administrator Daten müssen ausgefüllt sein",
 	/* Very long texts here */
-	"content_write_cheatsheet" => <<<CHEATSHEET
+	"linking_back_hint" => <<<LINKINGBACK
 <h2>Verlinken auf die Seitenwurzel</h2>
 <p>Der Text <code>%root%</code> wird mit einem Pfad ersetzt, der auf die Wurzel deiner Ratatöskr Seite verweist.</p>
-
+LINKINGBACK
+	,"content_write_cheatsheet" => <<<CHEATSHEET
 <h2>Markdown Spickzettel</h2>
 
 <h3>Betonung / Kräftig</h3>

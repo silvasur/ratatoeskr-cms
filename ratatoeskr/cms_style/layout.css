@@ -21,6 +21,13 @@ body, html {
 	padding:0px;
 }
 
+hr {
+	border: 0;
+	height: 1px;
+	color: #000;
+	background-color: #000;
+}
+
 #bar_top {
 	margin: 0px;
 	position: fixed;

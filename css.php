@@ -17,7 +17,7 @@ try
 {
 	$style = Style::by_name($_GET["name"]);
 	header("Content-Type: text/css; charset=UTF-8");
-	echo $style->code;
+	echo str_replace("%root%", ".", $style->code);
 }
 catch(DoesNotExistError $e)
 {
