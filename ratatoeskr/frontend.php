@@ -82,7 +82,8 @@ function tag_transform_ste($tag, $lang)
  * 	* custom (array: name=>value)
  * 	* status (numeric)
  * 	* section (sub-fields: <section_transform_ste>)
- * 	* timestamp, tags (array(sub-fields: <tag_transform_ste>))
+ * 	* timestamp
+ * 	* tags (sub-fields: <tag_transform_ste>)
  * 	* languages (array: language name=>url)
  * 	* comments_allowed
  */
@@ -396,8 +397,6 @@ $ste->register_tag("article_comments", function($ste, $params, $sub)
  * 	You might also want to define this:
  * 	
  * 	* <input type="submit" name="preview_comment" /> - For a preview of the comment.
- * 	
- * 	If the parameter default is not empty, the tag's content will be thrown away.
  * 
  * Returns:
  * 	The finished HTML form.
