@@ -33,7 +33,7 @@
 				<ste:get_translation for="article_section" />:
 				<select name="section" class="fullwidth">
 					<ste:foreach array="sections" value="section_name">
-						<option name="<ste:escape>$section_name</ste:escape>"?{~{$section_name|eq|$article_section}| selected="selected"|}><ste:escape>$section_name</ste:escape></option>
+						<option value="<ste:escape>$section_name</ste:escape>"?{~{$section_name|eq|$article_section}| selected="selected"|}><ste:escape>$section_name</ste:escape></option>
 					</ste:foreach>
 				</select>
 			</p>

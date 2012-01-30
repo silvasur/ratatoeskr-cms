@@ -220,7 +220,7 @@ $backend_subactions = url_action_subactions(array(
 				
 				try
 				{
-					$inputs["section"] = Section::by_name($_POST["section"]);
+					$inputs["article_section"] = Section::by_name($_POST["section"]);
 				}
 				catch(DoesNotExistError $e)
 				{
@@ -244,17 +244,13 @@ $backend_subactions = url_action_subactions(array(
 				$article->text   [$editlang] = new Translation($inputs["content"], $inputs["content_txtproc"]);
 				$article->excerpt[$editlang] = new Translation($inputs["excerpt"], $inputs["excerpt_txtproc"]);
 				$article->set_tags(maketags($inputs["tags"], $editlang));
-				$article->set_section($inputs["section"]);
+				$article->set_section($inputs["article_section"]);
 			}
 			
 			if(empty($article))
 			{
 				/* New Article */
 				$ste->vars["pagetitle"] = $translation["new_article"];
-				$inputs = array(
-					"date" => time(),
-					"article_status" => ARTICLE_STATUS_LIVE
-				);
 				if(empty($fail_reasons) and isset($_POST["save_article"]))
 				{
 					$article = Article::create($inputs["urlname"]);
@@ -307,7 +303,6 @@ $backend_subactions = url_action_subactions(array(
 				
 				foreach(array(
 					"urlname"        => "urlname",
-					"section"        => "article_section",
 					"status"         => "article_status",
 					"timestamp"      => "date",
 					"allow_comments" => "allow_comments"
@@ -330,6 +325,8 @@ $backend_subactions = url_action_subactions(array(
 					$inputs["excerpt"]         = $translation_obj->text;
 					$inputs["excerpt_txtproc"] = $translation_obj->texttype;
 				}
+				if(!isset($inputs["article_section"]))
+					$inputs["article_section"] = $article->get_section();
 				if(!isset($inputs["tags"]))
 					$inputs["tags"] = array_map(function($tag) use ($editlang) { return $tag->name; }, $article->get_tags());
 				$ste->vars["morelangs"] = array();
@@ -340,6 +337,11 @@ $backend_subactions = url_action_subactions(array(
 						$ste->vars["morelangs"][] = array("url" => urlencode($article->urlname) . "/$lang", "full" => "($lang) " . $languages[$lang]["language"]);
 				}
 			}
+			
+			if(!isset($inputs["date"]))
+				$inputs["date"] = time();
+			if(!isset($inputs["article_status"]))
+				$inputs["article_status"] = ARTICLE_STATUS_LIVE;
 			
 			/* Push data back to template */
 			if(isset($inputs["tags"]))
