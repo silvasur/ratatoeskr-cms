@@ -1649,19 +1649,22 @@ $backend_subactions = url_action_subactions(array(
 			$ste->vars["pagetitle"] = $translation["menu_pluginlist"];
 			
 			/* Delete plugins? */
-			if(isset($_POST["delete"]) and ($_POST["really_delete"] == "yes") and (!empty($_POST["plugins_multiselect"])))
+			if(isset($_POST["delete"]) and (($_POST["really_delete"] == "yes") or ($_POST["really_delete"] == "force")) and (!empty($_POST["plugins_multiselect"])))
 			{
 				foreach($_POST["plugins_multiselect"] as $pid)
 				{
 					try
 					{
 						$plugin = Plugin::by_id($pid);
-						if(!isset($plugin_objs[$pid]))
+						if($_POST["really_delete"] != "force")
 						{
-							eval($plugin->code);
-							$plugin_objs[$pid] = new $plugin->classname($pid);
+							if(!isset($plugin_objs[$pid]))
+							{
+								eval($plugin->code);
+								$plugin_objs[$pid] = new $plugin->classname($pid);
+							}
+							$plugin_objs[$pid]->uninstall();
 						}
-						$plugin_objs[$pid]->uninstall();
 						$plugin->delete();
 					}
 					catch(DoesNotExistError $e)

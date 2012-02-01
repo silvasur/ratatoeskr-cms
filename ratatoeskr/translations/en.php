@@ -258,6 +258,7 @@ $translation = array(
 	"setup_link_yourpage" => "Your new Webpage",
 	"setup_link_backend" => "The backend of your Webpage",
 	"admin_data_must_be_filled_out" => "Administrator data must be filled out",
+	"enforce" => "Enforce",
 	/* Very long texts here */
 	"linking_back_hint" => <<<LINKINGBACK
 <h2>Linking back</h2>

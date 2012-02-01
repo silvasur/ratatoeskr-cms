@@ -216,7 +216,7 @@ $translation = array(
 	"install_from_package" => "Aus Paket installieren",
 	"invalid_package" => "Ungültiges Paket",
 	"incompatible_plugin" => "Dieses Plugin ist nicht mit dieser Version von Ratatöskr kompatibel. Es benötigt die API Version [[API]] oder eine kompatible.",
-	"plugin_safety_warning" => "Installiere <strong>niemals</strong> ein Plugin, dem du nicht vertraust! Plugins sind sehr mächtig und könnten potentiell diene Ratatöskr Installation zerstören!",
+	"plugin_safety_warning" => "Installiere <strong>niemals</strong> ein Plugin, dem du nicht vertraust! Plugins sind sehr mächtig und könnten potentiell deine Ratatöskr Installation zerstören!",
 	"plugin_src" => "Sourcecode",
 	"license" => "Lizenz",
 	"plugin_installed_successfully" => "Plugin erfolgreich installiert.",
@@ -258,6 +258,7 @@ $translation = array(
 	"setup_link_yourpage" => "Deine neuen Webpage",
 	"setup_link_backend" => "Das Backend deiner Webpage",
 	"admin_data_must_be_filled_out" => "Administrator Daten müssen ausgefüllt sein",
+	"enforce" => "Erzwingen",
 	/* Very long texts here */
 	"linking_back_hint" => <<<LINKINGBACK
 <h2>Verlinken auf die Seitenwurzel</h2>
