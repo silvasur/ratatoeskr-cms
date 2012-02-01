@@ -15,15 +15,15 @@ require_once(dirname(__FILE__) . "/../frontend.php");
 
 /*
  * Constant: APIVERSION
- * The current API version (4).
+ * The current API version (5).
  */
-define("APIVERSION", 4);
+define("APIVERSION", 5);
 
 /*
  * Array: $api_compat
  * Array of API versions, this version is compatible to (including itself).
  */
-$api_compat = array(3, 4);
+$api_compat = array(3, 4, 5);
 
 $url_handlers = array();
 /*
@@ -145,7 +145,20 @@ abstract class RatatoeskrPlugin
 	 */
 	final protected function register_comment_validator($fx)
 	{
-		register_comment_validator($fx);
+		global $comment_validators;
+		$comment_validators[] = $fx;
+	}
+	/*
+	 * Function: register_on_comment_store
+	 * Register a function that will be called, after a comment was saved.
+	 * 
+	 * Parameters:
+	 * 	$fx - Function, that accepts one parameter (a <Comment> object).
+	 */
+	final protected function register_on_comment_store($fx)
+	{
+		global $on_comment_store;
+		$on_comment_store[] = $fx;
 	}
 	
 	/*

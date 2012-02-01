@@ -82,8 +82,7 @@ function tag_transform_ste($tag, $lang)
  * 	* custom (array: name=>value)
  * 	* status (numeric)
  * 	* section (sub-fields: <section_transform_ste>)
- * 	* timestamp
- * 	* tags (sub-fields: <tag_transform_ste>)
+ * 	* timestamp, tags (array(sub-fields: <tag_transform_ste>))
  * 	* languages (array: language name=>url)
  * 	* comments_allowed
  */
@@ -397,6 +396,8 @@ $ste->register_tag("article_comments", function($ste, $params, $sub)
  * 	You might also want to define this:
  * 	
  * 	* <input type="submit" name="preview_comment" /> - For a preview of the comment.
+ * 	
+ * 	If the parameter default is not empty, the tag's content will be thrown away.
  * 
  * Returns:
  * 	The finished HTML form.
@@ -680,30 +681,17 @@ $comment_validators = array(
 		if(time() - $_SESSION["ratatoeskr_comment_tokens"][$_POST["comment_token"]] < 10) /* Comment filled in in under 10 seconds? Most likely a spambot. */
 			throw new CommentRejected($translation["comment_too_fast"]);
 		unset($_SESSION["ratatoeskr_comment_tokens"][$_POST["comment_token"]]);
-	},
+	}
 );
 
-/*
- * Function: register_comment_validator
- * Register a comment validator.
- * 
- * A comment validator is a function, that checks the $_POST fields and decides whether a comment should be stored or not (throws an <CommentRejected> exception with the rejection reason as the message).
- * 
- * Parameters:
- * 	$fx - The validator function (function()).
- */
-function register_comment_validator($fx)
-{
-	global $comment_validators;
-	$comment_validators[] = $fx;
-}
+$on_comment_store = array();
 
 /*
  * Function: frontend_url_handler
  */
 function frontend_url_handler(&$data, $url_now, &$url_next)
 {
-	global $ste, $ratatoeskr_settings, $languages, $metasections, $comment_validators;
+	global $ste, $ratatoeskr_settings, $languages, $metasections, $comment_validators, $on_comment_store;
 	$path = array_merge(array($url_now), $url_next);
 	$url_next = array();
 	
@@ -793,6 +781,8 @@ function frontend_url_handler(&$data, $url_now, &$url_next)
 						$comment->text        = $_POST["comment_text"];
 						$comment->save();
 						$ste->vars["current"]["commented"] = "Yes";
+						foreach($on_comment_store as $ocs_fx)
+							call_user_func($ocs_fx, $comment);
 					}
 				}
 			}
