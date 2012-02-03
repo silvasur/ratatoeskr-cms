@@ -2422,8 +2422,15 @@ LEFT OUTER JOIN `PREFIX_article_tag_relations` `c` ON `a`.`id` = `c`.`article`
 WHERE " . implode(" AND ", $subqueries) . " $sorting");
 		
 		$rows = array();
+		$fetched_ids = array();
 		while($sqlrow = mysql_fetch_assoc($result))
-			$rows[] = $sqlrow;
+		{
+			if(!in_array($sqlrow["id"], $fetched_ids))
+			{
+				$rows[]        = $sqlrow;
+				$fetched_ids[] = $sqlrow["id"];
+			}
+		}
 		
 		if($count !== NULL)
 			$rows = array_slice($rows, 0, $count);
@@ -2516,7 +2523,7 @@ WHERE " . implode(" AND ", $subqueries) . " $sorting");
 		
 		$articleid = $this->id;
 		/* So we just need to fire one query instead of count($this->tags) queries. */
-		if(!empty($this->tags))
+		if(!empty($tags))
 			qdb(
 				"INSERT INTO `PREFIX_article_tag_relations` (`article`, `tag`) VALUES " .
 				implode(",", array_map(function($tag) use ($articleid){ return qdb_fmt("(%d, %d)", $articleid, $tag->get_id()); }, $tags))
