@@ -12,7 +12,7 @@
 		</ste:then>
 	</ste:if>
 	
-	<form action="$rel_path_to_root/backend/content/tags/$tagname/addtranslation" method="POST" accept_charset="UTF-8">
+	<form action="$rel_path_to_root/backend/content/tags/$tagname/addtranslation" method="post" accept_charset="UTF-8">
 		<select name="language">
 			<ste:foreach array="all_languages" key="code" value="name">
 				<option value="$code">($code) $name</option>

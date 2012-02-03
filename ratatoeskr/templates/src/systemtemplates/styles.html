@@ -5,7 +5,7 @@
 	
 	<div class="dualcolumns">
 		<div class="column_left">
-			<form action="$rel_path_to_root/backend/design/styles" method="POST">
+			<form action="$rel_path_to_root/backend/design/styles" method="post">
 				<table class="fullwidth listtab">
 					<thead>
 						<tr>
@@ -38,7 +38,7 @@
 			<ste:get_translation for="linking_back_hint" raw="y" />
 		</div>
 		<div class="column_main">
-			<form action="$rel_path_to_root/backend/design/styles" method="POST" accept-charset="UTF-8">
+			<form action="$rel_path_to_root/backend/design/styles" method="post" accept-charset="UTF-8">
 				<p>
 					<strong><ste:get_translation for="style_name" />:</strong><br />
 					<input type="text" name="style_name" value="<ste:escape>$style_name</ste:escape>" />

@@ -433,7 +433,7 @@ $ste->register_tag("comment_form", function($ste, $params, $sub)
 	$token = uniqid("", True);
 	$_SESSION["ratatoeskr_comment_tokens"][$token] = time();
 	
-	$form_header = "<form action=\"{$tpl_article["fullurl"]}?comment\" method=\"POST\" accept-charset=\"UTF-8\"><input type=\"hidden\" name=\"comment_token\" value=\"$token\" />";
+	$form_header = "<form action=\"{$tpl_article["fullurl"]}?comment\" method=\"post\" accept-charset=\"UTF-8\"><input type=\"hidden\" name=\"comment_token\" value=\"$token\" />";
 	
 	if($ste->evalbool(@$params["default"]))
 		$form_body = "<p>{$translation["comment_form_name"]}: <input type=\"text\" name=\"author_name\" value=\"" . htmlesc(@$_POST["author_name"]) . "\" /></p>

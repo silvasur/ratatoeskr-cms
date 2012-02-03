@@ -1,6 +1,6 @@
 <ste:load name="setup_master.html" />
 <ste:block name="content">
-	<form action="$rel_path_to_root/setup.php" method="GET" accept-charset="UTF-8">
+	<form action="$rel_path_to_root/setup.php" method="get" accept-charset="UTF-8">
 		<select name="lang">
 			<ste:foreach array="translations" key="langcode" value="language">
 				<option value="$langcode"?{~{$langcode|eq|en}| selected="selected"|}><ste:escape>$langcode: $language</ste:escape></option>

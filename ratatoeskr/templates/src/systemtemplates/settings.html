@@ -4,14 +4,14 @@
 	<ste:default_error />
 	<ste:default_success />
 	
-	<form action="$rel_path_to_root/backend/admin/settings" method="POST" accept-charset="UTF-8">
+	<form action="$rel_path_to_root/backend/admin/settings" method="post" accept-charset="UTF-8">
 		<h2><ste:get_translation for="comment_settings" /></h2>
 		<strong><ste:get_translation for="comment_textprocessor" />:</strong> <ste:instant_select name="comment_textprocessor" array="textprocessors" selected="$comment_textprocessor" /><br />
 		<strong><ste:get_translation for="comment_auto_visible" />:</strong> <input type="checkbox" name="comment_auto_visible" value="yes"?{$comment_auto_visible| checked="checked"|} /><br />
 		<input type="submit" name="save_comment_settings" />
 	</form>
 	
-	<form action="$rel_path_to_root/backend/admin/settings" method="POST" accept-charset="UTF-8">
+	<form action="$rel_path_to_root/backend/admin/settings" method="post" accept-charset="UTF-8">
 		<h2><ste:get_translation for="language_settings" /></h2>
 		<table class="listtab">
 			<thead>

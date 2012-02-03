@@ -3,7 +3,7 @@
 	<ste:default_error />
 	<ste:default_success />
 	
-	<form action="$rel_path_to_root/backend/content/comments" method="GET" accept-charset="UTF-8">
+	<form action="$rel_path_to_root/backend/content/comments" method="get" accept-charset="UTF-8">
 		<div>
 			<strong><ste:get_translation for="filter" />:</strong>
 			<ste:get_translation for="filter_article" /> <input type="text" name="filter_article" value="<ste:escape>$filter_article</ste:escape>" />
@@ -12,7 +12,7 @@
 		</div>
 	</form>
 	
-	<form action="$rel_path_to_root/backend/content/comments?$filterquery?{$filterquery|&|}$sortquery" method="POST">
+	<form action="$rel_path_to_root/backend/content/comments?$filterquery?{$filterquery|&|}$sortquery" method="post">
 		<table class="fullwidth listtab">
 			<thead>
 				<tr>

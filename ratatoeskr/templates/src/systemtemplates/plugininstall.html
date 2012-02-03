@@ -4,7 +4,7 @@
 	<ste:default_success />
 	
 	<h2><ste:get_translation for="install_from_package" /></h2>
-	<form action="$rel_path_to_root/backend/plugin/install" method="POST" accept-charset="UTF-8" enctype="multipart/form-data">
+	<form action="$rel_path_to_root/backend/plugin/install" method="post" accept-charset="UTF-8" enctype="multipart/form-data">
 		<input type="file" name="pluginpackage" /> <input type="submit" name="installpackage" />
 	</form>
 	
@@ -13,7 +13,7 @@
 	<ste:if>
 		~{$repos_n|gt|0}
 		<ste:then>
-			<form action="$rel_path_to_root/backend/plugin/install" method="POST" accept-charset="UTF-8">
+			<form action="$rel_path_to_root/backend/plugin/install" method="post" accept-charset="UTF-8">
 				<ste:get_translation for="search" />: <input type="text" name="searchfor" />
 				<ste:get_translation for="repo_plugin_search_in" />:
 				<select name="searchin">

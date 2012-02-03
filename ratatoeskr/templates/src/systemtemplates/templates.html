@@ -5,7 +5,7 @@
 	
 	<div class="dualcolumns">
 		<div class="column_left">
-			<form action="$rel_path_to_root/backend/design/templates" method="POST">
+			<form action="$rel_path_to_root/backend/design/templates" method="post">
 				<table class="fullwidth listtab">
 					<thead>
 						<tr>
@@ -36,7 +36,7 @@
 			</form>
 		</div>
 		<div class="column_main">
-			<form action="$rel_path_to_root/backend/design/templates" method="POST" accept-charset="UTF-8">
+			<form action="$rel_path_to_root/backend/design/templates" method="post" accept-charset="UTF-8">
 				<p>
 					<strong><ste:get_translation for="template_name" />:</strong><br />
 					<input type="text" name="template_name" value="<ste:escape>$template_name</ste:escape>" />

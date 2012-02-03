@@ -3,7 +3,7 @@
 	<ste:default_error />
 	<ste:default_success />
 	
-	<form action="$rel_path_to_root/backend/content/tags" method="POST" accept-charset="UTF-8">
+	<form action="$rel_path_to_root/backend/content/tags" method="post" accept-charset="UTF-8">
 		<table class="listtab">
 			<thead>
 				<tr>
@@ -39,7 +39,7 @@
 	
 	<div>
 		<h2><ste:get_translation for="create_new_tag" /></h2>
-		<form action="$rel_path_to_root/backend/content/tags" method="POST" accept-charset="UTF-8">
+		<form action="$rel_path_to_root/backend/content/tags" method="post" accept-charset="UTF-8">
 			<p><ste:get_translation for="new_tag_name" />: <input type="text" name="new_tag_name" /></p>
 			<p><input type="submit" name="create_new_tag" /></p>
 		</form>
