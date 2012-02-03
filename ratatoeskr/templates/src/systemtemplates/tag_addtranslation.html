@@ -15,7 +15,7 @@
 	<form action="$rel_path_to_root/backend/content/tags/$tagname/addtranslation" method="post" accept_charset="UTF-8">
 		<select name="language">
 			<ste:foreach array="all_languages" key="code" value="name">
-				<option value="$code">($code) $name</option>
+				<option value="$code">$code: $name</option>
 			</ste:foreach>
 		</select>: <input type="text" name="translation" /> <input type="submit" name="addtranslation" />
 	</form>
