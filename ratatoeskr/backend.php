@@ -209,10 +209,10 @@ $backend_subactions = url_action_subactions(array(
 					$inputs["excerpt_txtproc"] = $_POST["excerpt_txtproc"];
 				if(!empty($_POST["date"]))
 				{
-					if(($time_tmp = strptime(@$_POST["date"], "%Y-%m-%d %H:%M:%S")) === False)
+					if(($time_tmp = @DateTime::createFromFormat("Y-m-d H:i:s", @$_POST["date"])) === False)
 						$fail_reasons[] = $translation["invalid_date"];
 					else
-						$inputs["date"] = @mktime($time_tmp["tm_sec"], $time_tmp["tm_min"], $time_tmp["tm_hour"], $time_tmp["tm_mon"] + 1, $time_tmp["tm_mday"], $time_tmp["tm_year"] + 1900);
+						$inputs["date"] = @$time_tmp->getTimestamp();
 				}
 				else
 					$inputs["date"] = time();
