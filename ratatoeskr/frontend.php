@@ -82,7 +82,8 @@ function tag_transform_ste($tag, $lang)
  * 	* custom (array: name=>value)
  * 	* status (numeric)
  * 	* section (sub-fields: <section_transform_ste>)
- * 	* timestamp, tags (array(sub-fields: <tag_transform_ste>))
+ * 	* timestamp
+ * 	* tags (array(sub-fields: <tag_transform_ste>))
  * 	* languages (array: language name=>url)
  * 	* comments_allowed
  */
