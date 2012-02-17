@@ -73,7 +73,6 @@ $files = array(
 	"/ratatoeskr/sys/db.php",
 	"/ratatoeskr/sys/utils.php",
 	"/ratatoeskr/sys/pwhash.php",
-	"/ratatoeskr/sys/default_settings.php",
 	"/ratatoeskr/sys/init_ste.php",
 	"/ratatoeskr/sys/models.php",
 	"/ratatoeskr/sys/textprocessors.php",
