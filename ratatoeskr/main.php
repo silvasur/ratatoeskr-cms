@@ -48,11 +48,7 @@ function _ratatoeskr()
 	$ts_start = microtime(True);
 	
 	session_start();
-	if(!CONFIG_FILLED_OUT)
-		return setup();
-	
 	db_connect();
-	
 	clean_database();
 	
 	if(PLUGINS_ENABLED)
