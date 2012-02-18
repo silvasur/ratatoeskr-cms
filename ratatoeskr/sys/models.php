@@ -1602,7 +1602,7 @@ class Section extends BySQLRowEnabled
 	public function get_articles()
 	{
 		$rv = array();
-		$result = qdb("SELECT `id`, `urlname`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments` FROM `PREFIX_articles` FROM `PREFIX_articles` WHERE `section` = %d", $this->id);
+		$result = qdb("SELECT `id`, `urlname`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments` FROM `PREFIX_articles` WHERE `section` = %d", $this->id);
 		while($sqlrow = mysql_fetch_assoc($result))
 			$rv[] = Article::by_sqlrow($sqlrow);
 		return $rv;
