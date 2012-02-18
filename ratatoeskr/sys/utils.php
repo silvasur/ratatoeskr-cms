@@ -186,7 +186,7 @@ function strleft($s1, $s2) {
 
 /*
  * Function: htmlesc
- * Escape HTML (shorter than htmlentities($text, ENT_QUOTES, "UTF-8"))
+ * Escape HTML (shorter than htmlspecialchars)
  * 
  * Parameters:
  * 	$text - Input text.
@@ -196,7 +196,7 @@ function strleft($s1, $s2) {
  */
 function htmlesc($text)
 {
-	return htmlentities($text, ENT_QUOTES, "UTF-8");
+	return htmlspecialchars($text, ENT_QUOTES, "UTF-8");
 }
 
 /*
