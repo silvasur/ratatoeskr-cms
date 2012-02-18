@@ -1225,6 +1225,7 @@ class Plugin extends BySQLRowEnabled
 	 * $license           - License text.
 	 * $installed         - Is this plugin installed? Used during the installation process.
 	 * $update            - Should the plugin be updated at next start?
+	 * $api               - The API version this Plugin needs.
 	 */
 	
 	public $name;
@@ -1241,6 +1242,7 @@ class Plugin extends BySQLRowEnabled
 	public $license;
 	public $installed;
 	public $update;
+	public $api;
 	
 	/*
 	 * Function: clean_db
@@ -1288,6 +1290,7 @@ class Plugin extends BySQLRowEnabled
 		$this->web               = $pkg->web;
 		$this->license           = $pkg->license;
 		$this->help              = $pkg->help;
+		$this->api               = $pkg->api;
 		
 		if(!empty($pkg->custompub))
 			array2dir($pkg->custompub, dirname(__FILE__) . "/../plugin_extradata/public/" . $this->get_id());
@@ -1314,6 +1317,7 @@ class Plugin extends BySQLRowEnabled
 		$this->license           = $sqlrow["license"];
 		$this->installed         = ($sqlrow["installed"] == 1);
 		$this->update            = ($sqlrow["update"] == 1);
+		$this->api               = $sqlrow["api"];
 	}
 	
 	/*
@@ -1328,7 +1332,7 @@ class Plugin extends BySQLRowEnabled
 	 */
 	public static function by_id($id)
 	{
-		$result = qdb("SELECT `id`, `name`, `author`, `versiontext`, `versioncount`, `short_description`, `updatepath`, `web`, `help`, `code`, `classname`, `active`, `license`, `installed`, `update` FROM `PREFIX_plugins` WHERE `id` = %d", $id);
+		$result = qdb("SELECT `id`, `name`, `author`, `versiontext`, `versioncount`, `short_description`, `updatepath`, `web`, `help`, `code`, `classname`, `active`, `license`, `installed`, `update`, `api` FROM `PREFIX_plugins` WHERE `id` = %d", $id);
 		$sqlrow = mysql_fetch_assoc($result);
 		if($sqlrow === False)
 			throw new DoesNotExistError();
@@ -1346,7 +1350,7 @@ class Plugin extends BySQLRowEnabled
 	public static function all()
 	{
 		$rv = array();
-		$result = qdb("SELECT `id`, `name`, `author`, `versiontext`, `versioncount`, `short_description`, `updatepath`, `web`, `help`, `code`, `classname`, `active`, `license`, `installed`, `update` FROM `PREFIX_plugins` WHERE 1");
+		$result = qdb("SELECT `id`, `name`, `author`, `versiontext`, `versioncount`, `short_description`, `updatepath`, `web`, `help`, `code`, `classname`, `active`, `license`, `installed`, `update`, `api` FROM `PREFIX_plugins` WHERE 1");
 		while($sqlrow = mysql_fetch_assoc($result))
 			$rv[] = self::by_sqlrow($sqlrow);
 		return $rv;
@@ -1357,8 +1361,8 @@ class Plugin extends BySQLRowEnabled
 	 */
 	public function save()
 	{
-		qdb("UPDATE `PREFIX_plugins` SET `name` = '%s', `author` = '%s', `code` = '%s', `classname` = '%s', `active` = %d, `versiontext` = '%s', `versioncount` = %d, `short_description` = '%s', `updatepath` = '%s', `web` = '%s', `help` = '%s', `installed` = %d, `update` = %d, `license` = '%s' WHERE `id` = %d",
-			$this->name, $this->author, $this->code, $this->classname, ($this->active ? 1 : 0), $this->versiontext, $this->versioncount, $this->short_description, $this->updatepath, $this->web, $this->help, ($this->installed ? 1 : 0), ($this->update ? 1 : 0), $this->license, $this->id);
+		qdb("UPDATE `PREFIX_plugins` SET `name` = '%s', `author` = '%s', `code` = '%s', `classname` = '%s', `active` = %d, `versiontext` = '%s', `versioncount` = %d, `short_description` = '%s', `updatepath` = '%s', `web` = '%s', `help` = '%s', `installed` = %d, `update` = %d, `license` = '%s', `api` = %d WHERE `id` = %d",
+			$this->name, $this->author, $this->code, $this->classname, ($this->active ? 1 : 0), $this->versiontext, $this->versioncount, $this->short_description, $this->updatepath, $this->web, $this->help, ($this->installed ? 1 : 0), ($this->update ? 1 : 0), $this->license, $this->api, $this->id);
 	}
 	
 	/*

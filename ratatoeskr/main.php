@@ -43,7 +43,7 @@ function ratatoeskr()
 
 function _ratatoeskr()
 {
-	global $backend_subactions, $ste, $url_handlers, $ratatoeskr_settings, $plugin_objs;
+	global $backend_subactions, $ste, $url_handlers, $ratatoeskr_settings, $plugin_objs, $api_compat;
 	
 	$ts_start = microtime(True);
 	
@@ -60,6 +60,13 @@ function _ratatoeskr()
 		$activeplugins = array_filter(Plugin::all(), function($plugin) { return $plugin->active; });
 		foreach($activeplugins as $plugin)
 		{
+			if(!in_array($plugin->api, $api_compat))
+			{
+				$plugin->active = False;
+				$plugin->save();
+				continue;
+			}
+			
 			eval($plugin->code);
 			$plugin_obj = new $plugin->classname($plugin->get_id());
 			if($plugin->update)

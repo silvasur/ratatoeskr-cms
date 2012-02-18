@@ -259,6 +259,8 @@ $translation = array(
 	"setup_link_backend" => "The backend of your Webpage",
 	"admin_data_must_be_filled_out" => "Administrator data must be filled out",
 	"enforce" => "Enforce",
+	"could_not_activate_plugin_api_incompat" => "Could not activate these plugins, because they are not / no longer compatible with your Ratatöskr-installation: [[PLUGINS]]",
+	"plugins_incompat" => "These plugins are not / no longer compatible with your Ratatöskr -installation: [[PLUGINS]]",
 	/* Very long texts here */
 	"linking_back_hint" => <<<LINKINGBACK
 <h2>Linking back</h2>

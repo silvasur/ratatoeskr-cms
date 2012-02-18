@@ -80,6 +80,7 @@ CREATE TABLE IF NOT EXISTS `PREFIX_plugins` (
   `installed` tinyint(4) NOT NULL,
   `added` bigint(20) NOT NULL,
   `update` tinyint(4) NOT NULL,
+  `api` int(11) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 

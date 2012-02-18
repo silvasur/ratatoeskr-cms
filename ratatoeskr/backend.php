@@ -1640,7 +1640,7 @@ $backend_subactions = url_action_subactions(array(
 	"plugin" => url_action_subactions(array(
 		"list" => function(&$data, $url_now, &$url_next)
 		{
-			global $ste, $translation, $languages, $rel_path_to_root, $plugin_objs;
+			global $ste, $translation, $languages, $rel_path_to_root, $plugin_objs, $api_compat;
 			
 			$url_next = array();
 			
@@ -1679,6 +1679,7 @@ $backend_subactions = url_action_subactions(array(
 			/* Activate or deactivate plugins? */
 			if((isset($_POST["activate"]) or isset($_POST["deactivate"])) and (!empty($_POST["plugins_multiselect"])))
 			{
+				$api_incompat = array();
 				$newstatus = isset($_POST["activate"]);
 				foreach($_POST["plugins_multiselect"] as $pid)
 				{
@@ -1687,9 +1688,14 @@ $backend_subactions = url_action_subactions(array(
 						$plugin = Plugin::by_id($pid);
 						if(!$plugin->installed)
 							continue;
+						if($newstatus and (!in_array($plugin->api, $api_compat)))
+						{
+							$api_incompat[] = $plugin->name . ("(ID: " . $plugin->get_id() . ")");
+							continue;
+						}
 						$plugin->active = $newstatus;
 						$plugin->save();
-						if($newstatus and(!isset($plugin_objs[$pid])))
+						if($newstatus and (!isset($plugin_objs[$pid])))
 						{
 							eval($plugin->code);
 							$plugin_objs[$pid] = new $plugin->classname($pid);
@@ -1703,6 +1709,9 @@ $backend_subactions = url_action_subactions(array(
 				}
 				
 				$ste->vars["success"] = $translation[$newstatus ? "plugins_activated" : "plugins_deactivated"];
+				
+				if(!empty($api_incompat))
+					$ste->vars["error"] = htmlesc(str_replace("[[PLUGINS]]", implode(", ", $api_incompat), $translation["could_not_activate_plugin_api_incompat"]));
 			}
 			
 			$stream_ctx = stream_context_create(array("http" => array("timeout" => 5)));
@@ -1748,10 +1757,14 @@ $backend_subactions = url_action_subactions(array(
 			/* Load plugin data */
 			$all_plugins = Plugin::all();
 			$ste->vars["plugins"] = array();
+			$api_incompat = array();
 			foreach($all_plugins as $p)
 			{
 				if(!$p->installed)
 					continue;
+				
+				if(!in_array($p->api, $api_compat))
+					$api_incompat[] = $p->name . ("(ID: " . $p->get_id() . ")");
 				
 				$ste->vars["plugins"][] = array(
 					"id"          => $p->get_id(),
@@ -1764,6 +1777,9 @@ $backend_subactions = url_action_subactions(array(
 					"help"        => !empty($p->help)
 				);
 			}
+			
+			if(!empty($api_incompat))
+				$ste->vars["notice"] = htmlesc(str_replace("[[PLUGINS]]", implode(", ", $api_incompat), $translation["plugins_incompat"]));
 			
 			echo $ste->exectemplate("/systemtemplates/pluginlist.html");
 		},

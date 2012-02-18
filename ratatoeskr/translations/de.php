@@ -259,6 +259,8 @@ $translation = array(
 	"setup_link_backend" => "Das Backend deiner Webpage",
 	"admin_data_must_be_filled_out" => "Administrator Daten müssen ausgefüllt sein",
 	"enforce" => "Erzwingen",
+	"could_not_activate_plugin_api_incompat" => "Konnte diese Plugins nicht aktivieren, da sie nicht (mehr) mit deiner Ratatöskr-Installation kompatibel sind: [[PLUGINS]]",
+	"plugins_incompat" => "Diese Plugins sind nicht (mehr) mit deiner Ratatöskr-Installation kompatibel: [[PLUGINS]]",
 	/* Very long texts here */
 	"linking_back_hint" => <<<LINKINGBACK
 <h2>Verlinken auf die Seitenwurzel</h2>

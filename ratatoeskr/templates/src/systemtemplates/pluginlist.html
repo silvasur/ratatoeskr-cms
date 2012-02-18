@@ -1,6 +1,7 @@
 <ste:load name="master.html" />
 <ste:block name="content">
-	<ste:default_error />
+	<ste:default_error noescape="y" />
+	<ste:default_notice noescape="y" />
 	<ste:default_success />
 	
 	<form action="$rel_path_to_root/backend/plugin/list" method="post">
