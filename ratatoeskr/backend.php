@@ -678,9 +678,9 @@ $backend_subactions = url_action_subactions(array(
 					throw new NotFoundError();
 				else
 				{
-					if(($imageaction == "markdown") or ($imageaction == "html"))
+					if(($imageaction == "markdown") or ($imageaction == "html") or ($imageaction == "ste"))
 					{
-						$ste->vars["pagetitle"]      = $translations["generate_embed_code"];
+						$ste->vars["pagetitle"]      = $translation["generate_embed_code"];
 						$ste->vars["image_id"]       = $image->get_id();
 						$ste->vars["markup_variant"] = $imageaction;
 						if(isset($_POST["img_alt"]))
@@ -689,6 +689,8 @@ $backend_subactions = url_action_subactions(array(
 								$ste->vars["embed_code"] = "![" . str_replace("]", "\\]", $_POST["img_alt"]) . "](%root%/images/" . str_replace(")", "\\)", urlencode($image->get_filename())) . ")";
 							elseif($imageaction == "html")
 								$ste->vars["embed_code"] = "<img src=\"%root%/images/" . htmlesc(urlencode($image->get_filename())) . "\" alt=\"" . htmlesc($_POST["img_alt"]) . "\" />";
+							elseif($imageaction == "ste")
+								$ste->vars["embed_code"] = "<img src=\"\$rel_path_to_root/images/" . htmlesc(urlencode($image->get_filename())) . "\" alt=\"" . htmlesc($_POST["img_alt"]) . "\" />";
 						}
 						
 						echo $ste->exectemplate("/systemtemplates/image_embed.html");
