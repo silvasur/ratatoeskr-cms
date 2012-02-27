@@ -1,5 +1,10 @@
 <ste:load name="setup_master.html" />
 <ste:block name="content">
+	<ste:if>$notice
+		<ste:then>
+			<div class="notice">$notice</div>
+		</ste:then>
+	</ste:if>
 	<h2><ste:get_translation for="setup_almost_done" /></h2>
 	
 	<p><ste:get_translation for="setup_configfile_instructions" /></p>

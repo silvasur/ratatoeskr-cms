@@ -261,6 +261,7 @@ $translation = array(
 	"enforce" => "Enforce",
 	"could_not_activate_plugin_api_incompat" => "Could not activate these plugins, because they are not / no longer compatible with your Ratatöskr-installation: [[PLUGINS]]",
 	"plugins_incompat" => "These plugins are not / no longer compatible with your Ratatöskr -installation: [[PLUGINS]]",
+	"could_not_initialize_repos" => "Setup is completed, but the default repositories could not be initalized.",
 	/* Very long texts here */
 	"linking_back_hint" => <<<LINKINGBACK
 <h2>Linking back</h2>
