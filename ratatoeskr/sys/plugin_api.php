@@ -167,7 +167,7 @@ abstract class RatatoeskrPlugin
 	 * 
 	 * Parameters:
 	 * 	$label - The label for the page.
-	 * 	$fx    - A function for <urlprocess>.
+	 * 	$fx    - A function for <url_process>.
 	 * 
 	 * Your $fx should output output the result of a STE template, which should load "/systemtemplates/master.html" and overwrite the "content" section.
 	 * 

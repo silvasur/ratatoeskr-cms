@@ -1276,6 +1276,21 @@ $backend_subactions = url_action_subactions(array(
 				if($properties[1])
 					$ste->vars["textprocessors"][] = $txtproc;
 			
+			/* Toggle debugmode value? */
+			if(isset($_POST["toggle_debugmode"]))
+			{
+				if(isset($ratatoeskr_settings["debugmode"]) and $ratatoeskr_settings["debugmode"])
+				{
+					$ratatoeskr_settings["debugmode"] = False;
+					$ste->vars["success"] = $translation["debugmode_now_disabled"];
+				}
+				else
+				{
+					$ratatoeskr_settings["debugmode"] = True;
+					$ste->vars["success"] = $translation["debugmode_now_enabled"];
+				}
+			}
+			
 			/* Save comment settings? */
 			if(isset($_POST["save_comment_settings"]))
 			{
@@ -1328,6 +1343,7 @@ $backend_subactions = url_action_subactions(array(
 				}
 			}
 			
+			$ste->vars["debugmode_enabled"]     = (isset($ratatoeskr_settings["debugmode"]) and $ratatoeskr_settings["debugmode"]);
 			$ste->vars["comment_auto_visible"]  = $ratatoeskr_settings["comment_visible_default"];
 			$ste->vars["comment_textprocessor"] = $ratatoeskr_settings["comment_textprocessor"];
 			$ste->vars["used_langs"] = array_map(function ($l) use ($ratatoeskr_settings, $languages) { return array(

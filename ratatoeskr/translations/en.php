@@ -262,6 +262,12 @@ $translation = array(
 	"could_not_activate_plugin_api_incompat" => "Could not activate these plugins, because they are not / no longer compatible with your Ratatöskr-installation: [[PLUGINS]]",
 	"plugins_incompat" => "These plugins are not / no longer compatible with your Ratatöskr -installation: [[PLUGINS]]",
 	"could_not_initialize_repos" => "Setup is completed, but the default repositories could not be initalized.",
+	"debugmode" => "Debugmode",
+	"enabled" => "Enabled",
+	"disabled" => "Disabled",
+	"debugmode_might_get_overwritten_by_config_file" => "(this can be overwritten by config.php)",
+	"debugmode_now_enabled" => "Debugmode now enabled",
+	"debugmode_now_disabled" => "Debugmode now disabled",
 	/* Very long texts here */
 	"linking_back_hint" => <<<LINKINGBACK
 <h2>Linking back</h2>

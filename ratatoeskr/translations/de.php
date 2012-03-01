@@ -262,6 +262,12 @@ $translation = array(
 	"could_not_activate_plugin_api_incompat" => "Konnte diese Plugins nicht aktivieren, da sie nicht (mehr) mit deiner Ratatöskr-Installation kompatibel sind: [[PLUGINS]]",
 	"plugins_incompat" => "Diese Plugins sind nicht (mehr) mit deiner Ratatöskr-Installation kompatibel: [[PLUGINS]]",
 	"could_not_initialize_repos" => "Setup ist abgeschlossen, allerdings konnten die Standard-Repositories nicht initalisiert werden.",
+	"debugmode" => "Debug-Modus",
+	"enabled" => "Aktiviert",
+	"disabled" => "Deaktiviert",
+	"debugmode_might_get_overwritten_by_config_file" => "(dies kann durch config.php überschrieben werden)",
+	"debugmode_now_enabled" => "Debug-Modus ist nun aktiviert",
+	"debugmode_now_disabled" => "Debug-Modus ist nun deaktiviert",
 	/* Very long texts here */
 	"linking_back_hint" => <<<LINKINGBACK
 <h2>Verlinken auf die Seitenwurzel</h2>

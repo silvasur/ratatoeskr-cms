@@ -172,7 +172,7 @@ $ste->register_tag("articles_get", function($ste, $params, $sub)
 	$lang = $ste->vars["language"];
 	
 	if(!isset($params["var"]))
-		throw new Exception("Parameter var is needed in article_get!");
+		throw new \ste\RuntimeError("Parameter var is needed in article_get!");
 	if(isset($params["section"]))
 	{
 		try
@@ -253,7 +253,7 @@ $ste->register_tag("section_list", function($ste, $params, $sub)
 	$default_section = $ratatoeskr_settings["default_section"];
 	
 	if(!isset($params["var"]))
-		throw new Exception("Parameter var is needed in article_get!");
+		throw new \ste\RuntimeException("Parameter var is needed in article_get!");
 	
 	$result = Section::all();
 	
@@ -295,7 +295,7 @@ $ste->register_tag("section_list", function($ste, $params, $sub)
 $ste->register_tag("article_comments_count", function($ste, $params, $sub)
 {
 	if(!isset($params["article"]))
-		throw new Exception("Need parameter 'article' in ste:article_comments_count.");
+		throw new \ste\RuntimeException("Need parameter 'article' in ste:article_comments_count.");
 	$tpl_article = $ste->get_var_reference($params["article"], False);
 	$lang = $ste->vars["language"];
 	
@@ -336,9 +336,9 @@ $ste->register_tag("article_comments_count", function($ste, $params, $sub)
 $ste->register_tag("article_comments", function($ste, $params, $sub)
 {
 	if(!isset($params["var"]))
-		throw new Exception("Need parameter 'var' in ste:article_comments.");
+		throw new \ste\RuntimeException("Need parameter 'var' in ste:article_comments.");
 	if(!isset($params["article"]))
-		throw new Exception("Need parameter 'article' in ste:article_comments.");
+		throw new \ste\RuntimeException("Need parameter 'article' in ste:article_comments.");
 	$tpl_article = $ste->get_var_reference($params["article"], False);
 	$lang = $ste->vars["language"];
 	
@@ -410,7 +410,7 @@ $ste->register_tag("comment_form", function($ste, $params, $sub)
 {
 	global $translation;
 	if(!isset($params["article"]))
-		throw new Exception("Need parameter 'article' in ste:comment_form.");
+		throw new \ste\RuntimeException("Need parameter 'article' in ste:comment_form.");
 	$tpl_article = $ste->get_var_reference($params["article"], False);
 	
 	if(isset($tpl_article["__obj"]))
@@ -478,9 +478,9 @@ $ste->register_tag("page_prev", function($ste, $params, $sub)
 {
 	global $translation;
 	if(!isset($params["current"]))
-		throw new Exception("Need parameter 'current' in ste:page_prev.");
+		throw new \ste\RuntimeException("Need parameter 'current' in ste:page_prev.");
 	if(!isset($params["maxpage"]))
-		throw new Exception("Need parameter 'maxpage' in ste:page_prev.");
+		throw new \ste\RuntimeException("Need parameter 'maxpage' in ste:page_prev.");
 	
 	if($params["current"] == 1)
 		return "";
@@ -495,9 +495,9 @@ $ste->register_tag("page_next", function($ste, $params, $sub)
 {
 	global $translation;
 	if(!isset($params["current"]))
-		throw new Exception("Need parameter 'current' in ste:page_next.");
+		throw new \ste\RuntimeException("Need parameter 'current' in ste:page_next.");
 	if(!isset($params["maxpage"]))
-		throw new Exception("Need parameter 'maxpage' in ste:page_next.");
+		throw new \ste\RuntimeException("Need parameter 'maxpage' in ste:page_next.");
 	
 	if($params["current"] == $params["maxpage"])
 		return "";

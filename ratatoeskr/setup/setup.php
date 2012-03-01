@@ -54,6 +54,7 @@ if(isset($_POST["apply_setup"]))
 			$ratatoeskr_settings["comment_textprocessor"] = "Markdown";
 			$ratatoeskr_settings["languages"] = $lang == "en" ? array("en") : array($lang, "en");
 			$ratatoeskr_settings["last_db_cleanup"] = time();
+			$ratatoeskr_settings["debugmode"] = False;
 		
 			$style = Style::create("default");
 			$style->code = <<<STYLE
@@ -227,6 +228,16 @@ STYLE;
 			$article->allow_comments = True;
 			$article->set_section($section);
 			$article->save();
+			
+			try
+			{
+				Repository::create("http://repo-community.ratatoeskr-cms.net/");
+				Repository::create("http://repo-official.ratatoeskr-cms.net/");
+			}
+			catch(RepositoryUnreachableOrInvalid $e)
+			{
+				$ste->vars["notice"] = $translation["could_not_initialize_repos"];
+			}
 		
 			/* Almost done. Give the user the config file. */
 			$config = "<?php\n\ndefine(\"__DEBUG__\", False);\ndefine(\"CONFIG_FILLED_OUT\", True);\ndefine(\"PLUGINS_ENABLED\", True);\n\n\$config[\"mysql\"][\"server\"] = '" . addcslashes($config["mysql"]["server"], "'") . "';\n\$config[\"mysql\"][\"db\"]     = '" . addcslashes($config["mysql"]["db"], "'") . "';\n\$config[\"mysql\"][\"user\"]   = '" . addcslashes($config["mysql"]["user"], "'") . "';\n\$config[\"mysql\"][\"passwd\"] = '" . addcslashes($config["mysql"]["passwd"], "'") . "';\n\$config[\"mysql\"][\"prefix\"] = '" . addcslashes($config["mysql"]["prefix"], "'") . "';\n\n?>";

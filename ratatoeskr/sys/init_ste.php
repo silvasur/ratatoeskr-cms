@@ -23,6 +23,8 @@ if(!isset($ste))
 	 * The global STECore (Stupid Template Engine) instance.
 	 */
 	$ste = new \ste\STECore(new \ste\FilesystemStorageAccess("$tpl_basedir/src", "$tpl_basedir/transc"));
+	if(__DEBUG__)
+		$ste->mute_runtime_errors = False;
 }
 
 $ste->register_tag(

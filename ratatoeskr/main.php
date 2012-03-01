@@ -51,6 +51,9 @@ function _ratatoeskr()
 	db_connect();
 	clean_database();
 	
+	if(isset($ratatoeskr_settings["debugmode"]) and $ratatoeskr_settings["debugmode"])
+		define("__DEBUG__", True);
+	
 	if(PLUGINS_ENABLED)
 	{
 		$activeplugins = array_filter(Plugin::all(), function($plugin) { return $plugin->active; });
