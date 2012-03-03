@@ -94,7 +94,6 @@ $files = array(
 	"/ratatoeskr/cms_style/images/error.png",
 	"/ratatoeskr/main.php",
 	"/ratatoeskr/plugin_extradata/private/.htaccess",
-	"/session_doctor.php",
 	"/index.php",
 	"/setup.php",
 	"/css.php"
