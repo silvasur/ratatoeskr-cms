@@ -216,7 +216,7 @@ $backend_subactions = url_action_subactions(array(
 				}
 				else
 					$inputs["date"] = time();
-				$inputs["allow_comments"] = !(empty($_POST["allow_comments"]) or $_POST["allow_comments"] != "yes");
+				$inputs["allow_comments"] = !(empty($_POST["allow_comments"]) or ($_POST["allow_comments"] != "yes"));
 				
 				try
 				{
@@ -245,6 +245,7 @@ $backend_subactions = url_action_subactions(array(
 				$article->excerpt[$editlang] = new Translation($inputs["excerpt"], $inputs["excerpt_txtproc"]);
 				$article->set_tags(maketags($inputs["tags"], $editlang));
 				$article->set_section($inputs["article_section"]);
+				$article->allow_comments = $inputs["allow_comments"];
 			}
 			
 			if(empty($article))
