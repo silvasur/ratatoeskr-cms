@@ -55,12 +55,19 @@ function section_transform_ste($section, $lang)
  */
 function tag_transform_ste($tag, $lang)
 {
-	return array(
-		"id"    => $tag->get_id(),
-		"name"  => $tag->name,
-		"title" => $tag->title[$lang]->text,
-		"__obj" => $tag
-	);
+	try
+	{
+		return array(
+			"id"    => $tag->get_id(),
+			"name"  => $tag->name,
+			"title" => $tag->title[$lang]->text,
+			"__obj" => $tag
+		);
+	}
+	catch(DoesNotExistError $e)
+	{
+		return False;
+	}
 }
 
 /*
@@ -107,7 +114,7 @@ function article_transform_ste($article, $lang)
 		"status"           => $article->status,
 		"section"          => section_transform_ste($a_section, $lang),
 		"timestamp"        => $article->timestamp,
-		"tags"             => array_map(function($tag) use ($lang) { return tag_transform_ste($tag, $lang); }, $article->get_tags()),
+		"tags"             => array_filter(array_map(function($tag) use ($lang) { return tag_transform_ste($tag, $lang); }, $article->get_tags())),
 		"languages"        => $languages,
 		"comments_allowed" => $article->allow_comments,
 		"__obj"            => $article
