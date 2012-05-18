@@ -2,3 +2,10 @@ docu
 naturaldocs_dir
 *~
 images/*
+ratatoeskr/templates/src/plugintemplates/*
+ratatoeskr/templates/src/usertemplates/*
+ratatoeskr/templates/transc/*
+ratatoeskr/libs/stupid_template_engine.php
+ratatoeskr/libs/markdown.php
+ratatoeskr/libs/kses.php
+ratatoeskr/config.php
