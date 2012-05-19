@@ -88,6 +88,79 @@ abstract class BySQLRowEnabled
 	}
 }
 
+abstract class KVStorage implements Countable, ArrayAccess, Iterator
+{
+	private $keybuffer;
+	private $counter;
+	private $prepared_queries;
+	
+	final protected function init($sqltable, $common_fields)
+	{
+		$this->keybuffer = array();
+		
+		$selector = "WHERE " . (empty($common_fields) ? 1 : implode(" AND ", array_map(function($x) { return qdb_fmt("`{$x[0]}` = {$x[1]}", $x[2]); }, $common_fields)));
+		$this->prepared_queries = array(
+			"get"    => "SELECT `value` FROM `$sqltable` $selector AND `key` = '%s'",
+			"unset"  => "DELETE FROM `$sqltable` $selector AND `key` = '%s'",
+			"update" => "UPDATE `$sqltable` SET `value` = '%s' $selector AND `key` = '%s'",
+			"create" => "INSERT INTO `$sqltable` (`key`, `value` "
+			            . (empty($common_fields) ?: ", " . implode(", ", array_map(function($x) { return "`".$x[0]."`"; }, $common_fields)))
+			            . ") VALUES ('%s', '%s'"
+			            . (empty($common_fields) ?: ", " . implode(", ", array_map(function($x) { return qdb_fmt($x[1], $x[2]); }, $common_fields)))
+			            . ")"
+		);
+				
+		$result = qdb("SELECT `key` FROM `$sqltable` $selector");
+		while($sqlrow = mysql_fetch_assoc($result))
+			$this->keybuffer[] = $sqlrow["key"];
+		
+		$this->counter = 0;
+	}
+	
+	/* Countable interface implementation */
+	final public function count() { return count($this->keybuffer); }
+	
+	/* ArrayAccess interface implementation */
+	final public function offsetExists($offset) { return in_array($offset, $this->keybuffer); }
+	final public function offsetGet($offset)
+	{
+		if($this->offsetExists($offset))
+		{
+			$result = qdb($this->prepared_queries["get"], $offset);
+			$sqlrow = mysql_fetch_assoc($result);
+			return unserialize(base64_decode($sqlrow["value"]));
+		}
+		else
+			throw new DoesNotExistError();
+	}
+	final public function offsetUnset($offset)
+	{
+		if($this->offsetExists($offset))
+		{
+			unset($this->keybuffer[array_search($offset, $this->keybuffer)]);
+			$this->keybuffer = array_merge($this->keybuffer);
+			qdb($this->prepared_queries["unset"], $offset);
+		}
+	}
+	final public function offsetSet($offset, $value)
+	{
+		if($this->offsetExists($offset))
+			qdb($this->prepared_queries["update"], base64_encode(serialize($value)), $offset);
+		else
+		{
+			qdb($this->prepared_queries["create"], $offset, base64_encode(serialize($value)));
+			$this->keybuffer[] = $offset;
+		}
+	}
+	
+	/* Iterator interface implementation */
+	final public function rewind()  { return $this->counter = 0; }
+	final public function current() { return $this->offsetGet($this->keybuffer[$this->counter]); }
+	final public function key()     { return $this->keybuffer[$this->counter]; }
+	final public function next()    { ++$this->counter; }
+	final public function valid()   { return isset($this->keybuffer[$this->counter]); }
+}
+
 /*
  * Class: User
  * Data model for Users
@@ -772,12 +845,8 @@ $ratatoeskr_settings = Settings::get_instance();
  * Can be accessed like an array.
  * Keys are strings and Values can be everything serialize() can process.
  */
-class PluginKVStorage implements Countable, ArrayAccess, Iterator
+class PluginKVStorage extends KVStorage
 {
-	private $plugin_id;
-	private $keybuffer;
-	private $counter;
-	
 	/*
 	 * Constructor: __construct
 	 * 
@@ -786,60 +855,10 @@ class PluginKVStorage implements Countable, ArrayAccess, Iterator
 	 */
 	public function __construct($plugin_id)
 	{
-		$this->keybuffer = array();
-		$this->plugin_id = $plugin_id;
-		
-		$result = qdb("SELECT `key` FROM `PREFIX_plugin_kvstorage` WHERE `plugin` = %d", $plugin_id);
-		while($sqlrow = mysql_fetch_assoc($result))
-			$this->keybuffer[] = $sqlrow["key"];
-		
-		$this->counter = 0;
+		$this->init("PREFIX_plugin_kvstorage", array(
+			array("plugin", "%d", $plugin_id)
+		));
 	}
-	
-	/* Countable interface implementation */
-	public function count() { return count($this->keybuffer); }
-	
-	/* ArrayAccess interface implementation */
-	public function offsetExists($offset) { return in_array($offset, $this->keybuffer); }
-	public function offsetGet($offset)
-	{
-		if($this->offsetExists($offset))
-		{
-			$result = qdb("SELECT `value` FROM `PREFIX_plugin_kvstorage` WHERE `key` = '%s' AND `plugin` = %d", $offset, $this->plugin_id);
-			$sqlrow = mysql_fetch_assoc($result);
-			return unserialize(base64_decode($sqlrow["value"]));
-		}
-		else
-			throw new DoesNotExistError();
-	}
-	public function offsetUnset($offset)
-	{
-		if($this->offsetExists($offset))
-		{
-			unset($this->keybuffer[array_search($offset, $this->keybuffer)]);
-			$this->keybuffer = array_merge($this->keybuffer);
-			qdb("DELETE FROM `PREFIX_plugin_kvstorage` WHERE `key` = '%s' AND `plugin` = %d", $offset, $this->plugin_id);
-		}
-	}
-	public function offsetSet($offset, $value)
-	{
-		if($this->offsetExists($offset))
-			qdb("UPDATE `PREFIX_plugin_kvstorage` SET `value` = '%s' WHERE `key` = '%s' AND `plugin` = %d",
-				base64_encode(serialize($value)), $offset, $this->plugin_id);
-		else
-		{
-			qdb("INSERT INTO `PREFIX_plugin_kvstorage` (`plugin`, `key`, `value`) VALUES (%d, '%s', '%s')",
-				$this->plugin_id, $offset, base64_encode(serialize($value)));
-			$this->keybuffer[] = $offset;
-		}
-	}
-	
-	/* Iterator interface implementation */
-	function rewind()  { return $this->position = 0; }
-	function current() { return $this->offsetGet($this->keybuffer[$this->position]); }
-	function key()     { return $this->keybuffer[$this->position]; }
-	function next()    { ++$this->position; }
-	function valid()   { return isset($this->keybuffer[$this->position]); }
 }
 
 /*
@@ -1372,6 +1391,7 @@ class Plugin extends BySQLRowEnabled
 	{
 		qdb("DELETE FROM `PREFIX_plugins` WHERE `id` = %d", $this->id);
 		qdb("DELETE FROM `PREFIX_plugin_kvstorage` WHERE `plugin` = %d", $this->id);
+		qdb("DELETE FROM `PREFIX_article_extradata` WHERE `plugin` = %d", $this->id);
 		if(is_dir(SITE_BASE_PATH . "/ratatoeskr/plugin_extradata/private/" . $this->id))
 			delete_directory(SITE_BASE_PATH . "/ratatoeskr/plugin_extradata/private/" . $this->id);
 		if(is_dir(SITE_BASE_PATH . "/ratatoeskr/plugin_extradata/public/" . $this->id))
@@ -2604,8 +2624,52 @@ WHERE " . implode(" AND ", $subqueries) . " $sorting");
 			$comment->delete();
 		
 		qdb("DELETE FROM `PREFIX_article_tag_relations` WHERE `article` = %d", $this->id);
+		qdb("DELETE FROM `PREFIX_article_extradata` WHERE `article` = %d", $this->id);
 		qdb("DELETE FROM `PREFIX_articles` WHERE `id` = %d", $this->id);
 	}
+}
+
+/*
+ * Class: ArticleExtradata
+ * A Key-Value-Storage assigned to Articles for plugins to store additional data.
+ * Can be accessed like an array.
+ * Keys are strings and Values can be everything serialize() can process.
+ */
+class ArticleExtradata extends KVStorage
+{
+	/*
+	 * Constructor: __construct
+	 * 
+	 * Parameters:
+	 * 	$article_id - The ID of the Article.
+	 * 	$plugin_id  - The ID of the Plugin.
+	 */
+	public function __construct($article_id, $plugin_id)
+	{
+		$this->init("PREFIX_article_extradata", array(
+			array("article", "%d", $article_id),
+			array("plugin",  "%d", $plugin_id)
+		));
+	}
+}
+
+/*
+ * Function: dbversion
+ * Get the version of the database structure currently used.
+ * 
+ * Returns:
+ * 	The numerical version of the current database structure.
+ */
+function dbversion()
+{
+	/* Is the meta table present? If no, the version is 0. */
+	$result = qdb("SHOW TABLES LIKE 'PREFIX_meta'");
+	if(mysql_num_rows($result) == 0)
+		return 0;
+	
+	$result = qdb("SELECT `value` FROM `PREFIX_meta` WHERE `key` = 'dbversion'");
+	$sqlrow = mysql_fetch_assoc($result);
+	return unserialize(base64_decode($sqlrow["value"]));
 }
 
 /*
