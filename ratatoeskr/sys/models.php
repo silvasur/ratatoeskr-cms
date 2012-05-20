@@ -88,14 +88,23 @@ abstract class BySQLRowEnabled
 	}
 }
 
+/*
+ * Class: KVStorage
+ * An abstract class for a KVStorage.
+ *
+ * See also:
+ * 	<PluginKVStorage>, <ArticleExtradata>
+ */
 abstract class KVStorage implements Countable, ArrayAccess, Iterator
 {
 	private $keybuffer;
 	private $counter;
 	private $prepared_queries;
+	private $silent_mode;
 	
 	final protected function init($sqltable, $common_fields)
 	{
+		$this->silent_mode = False;
 		$this->keybuffer = array();
 		
 		$selector = "WHERE " . (empty($common_fields) ? 1 : implode(" AND ", array_map(function($x) { return qdb_fmt("`{$x[0]}` = {$x[1]}", $x[2]); }, $common_fields)));
@@ -117,6 +126,17 @@ abstract class KVStorage implements Countable, ArrayAccess, Iterator
 		$this->counter = 0;
 	}
 	
+	/*
+	 * Functions: Silent mode
+	 * If the silent mode is enabled, the KVStorage behaves even more like a PHP array, i.e. it just returns NULL,
+	 * if a unknown key was requested and does not throw an DoesNotExistError Exception.
+	 * 
+	 * enable_silent_mode  - Enable the silent mode.
+	 * disable_silent_mode - Disable the silent mode (default).
+	 */
+	final public function enable_silent_mode()  { $this->silent_mode = True;  }
+	final public function disable_silent_mode() { $this->silent_mode = False; }
+	
 	/* Countable interface implementation */
 	final public function count() { return count($this->keybuffer); }
 	
@@ -130,6 +150,8 @@ abstract class KVStorage implements Countable, ArrayAccess, Iterator
 			$sqlrow = mysql_fetch_assoc($result);
 			return unserialize(base64_decode($sqlrow["value"]));
 		}
+		elseif($this->silent_mode)
+			return NULL;
 		else
 			throw new DoesNotExistError();
 	}
@@ -844,6 +866,8 @@ $ratatoeskr_settings = Settings::get_instance();
  * A Key-Value-Storage for Plugins
  * Can be accessed like an array.
  * Keys are strings and Values can be everything serialize() can process.
+ *
+ * Extends the abstract <KVStorage> class.
  */
 class PluginKVStorage extends KVStorage
 {
@@ -2634,6 +2658,8 @@ WHERE " . implode(" AND ", $subqueries) . " $sorting");
  * A Key-Value-Storage assigned to Articles for plugins to store additional data.
  * Can be accessed like an array.
  * Keys are strings and Values can be everything serialize() can process.
+ * 
+ * Extends the abstract <KVStorage> class.
  */
 class ArticleExtradata extends KVStorage
 {
