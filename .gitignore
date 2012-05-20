@@ -8,4 +8,5 @@ ratatoeskr/templates/transc/*
 ratatoeskr/libs/stupid_template_engine.php
 ratatoeskr/libs/markdown.php
 ratatoeskr/libs/kses.php
+ratatoeskr/libs/jquery.min.js
 ratatoeskr/config.php
