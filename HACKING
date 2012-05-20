@@ -1,0 +1,13 @@
+Some rules for hacking on Ratatöskr
+===================================
+
+All in all, there are not many rules, Cowboy Coding FTW!
+
+But here are some rules / advice, to make cooperation easier:
+
+* Use the "develop" branch in git, not the "master" branch. The master branch
+  should by now only contain releases (including beta versions). But for the
+  work between releases, please use the develop branch from now on.
+* More an advice than a rule: When implementing a particular feature, make a new
+  branch for that feature. This should make things more clear for other people
+  that merge your changes.
