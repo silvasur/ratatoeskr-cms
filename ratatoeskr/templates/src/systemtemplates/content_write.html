@@ -49,6 +49,11 @@
 				</select>
 			</p>
 			<p><ste:get_translation for="allow_comments" />: <input type="checkbox" name="allow_comments" value="yes" ?{$allow_comments|checked="checked" |}/></p>
+			
+			<ste:foreach array="displayed_plugins" value="plugin">
+				<h2><ste:escape>$plugin[label]</ste:escape></h2>
+				<ste:load name="$plugin[template]" />
+			</ste:foreach>
 		</div>
 		
 		<div class="column_main">

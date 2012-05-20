@@ -25,9 +25,10 @@ require_once(dirname(__FILE__) . "/libs/kses.php");
  * 
  * Returns:
  * 	Array with these fields:
- * 	* id
- * 	* name
- * 	* title
+ * 	* id    - The ID of the section.
+ * 	* name  - The name of the section.
+ * 	* title - The title of the section in the current language
+ * 	* __obj - The <Section> object. Useful for plugins, so they do not need to fetch the object from the database again.
  */
 function section_transform_ste($section, $lang)
 {
@@ -49,9 +50,10 @@ function section_transform_ste($section, $lang)
  * 
  * Returns:
  * 	Array with these fields:
- * 	* id
- * 	* name
- * 	* title
+ * 	* id    - The ID of the tag.
+ * 	* name  - The name of the tag.
+ * 	* title - The title in the current language.
+ * 	* __obj - The <Tag> object. Useful for plugins, so they do not need to fetch the object from the database again.
  */
 function tag_transform_ste($tag, $lang)
 {
@@ -93,6 +95,7 @@ function tag_transform_ste($tag, $lang)
  * 	* tags (array(sub-fields: <tag_transform_ste>))
  * 	* languages (array: language name=>url)
  * 	* comments_allowed
+ * 	* __obj - Useful for plugins, so they do not need to fetch the object from the database again.
  */
 function article_transform_ste($article, $lang)
 {

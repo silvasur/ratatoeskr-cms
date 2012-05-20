@@ -2606,6 +2606,21 @@ WHERE " . implode(" AND ", $subqueries) . " $sorting");
 	}
 	
 	/*
+	 * Function: get_extradata
+	 * Get the extradata for this article and the given plugin.
+	 * 
+	 * Parameters:
+	 * 	$plugin_id - The ID of the plugin.
+	 * 
+	 * Returns:
+	 * 	An <ArticleExtradata> object.
+	 */
+	public function get_extradata($plugin_id)
+	{
+		return new ArticleExtradata($this->id, $plugin_id);
+	}
+	
+	/*
 	 * Function: save
 	 */
 	public function save()
