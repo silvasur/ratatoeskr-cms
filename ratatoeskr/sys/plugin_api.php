@@ -15,17 +15,18 @@ require_once(dirname(__FILE__) . "/../frontend.php");
 
 /*
  * Constant: APIVERSION
- * The current API version (5).
+ * The current API version (6).
  */
-define("APIVERSION", 5);
+define("APIVERSION", 6);
 
 /*
  * Array: $api_compat
  * Array of API versions, this version is compatible to (including itself).
  */
-$api_compat = array(3, 4, 5);
+$api_compat = array(3, 4, 5, 6);
 
-$url_handlers = array();
+$url_handlers = array(); /* master URL handler */
+
 /*
  * Function: register_url_handler
  * Register an URL handler. See <ratatoeskr/sys/urlprocess.php> for more details.
@@ -41,6 +42,8 @@ function register_url_handler($name, $callback)
 }
 
 $pluginpages_handlers = array();
+
+$articleeditor_plugins = array();
 
 /*
  * Class: RatatoeskrPlugin
@@ -93,7 +96,7 @@ abstract class RatatoeskrPlugin
 	final protected function get_custompub_dir()  { return SITE_BASE_PATH . "/ratatoeskr/plugin_extradata/public/" . $this->id;               }
 	final protected function get_custompub_url()  { return $GLOBALS["rel_path_to_root"] . "/ratatoeskr/plugin_extradata/public/" . $this->id; }
 	final protected function get_template_dir()   { return "/plugintemplates/" . $this->id;                                                   }
-	
+		
 	/*
 	 * Function: register_url_handler
 	 * Register a URL handler
@@ -194,6 +197,33 @@ abstract class RatatoeskrPlugin
 	}
 	
 	/*
+	 * Function: register_articleeditor_plugin
+	 * Register a plugin for the article editor in the backend.
+	 * 
+	 * Parameters:
+	 * 	$label    - The label for the plugin.
+	 * 	$fx       - A function that will be called during the articleeditor.
+	 * 	            This function must accept these parameters:
+	 * 	            * $article       - An <Article> object or NULL, if no Article is edited right now.
+	 * 	            * $about_to_save - If True, the article is about to be saved.
+	 * 	                               If you want to veto the saving, return the rejection reason as a string.
+	 * 	                               If everything is okay and you need to save additional data, return a callback function that accepts the saved <Article> object (that callback should also write data back to the template, if necessary).
+	 * 	                               If everything is okay and you do not need to save additional data, return NULL.
+	 * 	$template - The name of the template to display in the editor, relative to your template directory. If you do not want to display anything, you can set ths to NULL.
+	 */
+	final protected function register_articleeditor_plugin($label, $fx, $template)
+	{
+		global $articleeditor_plugins;
+		
+		$articleeditor_plugins[] = array(
+			"label"    => $label,
+			"fx"       => $fx,
+			"template" => $this->get_template_dir() . "/" . $template,
+			"display"  => $template != NULL
+		);
+	}
+	
+	/*
 	 * Function: get_backend_pluginpage_url
 	 * Get the URL to your backend plugin page.
 	 * 
@@ -204,6 +234,21 @@ abstract class RatatoeskrPlugin
 	{
 		global $rel_path_to_root;
 		return "$rel_path_to_root/backend/pluginpages/p{$this->id}";
+	}
+	
+	/*
+	 * Function: get_article_extradata
+	 * Get the <ArticleExtradata> object for this plugin and the given article.
+	 * 
+	 * Parameters:
+	 * 	$article - An <Article> object.
+	 * 
+	 * Returns:
+	 * 	An <ArticleExtradata> object for this plugin and the given article.
+	 */
+	final protected function get_article_extradata($article)
+	{
+		return new ArticleExtradata($article->get_id(), $this->id);
 	}
 	
 	/*

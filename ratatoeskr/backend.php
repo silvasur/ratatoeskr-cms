@@ -12,6 +12,7 @@
 require_once(dirname(__FILE__) . "/sys/models.php");
 require_once(dirname(__FILE__) . "/sys/pwhash.php");
 require_once(dirname(__FILE__) . "/sys/textprocessors.php");
+require_once(dirname(__FILE__) . "/sys/plugin_api.php");
 require_once(dirname(__FILE__) . "/languages.php");
 
 $admin_grp = NULL;
@@ -116,6 +117,7 @@ $backend_subactions = url_action_subactions(array(
 			}
 		}
 		load_language();
+		
 		/* If we are here, user is not logged in... */
 		$url_next = array("login");
 	},
@@ -159,7 +161,7 @@ $backend_subactions = url_action_subactions(array(
 	"content" => url_action_subactions(array(
 		"write" => function(&$data, $url_now, &$url_next)
 		{
-			global $ste, $translation, $textprocessors, $ratatoeskr_settings, $languages;
+			global $ste, $translation, $textprocessors, $ratatoeskr_settings, $languages, $articleeditor_plugins;
 			
 			list($article, $editlang) = array_slice($url_next, 0);
 			if(!isset($editlang))
@@ -234,14 +236,21 @@ $backend_subactions = url_action_subactions(array(
 				if(isset($_POST["saveaslang"]))
 					$editlang = $_POST["saveaslang"];
 			}
+			else
+			{
+				/* Call articleeditor plugins */
+				$article = empty($article) ? NULL : Article::by_urlname($article);
+				foreach($articleeditor_plugins as $plugin)
+					call_user_func($plugin["fx"], $article, False);
+			}
 			
 			function fill_article(&$article, $inputs, $editlang)
 			{
 				$article->urlname   = $inputs["urlname"];
 				$article->status    = $inputs["article_status"];
 				$article->timestamp = $inputs["date"];
-				$article->title  [$editlang] = new Translation($inputs["title"],   ""       );
-				$article->text   [$editlang] = new Translation($inputs["content"], $inputs["content_txtproc"]);
+				$article->title[$editlang]   = new Translation($inputs["title"], "");
+				$article->text[$editlang]    = new Translation($inputs["content"], $inputs["content_txtproc"]);
 				$article->excerpt[$editlang] = new Translation($inputs["excerpt"], $inputs["excerpt_txtproc"]);
 				$article->set_tags(maketags($inputs["tags"], $editlang));
 				$article->set_section($inputs["article_section"]);
@@ -256,15 +265,32 @@ $backend_subactions = url_action_subactions(array(
 				{
 					$article = Article::create($inputs["urlname"]);
 					fill_article($article, $inputs, $editlang);
-					try
+					
+					/* Calling articleeditor plugins */
+					$call_after_save = array();
+					foreach($articleeditor_plugins as $plugin)
 					{
-						$article->save();
-						$ste->vars["article_editurl"] = urlencode($article->urlname) . "/" . urlencode($editlang);
-						$ste->vars["success"] = htmlesc($translation["article_save_success"]);
+						$result = call_user_func($plugin["fx"], $article, True);
+						if(is_string($result))
+							$fail_reasons[] = $result;
+						elseif($result !== NULL)
+							$call_after_save[] = $result;
 					}
-					catch(AlreadyExistsError $e)
+					
+					if(empty($fail_reasons))
 					{
-						$fail_reasons[] = $translation["article_name_already_in_use"];
+						try
+						{
+							$article->save();
+							foreach($call_after_save as $cb)
+								call_user_func($cb, $article);
+							$ste->vars["article_editurl"] = urlencode($article->urlname) . "/" . urlencode($editlang);
+							$ste->vars["success"] = htmlesc($translation["article_save_success"]);
+						}
+						catch(AlreadyExistsError $e)
+						{
+							$fail_reasons[] = $translation["article_name_already_in_use"];
+						}
 					}
 				}
 			}
@@ -272,7 +298,8 @@ $backend_subactions = url_action_subactions(array(
 			{
 				try
 				{
-					$article = Article::by_urlname($article);
+					if(!($article instanceof Article))
+						$article = Article::by_urlname($article);
 				}
 				catch(DoesNotExistError $e)
 				{
@@ -282,15 +309,32 @@ $backend_subactions = url_action_subactions(array(
 				if(empty($fail_reasons) and isset($_POST["save_article"]))
 				{
 					fill_article($article, $inputs, $editlang);
-					try
+					
+					/* Calling articleeditor plugins */
+					$call_after_save = array();
+					foreach($articleeditor_plugins as $plugin)
 					{
-						$article->save();
-						$ste->vars["article_editurl"] = urlencode($article->urlname) . "/" . urlencode($editlang);
-						$ste->vars["success"] = htmlesc($translation["article_save_success"]);
+						$result = call_user_func($plugin["fx"], $article, True);
+						if(is_string($result))
+							$fail_reasons[] = $result;
+						elseif($result !== NULL)
+							$call_after_save[] = $result;
 					}
-					catch(AlreadyExistsError $e)
+					
+					if(empty($fail_reasons))
 					{
-						$fail_reasons[] = $translation["article_name_already_in_use"];
+						try
+						{
+							$article->save();
+							foreach($call_after_save as $cb)
+									call_user_func($cb, $article);
+							$ste->vars["article_editurl"] = urlencode($article->urlname) . "/" . urlencode($editlang);
+							$ste->vars["success"] = htmlesc($translation["article_save_success"]);
+						}
+						catch(AlreadyExistsError $e)
+						{
+							$fail_reasons[] = $translation["article_name_already_in_use"];
+						}
 					}
 				}
 				
@@ -365,6 +409,9 @@ $backend_subactions = url_action_subactions(array(
 				if(isset($inputs[$k_in]))
 					$ste->vars[$k_out] = $inputs[$k_in];
 			}
+			
+			/* Displaying article editor plugins */
+			$ste->vars["displayed_plugins"] = array_map(function($x) { return array("label" => $x["label"], "template" => $x["template"]); }, array_filter($articleeditor_plugins, function($x) { return $x["display"]; }));
 			
 			if(!empty($fail_reasons))
 				$ste->vars["failed"] = $fail_reasons;
