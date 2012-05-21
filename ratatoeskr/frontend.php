@@ -392,8 +392,9 @@ $ste->register_tag("article_comments", function($ste, $params, $sub)
  * Generates a HTML form tag that allows the visitor to write a comment.
  * 
  * Parameters:
- * 	article - (mandatory) The name of the variable, where the article is stored at.
- * 	default - (optional)  If not empty, a default formular with the mandatory fields will be generated.
+ * 	article    - (mandatory) The name of the variable, where the article is stored at.
+ * 	default    - (optional)  If not empty, a default formular with the mandatory fields will be generated.
+ * 	previewbtn - (optional)  If not empty and default form is choosen, a preview button will also be generated.
  * 
  * Tag Content:
  * 	The tag's content will be written into the HTML form tag.
@@ -446,11 +447,13 @@ $ste->register_tag("comment_form", function($ste, $params, $sub)
 	
 	$form_header = "<form action=\"{$tpl_article["fullurl"]}?comment\" method=\"post\" accept-charset=\"UTF-8\"><input type=\"hidden\" name=\"comment_token\" value=\"$token\" />";
 	
+	$previewbtn = $ste->evalbool(@$params["previewbtn"]) ? " <input type=\"submit\" name=\"preview_comment\" value=\"{$translation["comment_form_preview"]}\" />" : "";
+	
 	if($ste->evalbool(@$params["default"]))
 		$form_body = "<p>{$translation["comment_form_name"]}: <input type=\"text\" name=\"author_name\" value=\"" . htmlesc(@$_POST["author_name"]) . "\" /></p>
 <p>{$translation["comment_form_mail"]}: <input type=\"text\" name=\"author_mail\" value=\"" . htmlesc(@$_POST["author_mail"]) . "\" /></p>
 <p>{$translation["comment_form_text"]}:<br /><textarea name=\"comment_text\" cols=\"50\" rows=\"10\">" . htmlesc(@$_POST["comment_text"]) . "</textarea></p>
-<p><input type=\"submit\" name=\"post_comment\" /></p>";
+<p><input type=\"submit\" name=\"post_comment\" value=\"{$translation["comment_form_submit"]}\" />$previewbtn</p>";
 	else
 	{
 		$ste->vars["current"]["oldcomment"] = array(
