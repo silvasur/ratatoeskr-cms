@@ -257,3 +257,15 @@ ul.bulletfree {
 	list-style: none;
 	padding-left: 0mm;
 }
+
+.metabar_element_expanded {
+	min-height: 12px;
+	background: url(images/expandarrow_expanded.png) 0px 4px no-repeat;
+	padding-left: 12px;
+}
+
+.metabar_element_collapsed {
+	min-height: 12px;
+	background: url(images/expandarrow_collapsed.png) 0px 4px no-repeat;
+	padding-left: 12px;
+}
