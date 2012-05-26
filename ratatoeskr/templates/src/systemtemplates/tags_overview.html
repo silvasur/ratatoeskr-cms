@@ -7,41 +7,52 @@
 		<table class="listtab">
 			<thead>
 				<tr>
+					<th>&nbsp;</th>
 					<th><ste:get_translation for="tag_name" /></th>
-					<th><ste:get_translation for="delete" /></th>
 					<ste:foreach array="all_tag_langs" key="langcode" value="langname">
 						<th>($langcode) <ste:escape>$langname</ste:escape></th>
 					</ste:foreach>
-					<th><ste:get_translation for="tag_add_lang" /></th>
+					<th>
+						<select name="new_language">
+							<option value="" selected="selected"><ste:get_translation for="tag_add_lang" /></option>
+							<ste:foreach array="unused_languages" key="langcode" value="langname">
+								<option value="$langcode">$langcode: <ste:escape>$langname</ste:escape></option>
+							</ste:foreach>
+						</select>
+					</th>
 				</tr>
 			</thead>
 			<tbody>
 				<ste:foreach array="alltags" value="tagdata">
 					<tr>
-						<td>$tagdata[name]</td>
-						<td>
-							<a href="$rel_path_to_root/backend/content/tags/$tagdata[name]/delete"><img src="$rel_path_to_root/ratatoeskr/cms_style/images/delete.png" alt="<ste:get_translation for='delete' />" /></a>
-						</td>
+						<td><input type="checkbox" name="tag_multiselect[]" value="$tagdata[id]" /></td>
+						<td><ste:escape>$tagdata[name]</ste:escape></td>
 						<ste:foreach array="all_tag_langs" key="langcode" value="_">
 							<td>
-								<input type="text" name="tagtrans_${langcode}_${tagdata[name]}" value="<ste:escape>$tagdata[translations][$langcode]</ste:escape>" />
+								<input type="text" name="tagtrans_${langcode}_${tagdata[id]}" value="<ste:escape>$tagdata[translations][$langcode]</ste:escape>" />
 							</td>
 						</ste:foreach>
 						<td>
-							<a href="$rel_path_to_root/backend/content/tags/$tagdata[name]/addtranslation"><img src="$rel_path_to_root/ratatoeskr/cms_style/images/add.png" alt="<ste:get_translation for='tag_add_lang' />" /></a>
+							<input type="text" name="tagtrans_NEW_${tagdata[id]}" />
 						</td>
 					</tr>
 				</ste:foreach>
+				<tr>
+					<td>&nbsp;</td>
+					<td><input type="text" name="newtagname" /></td>
+					<ste:foreach array="all_tag_langs" key="langcode" value="_">
+						<td>
+							<input type="text" name="tagtrans_${langcode}_NEW" />
+						</td>
+					</ste:foreach>
+					<td>
+						<input type="text" name="tagtrans_NEW_NEW" />
+					</td>
+				</tr>
 			</tbody>
 		</table>
-		<div><input type="submit" name="edit_translations" /></div>
+		<div>
+			<ste:default_delete_yesno /> | <input type="submit" name="save_changes" value="<ste:get_translation for='save_changes' />">
+		</div>
 	</form>
-	
-	<div>
-		<h2><ste:get_translation for="create_new_tag" /></h2>
-		<form action="$rel_path_to_root/backend/content/tags" method="post" accept-charset="UTF-8">
-			<p><ste:get_translation for="new_tag_name" />: <input type="text" name="new_tag_name" /></p>
-			<p><input type="submit" name="create_new_tag" /></p>
-		</form>
-	</div>
 </ste:block>
