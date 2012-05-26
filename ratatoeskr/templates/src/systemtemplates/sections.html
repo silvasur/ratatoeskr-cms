@@ -56,10 +56,7 @@
 					</tbody>
 				</table>
 				<div>
-					<input type="submit" name="delete" value="<ste:get_translation for='delete' />" />&nbsp;<select name="really_delete">
-						<option value="no" selected="selected"><ste:get_translation for="no" /></option>
-						<option value="yes"><ste:get_translation for="yes" /></option>
-					</select>
+					<ste:default_delete_yesno />
 					|
 					<input type="submit" name="make_default" value="<ste:get_translation for='make_default' />" />
 					|
