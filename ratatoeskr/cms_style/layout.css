@@ -19,6 +19,7 @@ a:hover {
 body, html {
 	margin: 0px;
 	padding:0px;
+	background: white url(images/backendbg.png) bottom right no-repeat fixed;
 }
 
 hr {
@@ -241,12 +242,20 @@ table.listtab td {
 	border-top: 1px solid #eee;
 }
 
+table.listtab th, table.listtab td {
+	padding: 0mm 1mm 0mm;
+}
+
 table.listtab tr:first-child td {
 	border-top: 1px solid #666;
 }
 
 table.listtab tbody tr:hover {
 	background: #eee;
+}
+
+table.listtab tbody input[type="text"] {
+	width: 100%;
 }
 
 textarea.codeedit {
@@ -256,4 +265,22 @@ textarea.codeedit {
 ul.bulletfree {
 	list-style: none;
 	padding-left: 0mm;
+}
+
+.metabar_element_expanded, .metabar_element_collapsed {
+	min-height: 12px;
+	padding-left: 12px;
+	cursor: pointer;
+}
+
+.metabar_element_expanded:hover, .metabar_element_collapsed:hover {
+	text-decoration: underline;
+}
+
+.metabar_element_expanded {
+	background: url(images/expandarrow_expanded.png) 0px 4px no-repeat;
+}
+
+.metabar_element_collapsed {
+	background: url(images/expandarrow_collapsed.png) 0px 4px no-repeat;
 }

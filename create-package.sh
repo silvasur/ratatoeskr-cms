@@ -23,6 +23,7 @@ unzip kses-*.zip
 mv kses-*/kses.php .
 rm -rf kses-*
 rm kses-*.zip
+wget http://code.jquery.com/jquery.min.js
 cd ../..
 rm session_doctor.php 
 cd ..

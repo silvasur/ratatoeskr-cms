@@ -39,25 +39,6 @@ function maketags($tagnames, $lang)
 	return $rv;
 }
 
-/* Generates Yes/No form / checks it. */
-function askyesno($ste, $callback, $question, $yes=NULL, $no=NULL, $moredetails="")
-{
-	if(isset($_POST["yes"]))
-		return True;
-	if(isset($_POST["no"]))
-		return False;
-	
-	$ste->vars["callback"] = $callback;
-	$ste->vars["question"] = $question;
-	if($yes !== NULL)
-		$ste->vars["yestext"] = $yes;
-	if($no !== NULL)
-		$ste->vars["notext"] = $no;
-	if($moredetails !== NULL)
-		$ste->vars["moredetails"] = $moredetails;
-	return $ste->exectemplate("/systemtemplates/areyousure.html");
-}
-
 $backend_subactions = NULL;
 
 function build_backend_subactions()
@@ -421,149 +402,136 @@ $backend_subactions = url_action_subactions(array(
 		"tags" => function(&$data, $url_now, &$url_next)
 		{
 			global $translation, $languages, $ste, $rel_path_to_root;
-			$ste->vars["section"] = "content";
-			$ste->vars["submenu"] = "tags";
 			
-			list($tagname, $tagaction) = $url_next;
 			$url_next = array();
 			
-			if(isset($tagname))
+			$ste->vars["section"]   = "content";
+			$ste->vars["submenu"]   = "tags";
+			$ste->vars["pagetitle"] = $translation["tags_overview"];
+			
+			if(isset($_POST["delete"]) and ($_POST["really_delete"] == "yes"))
 			{
-				try
+				foreach($_POST["tag_multiselect"] as $tagid)
 				{
-					$tag = Tag::by_name($tagname);
-				}
-				catch(DoesNotExistError $e)
-				{
-					throw new NotFoundError();
-				}
-				
-				if(isset($tagaction))
-				{
-					switch($tagaction)
+					try
 					{
-						case "delete": 
-							$ste->vars["pagetitle"] = str_replace("[[TAGNAME]]", $tag->name, $translation["delete_tag_pagetitle"]);
-							$yesnoresp = askyesno($ste, "$rel_path_to_root/backend/content/tags/{$tag->name}/delete", $translation["delete_comment_question"]);
-							if(is_string($yesnoresp))
-							{
-								echo $yesnoresp;
-								return;
-							}
-					
-							if($yesnoresp)
-							{
-								$tag->delete();
-								echo $ste->exectemplate("/systemtemplates/tag_deleted.html");
-							}
-							else
-								goto backend_content_tags_overview; /* Hopefully no dinosaur will attack me: http://xkcd.com/292/ :-) */
-							break;
-						case "addtranslation":
-							$ste->vars["pagetitle"] = $translation["tag_add_lang"];
-							$ste->vars["tagname"] = $tag->name;
-							if(isset($_POST["addtranslation"]))
-							{
-								$errors = array();
-								if(!isset($languages[@$_POST["language"]]))
-									$errors[] = $translation["language_unknown"];
-								if(empty($_POST["translation"]))
-									$errors[] = $translation["no_translation_text_given"];
-								if(empty($errors))
-								{
-									$tag->title[$_POST["language"]] = new Translation($_POST["translation"], "");
-									$tag->save();
-									$ste->vars["success"] = $translation["tag_translation_added"];
-									goto backend_content_tags_overview;
-								}
-								else
-									$ste->vars["errors"] = $errors;
-							}
-							echo $ste->exectemplate("/systemtemplates/tag_addtranslation.html");
-							break;
+						$tag = Tag::by_id($tagid);
+						$tag->delete();
+					}
+					catch(DoesNotExistError $e)
+					{
+						continue;
 					}
 				}
-			}
-			else
-			{
-				backend_content_tags_overview:
 				
-				if(isset($_POST["create_new_tag"]))
+				$ste->vars["success"] = $translation["tags_successfully_deleted"];
+			}
+			
+			if(isset($_POST["save_changes"]))
+			{
+				$newlang = (!empty($_POST["new_language"])) ? $_POST["new_language"] : NULL;
+				$newtag  = NULL;
+				
+				if(!empty($_POST["newtagname"]))
 				{
-					if((strpos(@$_POST["new_tag_name"], ",") !== False) or (strpos(@$_POST["new_tag_name"], " ") !== False) or (strlen(@$_POST["new_tag_name"]) == 0))
+					if((strpos(@$_POST["new_tag_name"], ",") !== False) or (strpos(@$_POST["new_tag_name"], " ") !== False))
 						$ste->vars["error"] = $translation["invalid_tag_name"];
+					else
+						$newtag = $_POST["newtagname"];
+				}
+				
+				if(($newlang !== NULL) and (!isset($languages[$newlang])))
+					$newlang = NULL;
+				if($newtag !== NULL)
+				{
+					try
+					{
+						$newtag = Tag::create($newtag);
+					}
+					catch(AlreadyExistsError $e)
+					{
+						$newtag = NULL;
+					}
+				}
+				
+				$translations = array();
+				foreach($_POST as $k => $v)
+				{
+					if(preg_match('/tagtrans_(NEW|[a-z]{2})_(.*)/', $k, $matches) == 1)
+					{
+						$lang = ($matches[1] == "NEW") ? $newlang : $matches[1];
+						$tag  = $matches[2];
+						if($lang === NULL)
+							continue;
+						$translations[$tag][$lang] = $v;
+					}
+				}
+				
+				foreach($translations as $tag => $langmap)
+				{
+					if($tag == "NEW")
+					{
+						if($newtag === NULL)
+							continue;
+						$tag = $newtag;
+					}
 					else
 					{
 						try
 						{
-							$tag = Tag::create($_POST["new_tag_name"]);
-							$tag->title[$data["user"]->language] = new Translation($_POST["new_tag_name"], "");
-							$tag->save();
-							$ste->vars["success"] = $translation["tag_created_successfully"];
+							$tag = Tag::by_id($tag);
 						}
-						catch(AlreadyExistsError $e)
+						catch(DoesNotExistError $e)
 						{
-							$ste->vars["error"] = $translation["tag_name_already_in_use"];
-						}
-					}
-				}
-				
-				if(isset($_POST["edit_translations"]))
-				{
-					$tagbuffer = array();
-					foreach($_POST as $k => $v)
-					{
-						if(preg_match("/^tagtrans_(.*?)_(.*)$/", $k, $matches))
-						{
-							if(!isset($languages[$matches[1]]))
-								continue;
-							
-							if(!isset($tagbuffer[$matches[2]]))
-							{
-								try
-								{
-									$tagbuffer[$matches[2]] = Tag::by_name($matches[2]);
-								}
-								catch(DoesNotExistError $e)
-								{
-									continue;
-								}
-							}
-							
-							if(empty($v) and isset($tagbuffer[$matches[2]]->title[$matches[1]]))
-								unset($tagbuffer[$matches[2]]->title[$matches[1]]);
-							elseif(empty($v))
-								continue;
-							else
-								$tagbuffer[$matches[2]]->title[$matches[1]] = new Translation($v, "");
+							continue;
 						}
 					}
 					
-					foreach($tagbuffer as $tag)
-						$tag->save();
-					
-					$ste->vars["success"] = $translation["tag_titles_edited_successfully"];
-				}
-				
-				$ste->vars["pagetitle"] = $translation["tags_overview"];
-				
-				$alltags = Tag::all();
-				usort($alltags, function($a, $b) { return strcmp($a->name, $b->name); });
-				$ste->vars["all_tag_langs"] = array();
-				$ste->vars["alltags"] = array();
-				foreach($alltags as $tag)
-				{
-					$tag_pre = array("name" => $tag->name, "translations" => array());
-					foreach($tag->title as $langcode => $translation_obj)
+					foreach($langmap as $l => $text)
 					{
-						$tag_pre["translations"][$langcode] = $translation_obj->text;
-						if(!isset($ste->vars["all_tag_langs"][$langcode]))
-							$ste->vars["all_tag_langs"][$langcode] = $languages[$langcode]["language"];
+						if(empty($text))
+							unset($tag->title[$l]);
+						else
+							$tag->title[$l] = new Translation($text, "");
 					}
-					$ste->vars["alltags"][] = $tag_pre;
+					
+					$tag->save();
 				}
-				echo $ste->exectemplate("/systemtemplates/tags_overview.html");
+				
+				$ste->vars["success"] = $translation["tags_successfully_edited"];
 			}
+			
+			$ste->vars["alltags"] = array();
+			$taglangs = array();
+			
+			$alltags = Tag::all();
+			foreach($alltags as $tag)
+			{
+				$transls = array();
+				foreach($tag->title as $l => $t)
+				{
+					if(!in_array($l, $taglangs))
+						$taglangs[] = $l;
+					$transls[$l] = $t->text;
+				}
+				
+				$ste->vars["alltags"][] = array(
+					"id" => $tag->get_id(),
+					"name" => $tag->name,
+					"translations" => $transls
+				);
+			}
+			
+			$unused_langs = array_diff(array_keys($languages), $taglangs);
+			
+			$ste->vars["all_tag_langs"] = array();
+			foreach($taglangs as $l)
+				$ste->vars["all_tag_langs"][$l] = $languages[$l]["language"];
+			$ste->vars["unused_languages"] = array();
+			foreach($unused_langs as $l)
+				$ste->vars["unused_languages"][$l] = $languages[$l]["language"];
+			
+			echo $ste->exectemplate("/systemtemplates/tags_overview.html");
 		},
 		"articles" => function(&$data, $url_now, &$url_next)
 		{

@@ -39,7 +39,7 @@
 					</tbody>
 				</table>
 				<div>
-					<input type="submit" name="delete_groups" value="<ste:get_translation for='delete' />" /><select name="really_delete"><option value="no" selected="selected"><ste:get_translation for="no" /></option><option value="yes"><ste:get_translation for="yes" /></option></select>
+					<ste:default_delete_yesno name="delete_groups" />
 				</div>
 			</form>
 			
@@ -72,7 +72,7 @@
 					</tbody>
 				</table>
 				<div>
-					<input type="submit" name="delete_users" value="<ste:get_translation for='delete' />" /><select name="really_delete"><option value="no" selected="selected"><ste:get_translation for="no" /></option><option value="yes"><ste:get_translation for="yes" /></option></select>
+					<ste:default_delete_yesno name="delete_users" />
 				</div>
 			</form>
 		</div>

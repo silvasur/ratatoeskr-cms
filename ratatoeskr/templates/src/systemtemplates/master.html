@@ -19,12 +19,21 @@
 		</ste:then>
 	</ste:if>
 </ste:mktag>
+<ste:mktag name="default_delete_yesno">
+	<input type="submit" name="?{$_tag_parameters[name]|$_tag_parameters[name]|delete}" value="<ste:get_translation for='delete' />" />
+		<select name="really_delete">
+			<option value="no" selected="selected"><ste:get_translation for="no" /></option>
+			<option value="yes"><ste:get_translation for="yes" /></option>
+		</select>
+</ste:mktag>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 	<meta http-equiv="Content-Style-Type" content="text/css" />
 	<title><ste:get_translation for="section_$section" />::<ste:escape>$pagetitle</ste:escape> - Ratatöskr</title>
+	<script type="text/javascript" src="$rel_path_to_root/ratatoeskr/libs/jquery.min.js"></script>
+	<script type="text/javascript" src="$rel_path_to_root/ratatoeskr/js/backend.js"></script>
 	<ste:mktag name="cms_style"><link rel="stylesheet" type="text/css" media="screen" href="$rel_path_to_root/ratatoeskr/cms_style/<ste:tagcontent />" /></ste:mktag>
 	<ste:cms_style>layout.css</ste:cms_style>
 	<ste:foreach array="additional_styles" value="cssfile"><ste:cms_style>$cssfile</ste:cms_style></ste:foreach>
