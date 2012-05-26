@@ -241,12 +241,20 @@ table.listtab td {
 	border-top: 1px solid #eee;
 }
 
+table.listtab th, table.listtab td {
+	padding: 0mm 1mm 0mm;
+}
+
 table.listtab tr:first-child td {
 	border-top: 1px solid #666;
 }
 
 table.listtab tbody tr:hover {
 	background: #eee;
+}
+
+table.listtab tbody input[type="text"] {
+	width: 100%;
 }
 
 textarea.codeedit {
