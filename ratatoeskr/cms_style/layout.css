@@ -19,6 +19,7 @@ a:hover {
 body, html {
 	margin: 0px;
 	padding:0px;
+	background: white url(images/backendbg.png) bottom right no-repeat fixed;
 }
 
 hr {
