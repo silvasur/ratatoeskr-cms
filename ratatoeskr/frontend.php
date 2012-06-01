@@ -654,6 +654,55 @@ $ste->register_tag("title", function($ste, $params, $sub)
 	return "<title>$pagetitle</title>";
 });
 
+function make_on_anything_tag($field)
+{
+	return function($ste, $params, $sub) use ($field)
+	{
+		if($ste->evalbool($ste->vars["current"][$field]))
+		{
+			if(!empty($params["var"]))
+				$ste->set_var_by_name($params["var"], $ste->vars["current"][$field]);
+			return $sub($ste);
+		}
+	};
+}
+
+/*
+ * STETag: on_article
+ * Execute tag content, if currently an article is requested.
+ *
+ * Parameters:
+ * 	var - (optional) If set, the article will be stored in the variable with that name (see <article_transform_ste> for sub-fields).
+ *
+ * Returns:
+ * 	The executed tag content, if an article was requested.
+ */
+$ste->register_tag("on_article", make_on_anything_tag("article"));
+
+/*
+ * STETag: on_tag
+ * Execute tag content, if currently a tag is requested.
+ *
+ * Parameters:
+ * 	var - (optional) If set, the tag will be stored in the variable with that name (see <tag_transform_ste> for sub-fields).
+ *
+ * Returns:
+ * 	The executed tag content, if a tag was requested.
+ */
+$ste->register_tag("on_tag", make_on_anything_tag("tag"));
+
+/*
+ * STETag: on_section
+ * Execute tag content, if currently a section is requested.
+ *
+ * Parameters:
+ * 	var - (optional) If set, the section will be stored in the variable with that name (see <section_transform_ste> for sub-fields).
+ *
+ * Returns:
+ * 	The executed tag content, if a section was requested.
+ */
+$ste->register_tag("on_section", make_on_anything_tag("section"));
+
 /*
  * STEVar: $current
  * Holds information about the current page in the frontend (the part of the webpage, the visitor sees).
