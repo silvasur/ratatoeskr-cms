@@ -158,18 +158,20 @@ function comment_transform_ste($comment)
  * The fields of an article can be looked up at <article_transform_ste>.
  * 
  * Parameters:
- * 	var      - (mandatory) The name of the variable, where the current article should be stored at.
- * 	id       - (optional)  Filter by ID.
- * 	urlname  - (optional)  Filter by urlname.
- * 	section  - (optional)  Filter by section (section name).
- * 	status   - (optional)  Filter by status (numeric, <ARTICLE_STATUS_>).
- * 	tag      - (optional)  Filter by tag (tag name).
- * 	sort     - (optional)  How to sort. Format: "fieldname direction" where fieldname is one of [id, urlname, title, timestamp] and direction is one of [asc, desc].
- * 	perpage  - (optional)  How many articles should be shown per page (default unlimited).
- * 	page     - (optional)  On which page are we (starting with 1). Useful in combination with $current[page], <page_prev> and <page_next>. (Default: 1)
- * 	maxpage  - (optional)  (variable name) If given, the number of pages are stored in this variable.
- * 	skip     - (optional)  How many articles should be skipped? (Default: none)
- * 	count    - (optional)  How many articles to output. (Default unlimited)
+ * 	var        - (mandatory) The name of the variable, where the current article should be stored at.
+ * 	id         - (optional)  Filter by ID.
+ * 	urlname    - (optional)  Filter by urlname.
+ * 	section    - (optional)  Filter by section (section name).
+ * 	sectionvar - (optional)  Filter by section (Name of variable that contains a section).
+ * 	status     - (optional)  Filter by status (numeric, <ARTICLE_STATUS_>).
+ * 	tag        - (optional)  Filter by tag (tag name).
+ * 	tagvar     - (optional)  Filter by tag (Name of variable that contains a tag).
+ * 	sort       - (optional)  How to sort. Format: "fieldname direction" where fieldname is one of [id, urlname, title, timestamp] and direction is one of [asc, desc].
+ * 	perpage    - (optional)  How many articles should be shown per page (default unlimited).
+ * 	page       - (optional)  On which page are we (starting with 1). Useful in combination with $current[page], <page_prev> and <page_next>. (Default: 1)
+ * 	maxpage    - (optional)  (variable name) If given, the number of pages are stored in this variable.
+ * 	skip       - (optional)  How many articles should be skipped? (Default: none)
+ * 	count      - (optional)  How many articles to output. (Default unlimited)
  *
  * Tag Content:
  * 	The tag's content will be executed for every article. The current article will be written to the variable specified by the var parameter before.
@@ -183,27 +185,32 @@ $ste->register_tag("articles_get", function($ste, $params, $sub)
 	
 	if(!isset($params["var"]))
 		throw new \ste\RuntimeError("Parameter var is needed in article_get!");
-	if(isset($params["section"]))
-	{
-		try
-		{
-			$params["section"] = Section::by_name($params["section"]);
-		}
-		catch(NotFoundError $e)
-		{
-			unset($params["section"]);
-		}
-	}
 	
 	$criterias = array("langavail" => $lang, "onlyvisible" => True);
 	if(isset($params["id"]))
 		$criterias["id"] = $params["id"];
 	if(isset($params["urlname"]))
 		$criterias["urlname"];
-	if(isset($params["section"]))
-		$criterias["section"] = $params["section"];
 	if(isset($params["status"]))
 		$criterias["status"] = $params["status"];
+	if(isset($params["sectionvar"]))
+	{
+		$sectionvar = $ste->get_var_by_name($params["sectionvar"]);
+		$criterias["section"] = $sectionvar["__obj"];
+	}
+	else if(isset($params["section"]))
+	{
+		try
+		{
+			$criterias["section"] = Section::by_name($params["section"]);
+		}
+		catch(DoesNotExistError $e) {}
+	}
+	if(isset($params["tagvar"]))
+	{
+		$tagvar = $ste->get_var_by_name($params["tagvar"]);
+		$criterias["tag"] = $tagvar["__obj"];
+	}
 	if(isset($params["tag"]))
 	{
 		try
