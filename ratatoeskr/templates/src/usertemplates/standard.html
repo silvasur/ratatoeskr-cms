@@ -1,72 +1,56 @@
 <ste:load name="master.html" />
 <ste:block name="content">
-	<ste:if>
-		$current[section]
-		<ste:then>
-			<ste:articles_get var="article" section="$current[section][name]" sort="timestamp desc" perpage="10" page="$current[page]" maxpage="maxpage">
-				<div class="article_short">
-					<h2>$article[title]</h2>
-					$article[excerpt]
-					<div class="readmore_link"><a href="<ste:escape>$article[fullurl]</ste:escape>"><ste:get_translation for="read_more" /></a></div>
-				</div class="article_short">
-			</ste:articles_get>
-			<ste:page_prev current="$current[page]" maxpage="$maxpage" default="y" />
-			<ste:page_next current="$current[page]" maxpage="$maxpage" default="y" />
-		</ste:then>
-	</ste:if>
+	<ste:on_section var="section">
+		<ste:articles_get var="article" sectionvar="section" sort="timestamp desc" perpage="10" page="$current[page]" maxpage="maxpage">
+			<div class="article_short">
+				<h2>$article[title]</h2>
+				$article[excerpt]
+				<div class="readmore_link"><a href="<ste:escape>$article[fullurl]</ste:escape>"><ste:get_translation for="read_more" /></a></div>
+			</div class="article_short">
+		</ste:articles_get>
+		<ste:page_prev current="$current[page]" maxpage="$maxpage" default="y" />
+		<ste:page_next current="$current[page]" maxpage="$maxpage" default="y" />
+	</ste:on_section>
 	
-	<ste:if>
-		$current[article]
-		<ste:then>
-			<div class="fullarticle">
-				<h2>$current[article][title]</h2>
-				<div class="article_meta">Published: <ste:date timestamp="$current[article][timestamp]">%d. %h. %Y, %H:%M</ste:date></div>
-				$current[article][text]<!-- $current[article][comments_allowed] -->
-				<ste:if>
-					$current[article][comments_allowed]
-					<ste:then>
-						<h3>Comments (<ste:article_comments_count article="current[article]" />)</h3>
-						<ste:article_comments var="comment" article="current[article]" sort="asc">
-							<div class="comment">
-								<p><strong>Name</strong>: $comment[author]</p>
-								<p><strong>Date</strong>: <ste:date timestamp="$comment[timestamp]">%d. %B %Y, %H:%M</ste:date></p>
-								$comment[text]
-							</div>
-						</ste:article_comments>
-						?{$current[commented]|Comment sucessfully stored!|}
-						?{$current[comment_fail]|Comment could not be stored: $current[comment_fail]|}
-						<ste:if>$current[comment_prev]
-							<ste:then>
-								<h3>Comment preview</h3>
-								<div class="comment">$current[comment_prev]</div>
-							</ste:then>
-						</ste:if>
-						<ste:comment_form article="current[article]">
-							Name: <input type="text" name="author_name" value="$current[oldcomment][name]" /><br />
-							Mail: <input type="text" name="author_mail" value="$current[oldcomment][mail]" /><br />
-							Text (Markdown): <br />
-							<textarea name="comment_text" cols="50" rows="10">$current[oldcomment][text]</textarea><br />
-							<input type="submit" name="post_comment" value="Post" />
-							<input type="submit" name="preview_comment" value="Preview" />
-						</ste:comment_form>
-					</ste:then>
-				</ste:if>
-			</div>
-		</ste:then>
-	</ste:if>
+	<ste:on_article var="article">
+		<div class="fullarticle">
+			<h2>$article[title]</h2>
+			<div class="article_meta">Published: <ste:date timestamp="$article[timestamp]">%d. %h. %Y, %H:%M</ste:date></div>
+			$article[text]
+			<ste:if>
+				$article[comments_allowed]
+				<ste:then>
+					<h3>Comments (<ste:article_comments_count article="article" />)</h3>
+					<ste:article_comments var="comment" article="article" sort="asc">
+						<div class="comment">
+							<p><strong>Name</strong>: $comment[author]</p>
+							<p><strong>Date</strong>: <ste:date timestamp="$comment[timestamp]">%d. %B %Y, %H:%M</ste:date></p>
+							$comment[text]
+						</div>
+					</ste:article_comments>
+					?{$current[commented]|Comment sucessfully stored!|}
+					?{$current[comment_fail]|Comment could not be stored: $current[comment_fail]|}
+					<ste:if>$current[comment_prev]
+						<ste:then>
+							<h3>Comment preview</h3>
+							<div class="comment">$current[comment_prev]</div>
+						</ste:then>
+					</ste:if>
+					<ste:comment_form article="article" default="y" previewbtn="y" />
+				</ste:then>
+			</ste:if>
+		</div>
+	</ste:on_article>
 	
-	<ste:if>
-		$current[tag]
-		<ste:then>
-			<ste:articles_get var="article" tag="$current[tag][name]" sort="timestamp desc" perpage="10" page="$current[page]" maxpage="maxpage">
-				<div class="article_short">
-					<h2><ste:escape>$article[title]</ste:escape></h2>
-					$article[excerpt]
-					<div class="readmore_link"><a href="<ste:escape>$article[fullurl]</ste:escape>"><ste:get_translation for="read_more" /></a></div>
-				</div class="article_short">
-			</ste:articles_get>
-			<ste:page_prev current="$current[page]" maxpage="$maxpage" default="y" />
-			<ste:page_next current="$current[page]" maxpage="$maxpage" default="y" />
-		</ste:then>
-	</ste:if>
+	<ste:on_tag var="tag">
+		<ste:articles_get var="article" tagvar="tag" sort="timestamp desc" perpage="10" page="$current[page]" maxpage="maxpage">
+			<div class="article_short">
+				<h2><ste:escape>$article[title]</ste:escape></h2>
+				$article[excerpt]
+				<div class="readmore_link"><a href="<ste:escape>$article[fullurl]</ste:escape>"><ste:get_translation for="read_more" /></a></div>
+			</div class="article_short">
+		</ste:articles_get>
+		<ste:page_prev current="$current[page]" maxpage="$maxpage" default="y" />
+		<ste:page_next current="$current[page]" maxpage="$maxpage" default="y" />
+	</ste:on_tag>
 </ste:block>

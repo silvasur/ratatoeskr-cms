@@ -158,18 +158,20 @@ function comment_transform_ste($comment)
  * The fields of an article can be looked up at <article_transform_ste>.
  * 
  * Parameters:
- * 	var      - (mandatory) The name of the variable, where the current article should be stored at.
- * 	id       - (optional)  Filter by ID.
- * 	urlname  - (optional)  Filter by urlname.
- * 	section  - (optional)  Filter by section (section name).
- * 	status   - (optional)  Filter by status (numeric, <ARTICLE_STATUS_>).
- * 	tag      - (optional)  Filter by tag (tag name).
- * 	sort     - (optional)  How to sort. Format: "fieldname direction" where fieldname is one of [id, urlname, title, timestamp] and direction is one of [asc, desc].
- * 	perpage  - (optional)  How many articles should be shown per page (default unlimited).
- * 	page     - (optional)  On which page are we (starting with 1). Useful in combination with $current[page], <page_prev> and <page_next>. (Default: 1)
- * 	maxpage  - (optional)  (variable name) If given, the number of pages are stored in this variable.
- * 	skip     - (optional)  How many articles should be skipped? (Default: none)
- * 	count    - (optional)  How many articles to output. (Default unlimited)
+ * 	var        - (mandatory) The name of the variable, where the current article should be stored at.
+ * 	id         - (optional)  Filter by ID.
+ * 	urlname    - (optional)  Filter by urlname.
+ * 	section    - (optional)  Filter by section (section name).
+ * 	sectionvar - (optional)  Filter by section (Name of variable that contains a section).
+ * 	status     - (optional)  Filter by status (numeric, <ARTICLE_STATUS_>).
+ * 	tag        - (optional)  Filter by tag (tag name).
+ * 	tagvar     - (optional)  Filter by tag (Name of variable that contains a tag).
+ * 	sort       - (optional)  How to sort. Format: "fieldname direction" where fieldname is one of [id, urlname, title, timestamp] and direction is one of [asc, desc].
+ * 	perpage    - (optional)  How many articles should be shown per page (default unlimited).
+ * 	page       - (optional)  On which page are we (starting with 1). Useful in combination with $current[page], <page_prev> and <page_next>. (Default: 1)
+ * 	maxpage    - (optional)  (variable name) If given, the number of pages are stored in this variable.
+ * 	skip       - (optional)  How many articles should be skipped? (Default: none)
+ * 	count      - (optional)  How many articles to output. (Default unlimited)
  *
  * Tag Content:
  * 	The tag's content will be executed for every article. The current article will be written to the variable specified by the var parameter before.
@@ -183,27 +185,32 @@ $ste->register_tag("articles_get", function($ste, $params, $sub)
 	
 	if(!isset($params["var"]))
 		throw new \ste\RuntimeError("Parameter var is needed in article_get!");
-	if(isset($params["section"]))
-	{
-		try
-		{
-			$params["section"] = Section::by_name($params["section"]);
-		}
-		catch(NotFoundError $e)
-		{
-			unset($params["section"]);
-		}
-	}
 	
 	$criterias = array("langavail" => $lang, "onlyvisible" => True);
 	if(isset($params["id"]))
 		$criterias["id"] = $params["id"];
 	if(isset($params["urlname"]))
 		$criterias["urlname"];
-	if(isset($params["section"]))
-		$criterias["section"] = $params["section"];
 	if(isset($params["status"]))
 		$criterias["status"] = $params["status"];
+	if(isset($params["sectionvar"]))
+	{
+		$sectionvar = $ste->get_var_by_name($params["sectionvar"]);
+		$criterias["section"] = $sectionvar["__obj"];
+	}
+	else if(isset($params["section"]))
+	{
+		try
+		{
+			$criterias["section"] = Section::by_name($params["section"]);
+		}
+		catch(DoesNotExistError $e) {}
+	}
+	if(isset($params["tagvar"]))
+	{
+		$tagvar = $ste->get_var_by_name($params["tagvar"]);
+		$criterias["tag"] = $tagvar["__obj"];
+	}
 	if(isset($params["tag"]))
 	{
 		try
@@ -392,8 +399,9 @@ $ste->register_tag("article_comments", function($ste, $params, $sub)
  * Generates a HTML form tag that allows the visitor to write a comment.
  * 
  * Parameters:
- * 	article - (mandatory) The name of the variable, where the article is stored at.
- * 	default - (optional)  If not empty, a default formular with the mandatory fields will be generated.
+ * 	article    - (mandatory) The name of the variable, where the article is stored at.
+ * 	default    - (optional)  If not empty, a default formular with the mandatory fields will be generated.
+ * 	previewbtn - (optional)  If not empty and default form is choosen, a preview button will also be generated.
  * 
  * Tag Content:
  * 	The tag's content will be written into the HTML form tag.
@@ -446,11 +454,13 @@ $ste->register_tag("comment_form", function($ste, $params, $sub)
 	
 	$form_header = "<form action=\"{$tpl_article["fullurl"]}?comment\" method=\"post\" accept-charset=\"UTF-8\"><input type=\"hidden\" name=\"comment_token\" value=\"$token\" />";
 	
+	$previewbtn = $ste->evalbool(@$params["previewbtn"]) ? " <input type=\"submit\" name=\"preview_comment\" value=\"{$translation["comment_form_preview"]}\" />" : "";
+	
 	if($ste->evalbool(@$params["default"]))
 		$form_body = "<p>{$translation["comment_form_name"]}: <input type=\"text\" name=\"author_name\" value=\"" . htmlesc(@$_POST["author_name"]) . "\" /></p>
 <p>{$translation["comment_form_mail"]}: <input type=\"text\" name=\"author_mail\" value=\"" . htmlesc(@$_POST["author_mail"]) . "\" /></p>
 <p>{$translation["comment_form_text"]}:<br /><textarea name=\"comment_text\" cols=\"50\" rows=\"10\">" . htmlesc(@$_POST["comment_text"]) . "</textarea></p>
-<p><input type=\"submit\" name=\"post_comment\" /></p>";
+<p><input type=\"submit\" name=\"post_comment\" value=\"{$translation["comment_form_submit"]}\" />$previewbtn</p>";
 	else
 	{
 		$ste->vars["current"]["oldcomment"] = array(
@@ -650,6 +660,55 @@ $ste->register_tag("title", function($ste, $params, $sub)
 		return "<title>" . htmlesc($ste->vars["current"]["section"]["title"]) . " – $pagetitle" . "</title>";
 	return "<title>$pagetitle</title>";
 });
+
+function make_on_anything_tag($field)
+{
+	return function($ste, $params, $sub) use ($field)
+	{
+		if($ste->evalbool($ste->vars["current"][$field]))
+		{
+			if(!empty($params["var"]))
+				$ste->set_var_by_name($params["var"], $ste->vars["current"][$field]);
+			return $sub($ste);
+		}
+	};
+}
+
+/*
+ * STETag: on_article
+ * Execute tag content, if currently an article is requested.
+ *
+ * Parameters:
+ * 	var - (optional) If set, the article will be stored in the variable with that name (see <article_transform_ste> for sub-fields).
+ *
+ * Returns:
+ * 	The executed tag content, if an article was requested.
+ */
+$ste->register_tag("on_article", make_on_anything_tag("article"));
+
+/*
+ * STETag: on_tag
+ * Execute tag content, if currently a tag is requested.
+ *
+ * Parameters:
+ * 	var - (optional) If set, the tag will be stored in the variable with that name (see <tag_transform_ste> for sub-fields).
+ *
+ * Returns:
+ * 	The executed tag content, if a tag was requested.
+ */
+$ste->register_tag("on_tag", make_on_anything_tag("tag"));
+
+/*
+ * STETag: on_section
+ * Execute tag content, if currently a section is requested.
+ *
+ * Parameters:
+ * 	var - (optional) If set, the section will be stored in the variable with that name (see <section_transform_ste> for sub-fields).
+ *
+ * Returns:
+ * 	The executed tag content, if a section was requested.
+ */
+$ste->register_tag("on_section", make_on_anything_tag("section"));
 
 /*
  * STEVar: $current
