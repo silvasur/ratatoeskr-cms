@@ -1678,6 +1678,21 @@ class Tag extends BySQLRowEnabled
 	public $title;
 	
 	/*
+	 * Function: test_name
+	 * Test, if a name is a valid tag name.
+	 * 
+	 * Parameters:
+	 * 	$name - Name to test.
+	 * 
+	 * Returns:
+	 * 	True, if the name is valid, False otherwise.
+	 */
+	public static function test_name($name)
+	{
+		return (strpos($name, ",") === False) and (strpos($name, " ") === False);
+	}
+	
+	/*
 	 * Function: get_id
 	 */
 	public function get_id() { return $this->id; }
@@ -1701,6 +1716,9 @@ class Tag extends BySQLRowEnabled
 	 */
 	public static function create($name)
 	{
+		if(!self::test_name($name))
+			throw new InvalidDataError("invalid_tag_name");
+			
 		try
 		{
 			$obj = self::by_name($name);
@@ -1818,6 +1836,9 @@ WHERE `b`.`tag` = '%d'" , $this->id);
 	 */
 	public function save()
 	{
+		if(!self::test_name($name))
+			throw new InvalidDataError("invalid_tag_name");
+		
 		$result = qdb("SELECT COUNT(*) AS `n` FROM `PREFIX_tags` WHERE `name` = '%s' AND `id` != %d", $this->name, $this->id);
 		$sqlrow = mysql_fetch_assoc($result);
 		if($sqlrow["n"] > 0)

@@ -434,7 +434,7 @@ $backend_subactions = url_action_subactions(array(
 				
 				if(!empty($_POST["newtagname"]))
 				{
-					if((strpos(@$_POST["new_tag_name"], ",") !== False) or (strpos(@$_POST["new_tag_name"], " ") !== False))
+					if(!Tag::test_name(@$_POST["newtagname"]))
 						$ste->vars["error"] = $translation["invalid_tag_name"];
 					else
 						$newtag = $_POST["newtagname"];
