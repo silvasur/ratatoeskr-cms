@@ -2373,6 +2373,21 @@ class Article extends BySQLRowEnabled
 	}
 	
 	/*
+	 * Function: test_status
+	 * Test, if a status is valid.
+	 * 
+	 * Parameters:
+	 * 	$status - Status value to test.
+	 * 
+	 * Returns:
+	 * 	True, if the status is a valid status value, False otherwise.
+	 */
+	public static function test_status($status)
+	{
+		return is_numeric($status) and ($status >= 0) and ($status <= 3);
+	}
+	
+	/*
 	 * Constructor: create
 	 * Create a new Article object.
 	 * 
@@ -2675,7 +2690,10 @@ WHERE " . implode(" AND ", $subqueries) . " $sorting");
 	public function save()
 	{
 		if(!self::test_urlname($this->urlname))
-			throw new DoesNotExistError("invalid_urlname");
+			throw new InvalidDataError("invalid_urlname");
+		
+		if(!self::test_status($this->status))
+			throw new InvalidDataError("invalid_article_status");
 			
 		$result = qdb("SELECT COUNT(*) AS `n` FROM `PREFIX_articles` WHERE `urlname` = '%s' AND `id` != %d", $this->urlname, $this->id);
 		$sqlrow = mysql_fetch_assoc($result);

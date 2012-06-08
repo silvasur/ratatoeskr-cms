@@ -178,7 +178,7 @@ $backend_subactions = url_action_subactions(array(
 					$fail_reasons[] = $translation["invalid_urlname"];
 				else
 					$inputs["urlname"] = $_POST["urlname"];
-				if((@$_POST["article_status"] < 0) or (@$_POST["article_status"] > 3))
+				if(!Article::test_status(@$_POST["article_status"]))
 					$fail_reasons[] = $translation["invalid_article_status"];
 				else
 					$inputs["article_status"] = (int) $_POST["article_status"];
