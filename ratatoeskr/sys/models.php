@@ -1472,6 +1472,21 @@ class Section extends BySQLRowEnabled
 	}
 	
 	/*
+	 * Function: test_name
+	 * Tests, if a name is a valid section name.
+	 * 
+	 * Parameters:
+	 * 	$name - The name to test.
+	 * 
+	 * Returns:
+	 * 	True, if the name is a valid section name, False otherwise.
+	 */
+	public static function test_name($name)
+	{
+		return preg_match("/^[a-zA-Z0-9\\-_]+$/", $name) != 0;
+	}
+	
+	/*
 	 * Function: get_id
 	 */
 	public function get_id() { return $this->id; }
@@ -1484,10 +1499,13 @@ class Section extends BySQLRowEnabled
 	 * 	$name - The name of the new section.
 	 * 
 	 * Throws:
-	 * 	<AlreadyExistsError>
+	 * 	<AlreadyExistsError>, <InvalidDataError>
 	 */
 	public static function create($name)
 	{
+		if(!self::test_name($name))
+			throw new InvalidDataError("invalid_section_name");
+			
 		try
 		{
 			$obj = self::by_name($name);
@@ -1619,10 +1637,13 @@ class Section extends BySQLRowEnabled
 	 * Function: save
 	 * 
 	 * Throws:
-	 * 	<AlreadyExistsError>
+	 * 	<AlreadyExistsError>, <InvalidDataError>
 	 */
 	public function save()
 	{
+		if(!self::test_name($name))
+			throw new InvalidDataError("invalid_section_name");
+		
 		$result = qdb("SELECT COUNT(*) AS `n` FROM `PREFIX_sections` WHERE `name` = '%s' AND `id` != %d", $this->name, $this->id);
 		$sqlrow = mysql_fetch_assoc($result);
 		if($sqlrow["n"] > 0)
@@ -1712,7 +1733,7 @@ class Tag extends BySQLRowEnabled
 	 * 	$name - The name
 	 * 
 	 * Throws:
-	 * 	<AlreadyExistsError>
+	 * 	<AlreadyExistsError>, <InvalidDataError>
 	 */
 	public static function create($name)
 	{
@@ -1832,7 +1853,7 @@ WHERE `b`.`tag` = '%d'" , $this->id);
 	 * Function: save
 	 * 
 	 * Throws:
-	 * 	<AlreadyExistsError>
+	 * 	<AlreadyExistsError>, <InvalidDataError>
 	 */
 	public function save()
 	{

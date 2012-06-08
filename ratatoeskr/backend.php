@@ -1112,7 +1112,7 @@ $backend_subactions = url_action_subactions(array(
 				{
 					if((preg_match("/^[a-zA-Z0-9\\-_\\.]+$/", $_POST["template"]) == 0) or (!is_file(SITE_BASE_PATH . "/ratatoeskr/templates/src/usertemplates/{$_POST['template']}")))
 						$ste->vars["error"] = $translation["unknown_template"];
-					else if(preg_match("/^[a-zA-Z0-9\\-_]+$/", $_POST["section_name"]) == 0)
+					else if(!Section::test_name($_POST["section_name"]))
 						$ste->vars["error"] = $translation["invalid_section_name"];
 					else
 					{
