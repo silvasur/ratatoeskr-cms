@@ -1130,6 +1130,21 @@ class Style extends BySQLRowEnabled
 	}
 	
 	/*
+	 * Function: test_name
+	 * Test, if a name is a valid Style name.
+	 * 
+	 * Parameters:
+	 * 	$name - The name to test
+	 * 
+	 * Returns:
+	 * 	True, if the name is a valid style name, False if not.
+	 */
+	public static function test_name($name)
+	{
+		return preg_match("/^[a-zA-Z0-9\\-_\\.]+$/", $name) == 1;
+	}
+	
+	/*
 	 * Function: get_id
 	 */
 	public function get_id() { return $this->id; }
@@ -1146,6 +1161,9 @@ class Style extends BySQLRowEnabled
 	 */
 	public static function create($name)
 	{
+		if(!self::test_name($name))
+			throw new InvalidDataError("invalid_style_name");
+			
 		try
 		{
 			self::by_name($name);
@@ -1231,6 +1249,9 @@ class Style extends BySQLRowEnabled
 	 */
 	public function save()
 	{
+		if(!self::test_name($name))
+			throw new InvalidDataError("invalid_style_name");
+		
 		$result = qdb("SELECT COUNT(*) AS `n` FROM `PREFIX_styles` WHERE `name` = '%s' AND `id` != %d", $this->name, $this->id);
 		$sqlrow = mysql_fetch_assoc($result);
 		if($sqlrow["n"] > 0)

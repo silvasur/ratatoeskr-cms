@@ -1059,7 +1059,7 @@ $backend_subactions = url_action_subactions(array(
 			/* A write request? */
 			if(isset($_POST["save_style"]))
 			{
-				if(preg_match("/^[a-zA-Z0-9\\-_\\.]+$/", $_POST["style_name"]) == 1)
+				if(Style::test_name($_POST["style_name"]))
 				{
 					$ste->vars["style_name"] = $_POST["style_name"];
 					$ste->vars["style_code"] = $_POST["style_code"];
