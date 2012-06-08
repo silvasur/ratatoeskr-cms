@@ -74,6 +74,13 @@ class AlreadyExistsError extends Exception { }
  */
 class NotAllowedError extends Exception { }
 
+/*
+ * Class: InvalidDataError
+ * Exception that will be thrown, if a object with invalid data (e.g. urlname in this form not allowed) should have been saved / created.
+ * Unless something else is said at a function, the exception message is a translation key.
+ */
+class InvalidDataError extends Exception { }
+
 abstract class BySQLRowEnabled
 {
 	protected function __construct() {  }
@@ -2329,6 +2336,11 @@ class Article extends BySQLRowEnabled
 	 */
 	public function get_id() { return $this->id; }
 	
+	private static function test_urlname($urlname)
+	{
+		return (bool) preg_match('/^[a-zA-Z0-9-_]+$/', $urlname);
+	}
+	
 	/*
 	 * Constructor: create
 	 * Create a new Article object.
@@ -2337,11 +2349,14 @@ class Article extends BySQLRowEnabled
 	 * 	urlname - A unique URL name
 	 * 
 	 * Throws:
-	 * 	<AlreadyExistsError>
+	 * 	<AlreadyExistsError>, <InvalidDataError>
 	 */
 	public static function create($urlname)
 	{
 		global $ratatoeskr_settings;
+		
+		if(!self::test_urlname($urlname))
+			throw new InvalidDataError("invalid_urlname");
 		
 		try
 		{
@@ -2622,9 +2637,15 @@ WHERE " . implode(" AND ", $subqueries) . " $sorting");
 	
 	/*
 	 * Function: save
+	 * 
+	 * Throws:
+	 * 	<AlreadyExistsError>, <InvalidDataError>
 	 */
 	public function save()
 	{
+		if(!self::test_urlname($this->urlname))
+			throw new DoesNotExistError("invalid_urlname");
+			
 		$result = qdb("SELECT COUNT(*) AS `n` FROM `PREFIX_articles` WHERE `urlname` = '%s' AND `id` != %d", $this->urlname, $this->id);
 		$sqlrow = mysql_fetch_assoc($result);
 		if($sqlrow["n"] > 0)

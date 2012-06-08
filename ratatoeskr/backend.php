@@ -174,7 +174,7 @@ $backend_subactions = url_action_subactions(array(
 			
 			if(isset($_POST["save_article"]))
 			{
-				if(!preg_match('/^[a-zA-Z0-9-_]+$/', @$_POST["urlname"]))
+				if(!Article::test_urlname($_POST["urlname"]))
 					$fail_reasons[] = $translation["invalid_urlname"];
 				else
 					$inputs["urlname"] = $_POST["urlname"];
