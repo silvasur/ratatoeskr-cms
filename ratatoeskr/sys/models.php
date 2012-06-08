@@ -2336,7 +2336,17 @@ class Article extends BySQLRowEnabled
 	 */
 	public function get_id() { return $this->id; }
 	
-	private static function test_urlname($urlname)
+	/*
+	 * Function: test_urlname
+	 * Test, if a urlname is a valid urlname.
+	 * 
+	 * Parameters:
+	 * 	$urlname - Urlname to test
+	 * 
+	 * Returns:
+	 * 	True, if the urlname is valid, False otherwise.
+	 */
+	public static function test_urlname($urlname)
 	{
 		return (bool) preg_match('/^[a-zA-Z0-9-_]+$/', $urlname);
 	}
