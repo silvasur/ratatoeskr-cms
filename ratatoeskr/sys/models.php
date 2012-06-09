@@ -42,8 +42,17 @@ $imagetype_file_extensions = array(
  * "comment_textprocessor"   - The textprocessor to be used for comments.
  * "languages"               - Array of activated languages.
  * "last_db_cleanup"         - Timestamp of the last database cleanup.
+ * "debugmode"               - If the debug mode is enabled (can be overwritten by <config.php>.
  */
 $ratatoeskr_settings = NULL;
+
+/*
+ * Variable: $admin_grp
+ * Since the admin group is used often, here is a global variable holding the <Group>.
+ * 
+ * Use <Group>::load_admin_group to load this group.
+ */
+$admin_grp = NULL;
 
 /*
  * Constants: ARTICLE_STATUS_
@@ -506,6 +515,17 @@ class Group extends BySQLRowEnabled
 			$rv[] = self::by_sqlrow($sqlrow);
 		
 		return $rv;
+	}
+	
+	/*
+	 * Function: load_admin_group
+	 * Will load the admin group into the global <$admin_grp> variable, if not already done.
+	 */
+	public static function load_admin_group()
+	{
+		global $admin_grp;
+		if($admin_grp === NULL)
+			$admin_grp = Group::by_name("admins");
 	}
 	
 	/*
