@@ -1316,6 +1316,54 @@ $global_acl_cache = array();
  */
 class ACL extends BySQLRowEnabled
 {
+	/*
+	 * List: Privileges for ACLTYPE_GENERAL
+	 * 
+	 * "change_settings"  - Change the global settings.
+	 * "manage_plugins"   - Install, delete, update, de/activate plugins. Add, delete repositories.
+	 * "add_users"        - Add a new user.
+	 * "modify_users"     - Modify (delete, change settings, change group association) of other users.
+	 * "manage_groups"    - Add, delete groups.
+	 * "edit_templates"   - Add, edit and delete templates.
+	 * "edit_styles"      - Add, edit and delete styles.
+	 * "edit_tags"        - Add, edit and delete tags.
+	 * "conf_global_acls" - Configure global ACLs.
+	 * "new_section"      - Add a new section.
+	 * "new_image"        - Upload a new image.
+	 */
+	
+	/*
+	 * List: Privileges for ACLTYPE_ARTICLE
+	 * 
+	 * "read"            - Read access to article.
+	 * "edit"            - Edit article.
+	 * "comment"         - Comment on the article.
+	 * "manage_comments" - Hide, unhide, delete comments for this article.
+	 * "edit_acl"        - Edit the ACL of this article.
+	 * "change_section"  - Changing the section of the article after it was created.
+	 */
+	
+	/*
+	 * List: Privileges for ACLTYPE_SECTION
+	 * 
+	 * "access"                   - Access this Section.
+	 * "edit"                     - Edit the section.
+	 * "new_article"              - Create a new article for this section. The "read", "edit" and "manage_comments" privileges for the new article will automatically be granted to the user.
+	 * "new_article_unprivileged" - Create a new article for this section. Does not grant the author extra privileges like the normal "new_article" privilege.
+	 */
+	
+	/*
+	 * List: Privileges for ACLTYPE_IMAGE
+	 * 
+	 * "delete" - Delete the image
+	 */
+	
+	/*
+	 * List: Privileges for ACLTYPE_PLUGIN
+	 * 
+	 * "use_in_backend" - Use the plugin functionality in the backend.
+	 */
+	
 	private $id;
 	private $type;
 	private $privileges;
