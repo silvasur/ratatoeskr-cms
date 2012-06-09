@@ -1554,14 +1554,14 @@ class ACL extends BySQLRowEnabled
 		$this->privileges[$privilege] = array(
 			"allowdeny" => (bool) $allowdeny,
 			"allow" => array(
-				"all" => (bool) $allow_all,
+				"all"    => (bool) $allow_all,
 				"groups" => array_filter(array_map(function($x) { return is_numeric($x) ? ((int) $x) : NULL; }, (array) $allow_groups)),
-				"users" => array_filter(array_map(function($x) { return is_numeric($x) ? ((int) $x) : NULL; }, (array) $allow_users))
+				"users"  => array_filter(array_map(function($x) { return is_numeric($x) ? ((int) $x) : NULL; }, (array) $allow_users))
 			),
 			"deny" => array(
-				"all" => (bool) $deny_all,
+				"all"    => (bool) $deny_all,
 				"groups" => array_filter(array_map(function($x) { return is_numeric($x) ? ((int) $x) : NULL; }, (array) $deny_groups)),
-				"users" => array_filter(array_map(function($x) { return is_numeric($x) ? ((int) $x) : NULL; }, (array) $deny_users))
+				"users"  => array_filter(array_map(function($x) { return is_numeric($x) ? ((int) $x) : NULL; }, (array) $deny_users))
 			)
 		);
 	}
