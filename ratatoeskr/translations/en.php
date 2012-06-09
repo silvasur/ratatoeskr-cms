@@ -263,6 +263,7 @@ $translation = array(
 	"debugmode_might_get_overwritten_by_config_file" => "(this can be overwritten by config.php)",
 	"debugmode_now_enabled" => "Debugmode now enabled",
 	"debugmode_now_disabled" => "Debugmode now disabled",
+	"invalid_acl_type" => "Invalid ACL type",
 	/* Very long texts here */
 	"linking_back_hint" => <<<LINKINGBACK
 <h2>Linking back</h2>

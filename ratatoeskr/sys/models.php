@@ -67,6 +67,22 @@ define("ARTICLE_STATUS_LIVE",   1);
 define("ARTICLE_STATUS_STICKY", 2);
 
 /*
+ * Constants: ACLTYPE_
+ * Possible types for <ACL>s
+ * 
+ * ACLTYPE_GENERAL - General sitewide privileges. Only a single one should be in the database
+ * ACLTYPE_ARTICLE - privileges for an <Article>
+ * ACLTYPE_SECTION - privileges for a <Section>
+ * ACLTYPE_IMAGE   - privileges for a <Image>
+ * ACLTYPE_PLUGIN  - privileges for a <Plugin>
+ */
+define(ACLTYPE_GENERAL, 0);
+define(ACLTYPE_ARTICLE, 1);
+define(ACLTYPE_SECTION, 2);
+define(ACLTYPE_IMAGE,   3);
+define(ACLTYPE_PLUGIN,  4);
+
+/*
  * Class: DoesNotExistError
  * This Exception is thrown by an ::by_*-constructor or any array-like object if the desired object is not present in the database.
  */
@@ -1288,6 +1304,294 @@ class Style extends BySQLRowEnabled
 	{
 		qdb("DELETE FROM `PREFIX_styles` WHERE `id` = %d", $this->id);
 		qdb("DELETE FROM `PREFIX_section_style_relations` WHERE `style` = %d", $this->id);
+	}
+}
+
+/* Global ACLs will be cached here... */
+$global_acl_cache = array();
+
+/*
+ * Class: ACL
+ * The representation af a Access Control List in the database.
+ */
+class ACL extends BySQLRowEnabled
+{
+	private $id;
+	private $type;
+	private $privileges;
+	
+	protected function populate_by_sqlrow($sqlrow)
+	{
+		$this->id         = $sqlrow["id"];
+		$this->type       = $sqlrow["type"];
+		$this->privileges = unserialize(base64_decode($sqlrow["privileges"]));
+	}
+	
+	/*
+	 * Functions: getters
+	 * 
+	 * get_id - Get the database ID.
+	 * get_type - Get the type of this ACL.
+	 */
+	public function get_id()   { return $this->id;   }
+	public function get_type() { return $this->type; }
+	
+	/*
+	 * Function: test_type
+	 * Test, if a type is a valid ACL type (i.e. one of <ACLTYPE_>*)
+	 * 
+	 * Parameters:
+	 * 	$type - Type to test.
+	 * 
+	 * Returns:
+	 * 	True, if the type is valid, False otherwise.
+	 */
+	public static function test_type($type)
+	{
+		return is_numeric($type) and ($type >= ACLTYPE_GENERAL) and ($type <= ACLTYPE_PLUGIN);
+	}
+	
+	/*
+	 * Constructor: create
+	 * Creates a new ACL.
+	 * 
+	 * Parameters:
+	 * 	$type - A <ACLTYPE_>* constant.
+	 *
+	 * Returns:
+	 * 	A <ACL> object.
+	 * 
+	 * Throws:
+	 * 	<InvalidDataError> 
+	 */
+	public static function create($type)
+	{
+		if(!self::test_type($type))
+			throw new InvalidDataError("invalid_acl_type");
+		
+		$obj = new self;
+		
+		$obj->type       = $type;
+		$obj->privileges = array();
+		
+		qdb("INSERT INTO `PREFIX_acls` (`type`, `privileges`) VALUES (%d, '%s')", $obj->type, base64_encode(serialize($obj->privileges)));
+		
+		$obj->id = mysql_insert_id();
+		
+		return $obj;
+	}
+	
+	/*
+	 * Constructor: by_id
+	 * Get a <ACL> by it's database ID.
+	 * 
+	 * Parameters:
+	 * 	$id - The ID of the ACL
+	 * 
+	 * Returns:
+	 * 	A <ACL> object.
+	 * 
+	 * Throws:
+	 * 	<DoesNotExistError>
+	 */
+	public static function by_id($id)
+	{
+		$result = qdb("SELECT `id`, `type`, `privileges` FROM `PREFIX_acls` WHERE `id` = %d", $id);
+		$sqlrow = mysql_fetch_assoc($result);
+		if(!$sqlrow)
+			throw new DoesNotExistError();
+		
+		return self::by_sqlrow($sqlrow);
+	}
+	
+	/*
+	 * Function: global_by_type
+	 * Get the global ACL of a given type.
+	 * 
+	 * Parameters:
+	 * 	$type - One of <ACLTYPE_>*
+	 * 
+	 * Returns:
+	 * 	The global ACL of this type.
+	 * 
+	 * Throws:
+	 * 	<DoesNotExistError>
+	 */
+	public static function global_by_type($type)
+	{
+		global $ratatoeskr_settings, $global_acl_cache;
+		
+		if(isset($global_acl_cache[$type]))
+			return $global_acl_cache[$type];
+		
+		$acl = self::by_id($ratatoeskr_settings["global_privileges"][$type]);
+		$global_acl_cache[$type] = $acl;
+		return $acl;
+	}
+	
+	private static function user_matches($user, $ruleset)
+	{
+		if($ruleset["all"])
+			return True;
+		
+		if($user === NULL)
+			return False;
+		
+		if(in_array($user->get_id(), $ruleset["users"]))
+			return True;
+		
+		foreach($ruleset["groups"] as $gid)
+		{
+			try
+			{
+				$group = Group::by_id($gid);
+			}
+			catch(DoesNotExistError $e)
+			{
+				continue;
+			}
+			
+			if($group->member_of($group))
+				return True;
+		}
+		
+		return False;
+	}
+	
+	/*
+	 * Function: check_privilege
+	 * Check, if a privilege is granted to a User.
+	 * 
+	 * Parameters:
+	 * 	$privilege - Name of the privilege to check.
+	 * 	$user      - The <User> to check. Can be NULL, if the anonymous user should be checked. Users in the admin <Group> will automatically be granted every privilege.
+	 */
+	public function check_privilege($privilege, $user, $default=True)
+	{
+		global $admin_grp;
+		
+		Group::load_admin_group();
+		
+		if(($user !== NULL) and ($user->member_of($admin_grp)))
+			return True;
+		
+		$global_acl = self::global_by_type($this->type);
+		$unified_privileges = array_merge($global_acl->privileges, $this->privileges);
+		
+		if(!isset($unified_privileges[$privilege]))
+			return $default;
+		
+		$privilege = $unified_privileges[$privilege];
+		if($privilege["allowdeny"])
+		{
+			$okay = self::user_matches($user, $privilege["allow"]);
+			if(self::user_matches($user, $privilege["deny"]))
+				$okay = False;
+		}
+		else
+		{
+			$okay = !self::user_matches($user, $privilege["deny"]);
+			if(self::user_matches($user, $privilege["allow"]))
+				$okay = True;
+		}
+		
+		return $okay;
+	}
+	
+	/*
+	 * Function: list_privileges
+	 * Get the names of the set privileges.
+	 * 
+	 * Returns:
+	 * 	Array of privilege names
+	 */
+	public function list_privileges()
+	{
+		return array_keys($this->privileges);
+	}
+	
+	/*
+	 * Function: get_privilege
+	 * Get the settings of a privilege.
+	 * 
+	 * Parameters:
+	 * 	$privilege - Name of the privilege.
+	 * 
+	 * Returns:
+	 * 	Associative array with these keys:
+	 * 	
+	 * 	* "allowdeny" - True, if allow then deny, False if deny then deny.
+	 * 	* "allow"     - Associative array with the keys: "all": True, if allow for everyone, "groups": IDs of allowed <Group>s, "users": IDs af allowed <User>.
+	 * 	* "deny"      - Associative array with the keys: "all": True, if deny for everyone, "groups": IDs of denied <Group>s, "users": IDs af denied <User>.
+	 * 
+	 * Throws:
+	 * 	<DoesNotExistError> if privilege not set in this ACL.
+	 */
+	public function get_privilege($privilege)
+	{
+		if(!isset($this->privileges[$privilege]))
+			throw new DoesNotExistError("Privilege \"$privilege\" not set in ACL #{$this->id}.");
+		
+		return $this->privileges[$privilege];
+	}
+	
+	/*
+	 * Function: set_privilege
+	 * Set the settings of a privilege.
+	 * 
+	 * Parameters:
+	 * 	$privilege    - Name of the privilege.
+	 * 	$allowdeny    - True, if first allow then deny. False, if first deny then allow.
+	 * 	$allow_all    - True, if everyone should be allowed.
+	 * 	$allow_groups - Array of the IDs of allowed <Group>s.
+	 * 	$allow_users  - Array of the IDs of allowed <User>s.
+	 * 	$deny_all     - True, if everyone should be denied.
+	 * 	$allow_groups - Array of the IDs of denied <Group>s.
+	 * 	$deny_users   - Array of the IDs of denied <User>s.
+	 */
+	public function set_privilege($privilege, $allowdeny, $allow_all, $allow_groups, $allow_users, $deny_all, $deny_groups, $deny_users)
+	{
+		$this->privileges[$privilege] = array(
+			"allowdeny" => (bool) $allowdeny,
+			"allow" => array(
+				"all" => (bool) $allow_all,
+				"groups" => array_filter(array_map(function($x) { return is_numeric($x) ? ((int) $x) : NULL; }, (array) $allow_groups)),
+				"users" => array_filter(array_map(function($x) { return is_numeric($x) ? ((int) $x) : NULL; }, (array) $allow_users))
+			),
+			"deny" => array(
+				"all" => (bool) $deny_all,
+				"groups" => array_filter(array_map(function($x) { return is_numeric($x) ? ((int) $x) : NULL; }, (array) $deny_groups)),
+				"users" => array_filter(array_map(function($x) { return is_numeric($x) ? ((int) $x) : NULL; }, (array) $deny_users))
+			)
+		);
+	}
+	
+	/*
+	 * Function: delete_privilege
+	 * Delete the settings of a privilege on this ACL.
+	 * 
+	 * Parameters:
+	 * 	$privilege - Name of the privilege to delete.
+	 */
+	public function delete_privilege($privilege)
+	{
+		unset($this->privileges[$privilege]);
+	}
+	
+	/*
+	 * Function: save
+	 */
+	public function save()
+	{
+		qdb("UPDATE `PREFIX_acls` SET `privileges` = '%s' WHERE `id` = %d", base64_encode(serialize($this->privileges)), $this->id);
+	}
+	
+	/*
+	 * Function: delete
+	 */
+	public function delete()
+	{
+		qdb("DELETE FROM `PREFIX_acls` WHERE `id` = %d", $this->id);
 	}
 }
 

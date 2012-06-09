@@ -162,6 +162,13 @@ CREATE TABLE IF NOT EXISTS `PREFIX_article_extradata` (
   `key` text COLLATE utf8_unicode_ci NOT NULL,
   `value` text COLLATE utf8_unicode_ci NOT NULL
 ) DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `PREFIX_acls` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `type` int(11) NOT NULL,
+  `privileges` text COLLATE utf8_unicode_ci NOT NULL,
+  PRIMARY KEY (`id`)
+) DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 SQL;
 
 function create_mysql_tables()

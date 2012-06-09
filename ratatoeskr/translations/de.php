@@ -263,6 +263,7 @@ $translation = array(
 	"debugmode_might_get_overwritten_by_config_file" => "(dies kann durch config.php überschrieben werden)",
 	"debugmode_now_enabled" => "Debug-Modus ist nun aktiviert",
 	"debugmode_now_disabled" => "Debug-Modus ist nun deaktiviert",
+	"invalid_acl_type" => "Ungültiger ACL-Typ",
 	/* Very long texts here */
 	"linking_back_hint" => <<<LINKINGBACK
 <h2>Verlinken auf die Seitenwurzel</h2>
