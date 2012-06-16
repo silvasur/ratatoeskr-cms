@@ -39,15 +39,15 @@ if(isset($_POST["apply_setup"]))
 		$config["mysql"]["user"]   = $_POST["mysql_user"];
 		$config["mysql"]["passwd"] = $_POST["mysql_password"];
 		$config["mysql"]["prefix"] = $_POST["table_prefix"];
-	
+		
 		try
 		{
 			db_connect();
 			create_mysql_tables();
-		
+			
 			/* Writing some demo data to database */
 			require_once(dirname(__FILE__) . "/../sys/models.php");
-		
+			
 			$ratatoeskr_settings["default_language"] = $lang;
 			$ratatoeskr_settings["comment_visible_defaut"] = True;
 			$ratatoeskr_settings["allow_comments_default"] = True;
@@ -55,7 +55,7 @@ if(isset($_POST["apply_setup"]))
 			$ratatoeskr_settings["languages"] = $lang == "en" ? array("en") : array($lang, "en");
 			$ratatoeskr_settings["last_db_cleanup"] = time();
 			$ratatoeskr_settings["debugmode"] = False;
-		
+			
 			$style = Style::create("default");
 			$style->code = <<<STYLE
 * {
@@ -201,7 +201,7 @@ table.listtab {
 }
 STYLE;
 			$style->save();
-		
+			
 			$section = Section::create("home");
 			$section->title["en"] = new Translation("Home", "");
 			if($lang != "en")
@@ -209,16 +209,14 @@ STYLE;
 			$section->template = "standard.html";
 			$section->add_style($style);
 			$section->save();
-		
+			
 			$ratatoeskr_settings["default_section"] = $section->get_id();
-		
-			$ratatoeskr_settings->save();
-		
+				
 			$admingrp = Group::create("admins");
 			$admin = user::create($_POST["admin_username"], PasswordHash::create($_POST["admin_init_password"]));
 			$admin->save();
 			$admingrp->include_user($admin);
-		
+			
 			$article = Article::create("congratulations");
 			$article->title["en"] = new Translation("Congratulations! You have just installed Ratatöskr!", "");
 			$article->text["en"] = new Translation("Congratulations! You have just installed Ratatöskr!", "Markdown");
@@ -228,6 +226,55 @@ STYLE;
 			$article->allow_comments = True;
 			$article->set_section($section);
 			$article->save();
+			
+			/* Set default ACLs. Only admins are allowed to change/create/delete anything */
+			$ratatoeskr_settings["global_acls"] = array();
+			
+			$acl = ACL::create(ACLTYPE_GENERAL);
+			$acl->set_privilege("change_settings",  False, False, array($admingrp->get_id()), array(), True, array(), array());
+			$acl->set_privilege("manage_plugins",   False, False, array($admingrp->get_id()), array(), True, array(), array());
+			$acl->set_privilege("add_users",        False, False, array($admingrp->get_id()), array(), True, array(), array());
+			$acl->set_privilege("modify_users",     False, False, array($admingrp->get_id()), array(), True, array(), array());
+			$acl->set_privilege("manage_groups",    False, False, array($admingrp->get_id()), array(), True, array(), array());
+			$acl->set_privilege("edit_templates",   False, False, array($admingrp->get_id()), array(), True, array(), array());
+			$acl->set_privilege("edit_styles",      False, False, array($admingrp->get_id()), array(), True, array(), array());
+			$acl->set_privilege("edit_tags",        False, False, array($admingrp->get_id()), array(), True, array(), array());
+			$acl->set_privilege("conf_global_acls", False, False, array($admingrp->get_id()), array(), True, array(), array());
+			$acl->set_privilege("new_section",      False, False, array($admingrp->get_id()), array(), True, array(), array());
+			$acl->set_privilege("new_image",        False, False, array($admingrp->get_id()), array(), True, array(), array());
+			$acl->set_privilege("access_backend",   False, False, array($admingrp->get_id()), array(), True, array(), array());
+			$acl->save();
+			$ratatoeskr_settings["global_acls"][ACLTYPE_GENERAL] = $acl->get_id();
+			
+			$acl = ACL::create(ACLTYPE_ARTICLE);
+			$acl->set_privilege("read",            True,  True,  array(),                    array(), False, array(), array());
+			$acl->set_privilege("edit",            False, False, array($admingrp->get_id()), array(), True,  array(), array());
+			$acl->set_privilege("manage_comments", False, False, array($admingrp->get_id()), array(), True,  array(), array());
+			$acl->set_privilege("edit_acl",        False, False, array($admingrp->get_id()), array(), True,  array(), array());
+			$acl->set_privilege("change_section",  False, False, array($admingrp->get_id()), array(), True,  array(), array());
+			$acl->set_privilege("comment",         True,  True,  array(),                    array(), False, array(), array());
+			$acl->save();
+			$ratatoeskr_settings["global_acls"][ACLTYPE_ARTICLE] = $acl->get_id();
+			
+			$acl = ACL::create(ACLTYPE_SECTION);
+			$acl->set_privilege("access",                   True,  True,  array(),                    array(), False, array(), array());
+			$acl->set_privilege("edit",                     False, False, array($admingrp->get_id()), array(), True,  array(), array());
+			$acl->set_privilege("new_article",              False, False, array($admingrp->get_id()), array(), True,  array(), array());
+			$acl->set_privilege("new_article_unprivileged", False, False, array($admingrp->get_id()), array(), True,  array(), array());
+			$acl->save();
+			$ratatoeskr_settings["global_acls"][ACLTYPE_SECTION] = $acl->get_id();
+			
+			$acl = ACL::create(ACLTYPE_IMAGE);
+			$acl->set_privilege("delete", False, False, array($admingrp->get_id()), array(), True,  array(), array());
+			$acl->save();
+			$ratatoeskr_settings["global_acls"][ACLTYPE_IMAGE] = $acl->get_id();
+			
+			$acl = ACL::create(ACLTYPE_PLUGIN);
+			$acl->set_privilege("use_in_backend", False, False, array($admingrp->get_id()), array(), True,  array(), array());
+			$acl->save();
+			$ratatoeskr_settings["global_acls"][ACLTYPE_PLUGIN] = $acl->get_id();
+			
+			$ratatoeskr_settings->save();
 			
 			try
 			{
