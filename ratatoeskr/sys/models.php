@@ -1331,6 +1331,7 @@ class ACL extends BySQLRowEnabled
 	 * "conf_global_acls" - Configure global ACLs.
 	 * "new_section"      - Add a new section.
 	 * "new_image"        - Upload a new image.
+	 * "access_backend"   - Accessing the backend.
 	 */
 	
 	/*
