@@ -43,6 +43,7 @@ $imagetype_file_extensions = array(
  * "languages"               - Array of activated languages.
  * "last_db_cleanup"         - Timestamp of the last database cleanup.
  * "debugmode"               - If the debug mode is enabled (can be overwritten by <config.php>.
+ * "global_acls"             - IDs of the global <ACL>s.
  */
 $ratatoeskr_settings = NULL;
 
@@ -1472,7 +1473,7 @@ class ACL extends BySQLRowEnabled
 		if(isset($global_acl_cache[$type]))
 			return $global_acl_cache[$type];
 		
-		$acl = self::by_id($ratatoeskr_settings["global_privileges"][$type]);
+		$acl = self::by_id($ratatoeskr_settings["global_acls"][$type]);
 		$global_acl_cache[$type] = $acl;
 		return $acl;
 	}
