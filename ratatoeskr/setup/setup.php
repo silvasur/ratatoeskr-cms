@@ -228,7 +228,7 @@ STYLE;
 			$article->save();
 			
 			/* Set default ACLs. Only admins are allowed to change/create/delete anything */
-			$ratatoeskr_settings["global_acls"] = array();
+			$global_acls = array();
 			
 			$acl = ACL::create(ACLTYPE_GENERAL);
 			$acl->set_privilege("change_settings",  False, False, array($admingrp->get_id()), array(), True, array(), array());
@@ -244,7 +244,7 @@ STYLE;
 			$acl->set_privilege("new_image",        False, False, array($admingrp->get_id()), array(), True, array(), array());
 			$acl->set_privilege("access_backend",   False, False, array($admingrp->get_id()), array(), True, array(), array());
 			$acl->save();
-			$ratatoeskr_settings["global_acls"][ACLTYPE_GENERAL] = $acl->get_id();
+			$global_acls[ACLTYPE_GENERAL] = $acl->get_id();
 			
 			$acl = ACL::create(ACLTYPE_ARTICLE);
 			$acl->set_privilege("read",            True,  True,  array(),                    array(), False, array(), array());
@@ -254,7 +254,7 @@ STYLE;
 			$acl->set_privilege("change_section",  False, False, array($admingrp->get_id()), array(), True,  array(), array());
 			$acl->set_privilege("comment",         True,  True,  array(),                    array(), False, array(), array());
 			$acl->save();
-			$ratatoeskr_settings["global_acls"][ACLTYPE_ARTICLE] = $acl->get_id();
+			$global_acls[ACLTYPE_ARTICLE] = $acl->get_id();
 			
 			$acl = ACL::create(ACLTYPE_SECTION);
 			$acl->set_privilege("access",                   True,  True,  array(),                    array(), False, array(), array());
@@ -262,18 +262,19 @@ STYLE;
 			$acl->set_privilege("new_article",              False, False, array($admingrp->get_id()), array(), True,  array(), array());
 			$acl->set_privilege("new_article_unprivileged", False, False, array($admingrp->get_id()), array(), True,  array(), array());
 			$acl->save();
-			$ratatoeskr_settings["global_acls"][ACLTYPE_SECTION] = $acl->get_id();
+			$global_acls[ACLTYPE_SECTION] = $acl->get_id();
 			
 			$acl = ACL::create(ACLTYPE_IMAGE);
 			$acl->set_privilege("delete", False, False, array($admingrp->get_id()), array(), True,  array(), array());
 			$acl->save();
-			$ratatoeskr_settings["global_acls"][ACLTYPE_IMAGE] = $acl->get_id();
+			$global_acls[ACLTYPE_IMAGE] = $acl->get_id();
 			
 			$acl = ACL::create(ACLTYPE_PLUGIN);
 			$acl->set_privilege("use_in_backend", False, False, array($admingrp->get_id()), array(), True,  array(), array());
 			$acl->save();
-			$ratatoeskr_settings["global_acls"][ACLTYPE_PLUGIN] = $acl->get_id();
+			$global_acls[ACLTYPE_PLUGIN] = $acl->get_id();
 			
+			$ratatoeskr_settings["global_acls"] = $global_acls;
 			$ratatoeskr_settings->save();
 			
 			try
