@@ -118,6 +118,7 @@ $backend_subactions = url_action_subactions(array(
 				/* Login successful. */
 				$_SESSION["ratatoeskr_uid"]    = $user->get_id();
 				$_SESSION["ratatoeskr_pwhash"] = $user->pwhash;
+				load_language($user->language);
 				$data["user"] = $user;
 				$ste->vars["user"] = array("id" => $user->get_id(), "name" => $user->username, "lang" => $user->language);
 			}
@@ -134,9 +135,9 @@ $backend_subactions = url_action_subactions(array(
 	}),
 	"logout" => url_action_simple(function($data)
 	{
-		echo "foo";
 		unset($_SESSION["ratatoeskr_uid"]);
 		unset($_SESSION["ratatoeskr_pwhash"]);
+		load_language();
 		throw new Redirect(array("login"));
 	}),
 	"content" => url_action_subactions(array(
