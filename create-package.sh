@@ -18,11 +18,11 @@ unzip php-markdown-*.zip
 mv PHP\ Markdown\ */markdown.php .
 rm -rf PHP\ Markdown\ *
 rm php-markdown-*.zip 
-wget http://sourceforge.net/projects/kses/files/latest/download
-unzip kses-*.zip
+wget -O kses.zip http://sourceforge.net/projects/kses/files/kses/0.2.2/kses-0.2.2.zip/download?use_mirror=optimate
+unzip kses.zip
 mv kses-*/kses.php .
 rm -rf kses-*
-rm kses-*.zip
+rm kses.zip
 wget http://code.jquery.com/jquery.min.js
 cd ../..
 rm session_doctor.php 
