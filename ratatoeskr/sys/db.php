@@ -15,6 +15,8 @@ if(!defined("SETUP"))
 
 require_once(dirname(__FILE__) . "/utils.php");
 
+$db_con = Null;
+
 /*
  * Function: db_connect
  *
@@ -23,86 +25,97 @@ require_once(dirname(__FILE__) . "/utils.php");
 function db_connect()
 {
 	global $config;
-	$db_connection = @mysql_pconnect(
-		$config["mysql"]["server"],
+	global $db_con;
+	
+	$db_con = new PDO(
+		"mysql:host=" . $config["mysql"]["server"] . ",dbname=" . $config["mysql"]["db"] . ",charset=utf8",
 		$config["mysql"]["user"],
-		$config["mysql"]["passwd"]);
-	if(!$db_connection)
-		throw new MySQLException("Could not connect to database server. " . mysql_error());
-	
-	if(!@mysql_select_db($config["mysql"]["db"], $db_connection))
-		throw new MySQLException("Could not open database. " . mysql_error());
-	
-	mysql_query("SET NAMES 'utf8'", $db_connection);
-}
-
-function sqlesc($str)
-{
-	return mysql_real_escape_string($str);
+		$config["mysql"]["passwd"],
+		array(
+			PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8',
+		));
+	$db_con->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 }
 
 /*
- * Function: qdb_vfmt
- * Like <qdb_fmt>, but needs arguments as single array. 
- * 
- * Parameters:
- * 	$args - The arguments as an array.
- * 
- * Returns:
- * 	The formatted string.
+ * Function: sub_prefix
+ *
+ * Substitutes "PREFIX_" in the input string with the prefix from the config.
  */
-function qdb_vfmt($args)
+function sub_prefix($q)
 {
 	global $config;
-	
-	if(count($args) < 1)
-		throw new InvalidArgumentException('Need at least one parameter');
-	
-	$query = $args[0];
-	
-	$data = array_map(function($x) { return is_string($x) ? sqlesc($x) : $x; }, array_slice($args, 1));
-	$query = str_replace("PREFIX_", $config["mysql"]["prefix"], $query);
-	
-	return vsprintf($query, $data);
+	return str_replace("PREFIX_", $config["mysql"]["prefix"], $q);
 }
 
 /*
- * Function: qdb_fmt
- * Formats a string like <qdb>, that means it replaces "PREFIX_" and <sqlesc>'s everything before sends everything to vsprintf.
+ * Function: prep_stmt
+ * 
+ * Prepares a SQL statement using the global DB connection.
+ * This will also replace "PREFIX_" with the prefix defined in 'config.php'.
+ * 
+ * Parameters:
+ * 	$q - The query / statement to prepare.
  * 
  * Returns:
- * 	The formatted string.
+ * 	A PDOStatement object.
  */
-function qdb_fmt()
+function prep_stmt($q)
 {
-	return qdb_vfmt(func_get_args());
+	global $db_con;
+	
+	return $db_con->prepare(sub_prefix($q));
 }
-
 
 /*
  * Function: qdb
- * Query Database.
  * 
- * This function replaces mysql_query and should eliminate SQL-Injections.
- * Use it like this:
+ * Prepares statement (1st argument) with <prep_stmt> and executes it with the remaining arguments.
  * 
- * $result = qdb("SELECT `foo` FROM `bar` WHERE `id` = %d AND `baz` = '%s'", 100, "lol");
- * 
- * It will also replace "PREFIX_" with the prefix defined in 'config.php'.
+ * Returns:
+ * 	A PDOStatement object.
  */
 function qdb()
 {
-	$query = qdb_vfmt(func_get_args());
-	$rv = mysql_query($query);
-	if($rv === false)
-		throw new MySQLException(mysql_errno() . ': ' . mysql_error() . (__DEBUG__ ? ("[[FULL QUERY: " . $query . "]]") : "" ));
-	return $rv;
+	$args = func_get_args();
+	if(count($args) < 1)
+		throw new InvalidArgumentException("qdb needs at least 1 argument");
+	
+	$stmt = prep_stmt($args[0]);
+	$stmt->execute(array_slice($args, 1));
+	return $stmt;
 }
 
 /*
- * Class: MySQLException
- * Will be thrown by qdb*, if the query induced an MySQL error.
+ * Function: transaction
+ * 
+ * Executes function $f and wraps it in a transaction.
+ * If $f has thrown an exception, the transactrion will be rolled back and the excetion will be re-thrown.
+ * Otherwise the transaction will be committed.
+ * 
+ * Parameters:
+ * 	$f - A function / callback.
  */
-class MySQLException extends Exception { }
+function transaction($f)
+{
+	global $db_con;
+	
+	if($db_con->inTransaction())
+		call_user_func($f);
+	else
+	{
+		try
+		{
+			$db_con->beginTransaction();
+			call_user_func($f);
+			$db_con->commit();
+		}
+		catch(Exception $e)
+		{
+			$db_con->rollBack();
+			throw $e;
+		}
+	}
+}
 
 ?>
