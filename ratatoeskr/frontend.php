@@ -665,7 +665,7 @@ function make_on_anything_tag($field)
 {
 	return function($ste, $params, $sub) use ($field)
 	{
-		if($ste->evalbool($ste->vars["current"][$field]))
+		if($ste->evalbool(@$ste->vars["current"][$field]))
 		{
 			if(!empty($params["var"]))
 				$ste->set_var_by_name($params["var"], $ste->vars["current"][$field]);
