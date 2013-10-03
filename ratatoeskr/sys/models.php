@@ -248,7 +248,7 @@ class User extends BySQLRowEnabled
 		global $db_con;
 		try
 		{
-			$obj = self::by_name($name);
+			$obj = self::by_name($username);
 		}
 		catch(DoesNotExistError $e)
 		{
@@ -1288,7 +1288,7 @@ class Style extends BySQLRowEnabled
 	 */
 	public function save()
 	{
-		if(!self::test_name($name))
+		if(!self::test_name($this->name))
 			throw new InvalidDataError("invalid_style_name");
 		
 		transaction(function()
@@ -1716,7 +1716,7 @@ class Section extends BySQLRowEnabled
 	 */
 	public function save()
 	{
-		if(!self::test_name($name))
+		if(!self::test_name($this->name))
 			throw new InvalidDataError("invalid_section_name");
 		
 		transaction(function()
@@ -1939,7 +1939,7 @@ WHERE `b`.`tag` = ?" , $this->id);
 	 */
 	public function save()
 	{
-		if(!self::test_name($name))
+		if(!self::test_name($this->name))
 			throw new InvalidDataError("invalid_tag_name");
 		
 		transaction(function()
