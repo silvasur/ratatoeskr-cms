@@ -2002,7 +2002,7 @@ $backend_subactions = url_action_subactions(array(
 			echo $ste->exectemplate("/systemtemplates/confirminstall.html");
 		}
 	)),
-	"pluginpages" => url_action_subactions(&$pluginpages_handlers)
+	"pluginpages" => url_action_subactions($pluginpages_handlers)
 ));
 
 }

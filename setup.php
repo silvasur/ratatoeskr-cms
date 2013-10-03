@@ -33,7 +33,6 @@ $files = array(
 	"/ratatoeskr/templates/src/systemtemplates/tag_addtranslation.html",
 	"/ratatoeskr/templates/src/systemtemplates/settings.html",
 	"/ratatoeskr/templates/src/systemtemplates/tag_deleted.html",
-	"/ratatoeskr/templates/src/systemtemplates/areyousure.html",
 	"/ratatoeskr/templates/src/systemtemplates/articles.html",
 	"/ratatoeskr/templates/src/systemtemplates/image_list.html",
 	"/ratatoeskr/templates/src/systemtemplates/repos.html",
@@ -138,8 +137,10 @@ if(!in_array("gd", $available_extensions))
 	$missing_requirements[] = "You need the gd PHP extension.";
 if(!in_array("session", $available_extensions))
 	$missing_requirements[] = "You need the session PHP extension.";
-if(!in_array("mysql", $available_extensions))
-	$missing_requirements[] = "You need the mysql PHP extension.";
+if(!in_array("PDO", $available_extensions))
+	$missing_requirements[] = "You need the PDO PHP extension.";
+if(!in_array("pdo_mysql", $available_extensions))
+	$missing_requirements[] = "You need the pdo_mysql PHP extension.";
 
 if(!in_array("hash", $available_extensions))
 	$missing_requirements[] = "You need the hash PHP extension.";

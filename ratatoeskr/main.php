@@ -94,7 +94,7 @@ function _ratatoeskr()
 		echo $ste->exectemplate("/systemtemplates/error.html");
 	}));
 	
-	$urlpath = explode("/", $_GET["action"]);
+	$urlpath = explode("/", @$_GET["action"]);
 	$rel_path_to_root = implode("/", array_merge(array("."), array_repeat("..", count($urlpath) - 1)));
 	$GLOBALS["rel_path_to_root"] = $rel_path_to_root;
 	$data = array("rel_path_to_root" => $rel_path_to_root);

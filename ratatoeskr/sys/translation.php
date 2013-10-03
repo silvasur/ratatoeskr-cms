@@ -15,7 +15,7 @@ require_once(dirname(__FILE__) . "/init_ste.php");
 if(!defined("SETUP"))
 	require_once(dirname(__FILE__) . "/models.php");
 
-if(!defined(TRANSLATION_PLUGIN_LOADED))
+if(!defined("TRANSLATION_PLUGIN_LOADED"))
 {
 	$ste->register_tag(
 		"get_translation",
@@ -28,7 +28,7 @@ if(!defined(TRANSLATION_PLUGIN_LOADED))
 			return (!empty($params["raw"])) ? $rv : htmlesc($rv);
 		}
 	);
-	define(TRANSLATION_PLUGIN_LOADED, True);
+	define("TRANSLATION_PLUGIN_LOADED", True);
 }
 
 /*

@@ -106,28 +106,37 @@ abstract class KVStorage implements Countable, ArrayAccess, Iterator
 {
 	private $keybuffer;
 	private $counter;
-	private $prepared_queries;
 	private $silent_mode;
 	
-	final protected function init($sqltable, $common_fields)
+	private $common_vals;
+	
+	private $stmt_get;
+	private $stmt_unset;
+	private $stmt_update;
+	private $stmt_create;
+	
+	final protected function init($sqltable, $common)
 	{
 		$this->silent_mode = False;
 		$this->keybuffer = array();
 		
-		$selector = "WHERE " . (empty($common_fields) ? 1 : implode(" AND ", array_map(function($x) { return qdb_fmt("`{$x[0]}` = {$x[1]}", $x[2]); }, $common_fields)));
-		$this->prepared_queries = array(
-			"get"    => "SELECT `value` FROM `$sqltable` $selector AND `key` = '%s'",
-			"unset"  => "DELETE FROM `$sqltable` $selector AND `key` = '%s'",
-			"update" => "UPDATE `$sqltable` SET `value` = '%s' $selector AND `key` = '%s'",
-			"create" => "INSERT INTO `$sqltable` (`key`, `value` "
-			            . (empty($common_fields) ?: ", " . implode(", ", array_map(function($x) { return "`".$x[0]."`"; }, $common_fields)))
-			            . ") VALUES ('%s', '%s'"
-			            . (empty($common_fields) ?: ", " . implode(", ", array_map(function($x) { return qdb_fmt($x[1], $x[2]); }, $common_fields)))
-			            . ")"
-		);
-				
-		$result = qdb("SELECT `key` FROM `$sqltable` $selector");
-		while($sqlrow = mysql_fetch_assoc($result))
+		$selector = "WHERE ";
+		$fields = "";
+		foreach($common as $field => $val)
+		{
+			$selector .= "`$field` = ? AND ";
+			$fields .= ", `$field`";
+			$this->common_vals[] = $val;
+		}
+		
+		$this->stmt_get    = prep_stmt("SELECT `value` FROM `$sqltable` $selector `key` = ?");
+		$this->stmt_unset  = prep_stmt("DELETE FROM `$sqltable` $selector `key` = ?");
+		$this->stmt_update = prep_stmt("UPDATE `$sqltable` SET `value` = ? $selector `key` = ?");
+		$this->stmt_create = prep_stmt("INSERT INTO `$sqltable` (`key`, `value` $fields) VALUES (?,?" . str_repeat(",?", count($common)) . ")");
+		
+		$get_keys = prep_stmt("SELECT `key` FROM `$sqltable` $selector");
+		$get_keys->execute($this->common_vals);
+		while($sqlrow = $get_keys->fetch())
 			$this->keybuffer[] = $sqlrow["key"];
 		
 		$this->counter = 0;
@@ -153,8 +162,9 @@ abstract class KVStorage implements Countable, ArrayAccess, Iterator
 	{
 		if($this->offsetExists($offset))
 		{
-			$result = qdb($this->prepared_queries["get"], $offset);
-			$sqlrow = mysql_fetch_assoc($result);
+			$this->stmt_get->execute(array_merge($this->common_vals, array($offset)));
+			$sqlrow = $this->stmt_get->fetch();
+			$this->stmt_get->closeCursor();
 			return unserialize(base64_decode($sqlrow["value"]));
 		}
 		elseif($this->silent_mode)
@@ -168,16 +178,21 @@ abstract class KVStorage implements Countable, ArrayAccess, Iterator
 		{
 			unset($this->keybuffer[array_search($offset, $this->keybuffer)]);
 			$this->keybuffer = array_merge($this->keybuffer);
-			qdb($this->prepared_queries["unset"], $offset);
+			$this->stmt_unset->execute(array_merge($this->common_vals, array($offset)));
+			$this->stmt_unset->closeCursor();
 		}
 	}
 	final public function offsetSet($offset, $value)
 	{
 		if($this->offsetExists($offset))
-			qdb($this->prepared_queries["update"], base64_encode(serialize($value)), $offset);
+		{
+			$this->stmt_update->execute(array_merge(array(base64_encode(serialize($value))), $this->common_vals, array($offset)));
+			$this->stmt_update->closeCursor();
+		}
 		else
 		{
-			qdb($this->prepared_queries["create"], $offset, base64_encode(serialize($value)));
+			$this->stmt_create->execute(array_merge(array($offset, base64_encode(serialize($value))), $this->common_vals));
+			$this->stmt_create->closeCursor();
 			$this->keybuffer[] = $offset;
 		}
 	}
@@ -229,18 +244,20 @@ class User extends BySQLRowEnabled
 	 */
 	public static function create($username, $pwhash)
 	{
+		global $ratatoeskr_settings;
+		global $db_con;
 		try
 		{
-			$obj = self::by_name($name);
+			$obj = self::by_name($username);
 		}
 		catch(DoesNotExistError $e)
 		{
 			global $ratatoeskr_settings;
-			qdb("INSERT INTO `PREFIX_users` (`username`, `pwhash`, `mail`, `fullname`, `language`) VALUES ('%s', '%s', '', '', '%s')",
+			qdb("INSERT INTO `PREFIX_users` (`username`, `pwhash`, `mail`, `fullname`, `language`) VALUES (?, ?, '', '', ?)",
 				$username, $pwhash, $ratatoeskr_settings["default_language"]);
 			$obj = new self();
 			
-			$obj->id       = mysql_insert_id();
+			$obj->id       = $db_con->lastInsertId();
 			$obj->username = $username;
 			$obj->pwhash   = $pwhash;
 			$obj->mail     = "";
@@ -277,8 +294,8 @@ class User extends BySQLRowEnabled
 	 */
 	public static function by_id($id)
 	{
-		$result = qdb("SELECT `id`, `username`, `pwhash`, `mail`, `fullname`, `language` FROM `PREFIX_users` WHERE `id` = %d", $id);
-		$sqlrow = mysql_fetch_assoc($result);
+		$stmt = qdb("SELECT `id`, `username`, `pwhash`, `mail`, `fullname`, `language` FROM `PREFIX_users` WHERE `id` = ?", $id);
+		$sqlrow = $stmt->fetch();
 		if(!$sqlrow)
 			throw new DoesNotExistError();
 		
@@ -300,8 +317,8 @@ class User extends BySQLRowEnabled
 	 */
 	public static function by_name($username)
 	{
-		$result = qdb("SELECT `id`, `username`, `pwhash`, `mail`, `fullname`, `language` FROM `PREFIX_users` WHERE `username` = '%s'", $username);
-		$sqlrow = mysql_fetch_assoc($result);
+		$stmt = qdb("SELECT `id`, `username`, `pwhash`, `mail`, `fullname`, `language` FROM `PREFIX_users` WHERE `username` = ?", $username);
+		$sqlrow = $stmt->fetch();
 		if(!$sqlrow)
 			throw new DoesNotExistError();
 		
@@ -316,8 +333,8 @@ class User extends BySQLRowEnabled
 	{
 		$rv = array();
 		
-		$result = qdb("SELECT `id`, `username`, `pwhash`, `mail`, `fullname`, `language` FROM `PREFIX_users` WHERE 1");
-		while($sqlrow = mysql_fetch_assoc($result))
+		$stmt = qdb("SELECT `id`, `username`, `pwhash`, `mail`, `fullname`, `language` FROM `PREFIX_users` WHERE 1");
+		while($sqlrow = $stmt->fetch())
 			$rv[] = self::by_sqlrow($sqlrow);
 		
 		return $rv;
@@ -342,13 +359,16 @@ class User extends BySQLRowEnabled
 	 */
 	public function save()
 	{
-		$result = qdb("SELECT COUNT(*) AS `n` FROM `PREFIX_users` WHERE `username` = '%s' AND `id` != %d", $this->username, $this->id);
-		$sqlrow = mysql_fetch_assoc($result);
-		if($sqlrow["n"] > 0)
-			throw new AlreadyExistsError();
-		
-		qdb("UPDATE `PREFIX_users` SET `username` = '%s', `pwhash` = '%s', `mail` = '%s', `fullname` = '%s', `language` = '%s' WHERE `id` = %d",
-			$this->username, $this->pwhash, $this->mail, $this->fullname, $this->language, $this->id);
+		transaction(function()
+		{
+			$stmt = qdb("SELECT COUNT(*) AS `n` FROM `PREFIX_users` WHERE `username` = ? AND `id` != ?", $this->username, $this->id);
+			$sqlrow = $stmt->fetch();
+			if($sqlrow["n"] > 0)
+				throw new AlreadyExistsError();
+			
+			qdb("UPDATE `PREFIX_users` SET `username` = ?, `pwhash` = ?, `mail` = ?, `fullname` = ?, `language` = ? WHERE `id` = ?",
+				$this->username, $this->pwhash, $this->mail, $this->fullname, $this->language, $this->id);
+		});
 	}
 	
 	/*
@@ -358,8 +378,11 @@ class User extends BySQLRowEnabled
 	 */
 	public function delete()
 	{
-		qdb("DELETE FROM `PREFIX_group_members` WHERE `user` = %d", $this->id);
-		qdb("DELETE FROM `PREFIX_users` WHERE `id` = %d", $this->id);
+		transaction(function()
+		{
+			qdb("DELETE FROM `PREFIX_group_members` WHERE `user` = ?", $this->id);
+			qdb("DELETE FROM `PREFIX_users` WHERE `id` = ?", $this->id);
+		});
 	}
 	
 	/*
@@ -370,8 +393,8 @@ class User extends BySQLRowEnabled
 	public function get_groups()
 	{
 		$rv = array();
-		$result = qdb("SELECT `a`.`id` AS `id`, `a`.`name` AS `name` FROM `PREFIX_groups` `a` INNER JOIN `PREFIX_group_members` `b` ON `a`.`id` = `b`.`group` WHERE `b`.`user` = %d", $this->id);
-		while($sqlrow = mysql_fetch_assoc($result))
+		$stmt = qdb("SELECT `a`.`id` AS `id`, `a`.`name` AS `name` FROM `PREFIX_groups` `a` INNER JOIN `PREFIX_group_members` `b` ON `a`.`id` = `b`.`group` WHERE `b`.`user` = ?", $this->id);
+		while($sqlrow = $stmt->fetch())
 			$rv[] = Group::by_sqlrow($sqlrow);
 		return $rv;
 	}
@@ -388,8 +411,8 @@ class User extends BySQLRowEnabled
 	 */
 	public function member_of($group)
 	{
-		$result = qdb("SELECT COUNT(*) AS `num` FROM `PREFIX_group_members` WHERE `user` = %d AND `group` = %d", $this->id, $group->get_id());
-		$sqlrow = mysql_fetch_assoc($result);
+		$stmt = qdb("SELECT COUNT(*) AS `num` FROM `PREFIX_group_members` WHERE `user` = ? AND `group` = ?", $this->id, $group->get_id());
+		$sqlrow = $stmt->fetch();
 		return ($sqlrow["num"] > 0);
 	}
 }
@@ -424,16 +447,17 @@ class Group extends BySQLRowEnabled
 	 */
 	public static function create($name)
 	{
+		global $db_con;
 		try
 		{
 			$obj = self::by_name($name);
 		}
 		catch(DoesNotExistError $e)
 		{
-			qdb("INSERT INTO `PREFIX_groups` (`name`) VALUES ('%s')", $name);
+			qdb("INSERT INTO `PREFIX_groups` (`name`) VALUES (?)", $name);
 			$obj = new self();
 			
-			$obj->id   = mysql_insert_id();
+			$obj->id   = $db_con->lastInsertId();
 			$obj->name = $name;
 			
 			return $obj;
@@ -462,8 +486,8 @@ class Group extends BySQLRowEnabled
 	 */
 	public static function by_id($id)
 	{
-		$result = qdb("SELECT `id`, `name` FROM `PREFIX_groups` WHERE `id` = %d", $id);
-		$sqlrow = mysql_fetch_assoc($result);
+		$stmt =  qdb("SELECT `id`, `name` FROM `PREFIX_groups` WHERE `id` = ?", $id);
+		$sqlrow = $stmt->fetch();
 		if(!$sqlrow)
 			throw new DoesNotExistError();
 		
@@ -485,8 +509,8 @@ class Group extends BySQLRowEnabled
 	 */
 	public static function by_name($name)
 	{
-		$result = qdb("SELECT `id`, `name` FROM `PREFIX_groups` WHERE `name` = '%s'", $name);
-		$sqlrow = mysql_fetch_assoc($result);
+		$stmt = qdb("SELECT `id`, `name` FROM `PREFIX_groups` WHERE `name` = ?", $name);
+		$sqlrow = $stmt->fetch();
 		if(!$sqlrow)
 			throw new DoesNotExistError();
 		
@@ -501,8 +525,8 @@ class Group extends BySQLRowEnabled
 	{
 		$rv = array();
 		
-		$result = qdb("SELECT `id`, `name` FROM `PREFIX_groups` WHERE 1");
-		while($sqlrow = mysql_fetch_assoc($result))
+		$stmt = qdb("SELECT `id`, `name` FROM `PREFIX_groups` WHERE 1");
+		while($sqlrow = $stmt->fetch())
 			$rv[] = self::by_sqlrow($sqlrow);
 		
 		return $rv;
@@ -524,8 +548,11 @@ class Group extends BySQLRowEnabled
 	 */
 	public function delete()
 	{
-		qdb("DELETE FROM `PREFIX_group_members` WHERE `group` = %d", $this->id);
-		qdb("DELETE FROM `PREFIX_groups` WHERE `id` = %d", $this->id);
+		transaction(function()
+		{
+			qdb("DELETE FROM `PREFIX_group_members` WHERE `group` = ?", $this->id);
+			qdb("DELETE FROM `PREFIX_groups` WHERE `id` = ?", $this->id);
+		});
 	}
 	
 	/*
@@ -538,10 +565,10 @@ class Group extends BySQLRowEnabled
 	public function get_members()
 	{
 		$rv = array();
-		$result = qdb("SELECT `a`.`id` AS `id`, `a`.`username` AS `username`, `a`.`pwhash` AS `pwhash`, `a`.`mail` AS `mail`, `a`.`fullname` AS `fullname`, `a`.`language` AS `language`
+		$stmt = qdb("SELECT `a`.`id` AS `id`, `a`.`username` AS `username`, `a`.`pwhash` AS `pwhash`, `a`.`mail` AS `mail`, `a`.`fullname` AS `fullname`, `a`.`language` AS `language`
 FROM `PREFIX_users` `a` INNER JOIN `PREFIX_group_members` `b` ON `a`.`id` = `b`.`user`
-WHERE `b`.`group` = %d", $this->id);
-		while($sqlrow = mysql_fetch_assoc($result))
+WHERE `b`.`group` = ?", $this->id);
+		while($sqlrow = $stmt->fetch())
 			$rv[] = User::by_sqlrow($sqlrow);
 		return $rv;
 	}
@@ -555,7 +582,7 @@ WHERE `b`.`group` = %d", $this->id);
 	 */
 	public function exclude_user($user)
 	{
-		qdb("DELETE FROM `PREFIX_group_members` WHERE `user` = %d AND `group` = %d", $user->get_id(), $this->id);
+		qdb("DELETE FROM `PREFIX_group_members` WHERE `user` = ? AND `group` = ?", $user->get_id(), $this->id);
 	}
 	
 	/*
@@ -568,7 +595,7 @@ WHERE `b`.`group` = %d", $this->id);
 	public function include_user($user)
 	{
 		if(!$user->member_of($this))
-			qdb("INSERT INTO `PREFIX_group_members` (`user`, `group`) VALUES (%d, %d)", $user->get_id(), $this->id);
+			qdb("INSERT INTO `PREFIX_group_members` (`user`, `group`) VALUES (?, ?)", $user->get_id(), $this->id);
 	}
 }
 
@@ -646,9 +673,11 @@ class Multilingual implements Countable, ArrayAccess, IteratorAggregate
 	 */
 	public static function create()
 	{
+		global $db_con;
+		
 		$obj = new self();
 		qdb("INSERT INTO `PREFIX_multilingual` () VALUES ()");
-		$obj->id = mysql_insert_id();
+		$obj->id = $db_con->lastInsertId();
 		return $obj;
 	}
 	
@@ -668,14 +697,14 @@ class Multilingual implements Countable, ArrayAccess, IteratorAggregate
 	public static function by_id($id)
 	{
 		$obj = new self();
-		$result = qdb("SELECT `id` FROM `PREFIX_multilingual` WHERE `id` = %d", $id);
-		$sqlrow = mysql_fetch_assoc($result);
+		$stmt = qdb("SELECT `id` FROM `PREFIX_multilingual` WHERE `id` = ?", $id);
+		$sqlrow = $stmt->fetch();
 		if($sqlrow == False)
 			throw new DoesNotExistError();
 		$obj->id = $id;
 		
-		$result = qdb("SELECT `language`, `text`, `texttype` FROM `PREFIX_translations` WHERE `multilingual` = %d", $id);
-		while($sqlrow = mysql_fetch_assoc($result))
+		$stmt = qdb("SELECT `language`, `text`, `texttype` FROM `PREFIX_translations` WHERE `multilingual` = ?", $id);
+		while($sqlrow = $stmt->fetch())
 			$obj->translations[$sqlrow["language"]] = new Translation($sqlrow["text"], $sqlrow["texttype"]);
 		
 		return $obj;
@@ -687,22 +716,25 @@ class Multilingual implements Countable, ArrayAccess, IteratorAggregate
 	 */
 	public function save()
 	{
-		foreach($this->to_be_deleted as $deletelang)
-			qdb("DELETE FROM `PREFIX_translations` WHERE `multilingual` = %d AND `language` = '%s'", $this->id, $deletelang);
-		$this->to_be_deleted = array();
-		
-		foreach($this->to_be_created as $lang)
-			qdb("INSERT INTO `PREFIX_translations` (`multilingual`, `language`, `text`, `texttype`) VALUES (%d, '%s', '%s', '%s')",
-				$this->id, $lang, $this->translations[$lang]->text, $this->translations[$lang]->texttype);
-		
-		foreach($this->translations as $lang => $translation)
+		transaction(function()
 		{
-			if(!in_array($lang, $this->to_be_created))
-				qdb("UPDATE `PREFIX_translations` SET `text` = '%s', `texttype` = '%s' WHERE `multilingual` = %d AND `language` = '%s'",
-					$translation->text, $translation->texttype, $this->id, $lang);
-		}
-		
-		$this->to_be_created = array();
+			foreach($this->to_be_deleted as $deletelang)
+				qdb("DELETE FROM `PREFIX_translations` WHERE `multilingual` = ? AND `language` = ?", $this->id, $deletelang);
+			
+			foreach($this->to_be_created as $lang)
+				qdb("INSERT INTO `PREFIX_translations` (`multilingual`, `language`, `text`, `texttype`) VALUES (?, ?, ?, ?)",
+					$this->id, $lang, $this->translations[$lang]->text, $this->translations[$lang]->texttype);
+			
+			foreach($this->translations as $lang => $translation)
+			{
+				if(!in_array($lang, $this->to_be_created))
+					qdb("UPDATE `PREFIX_translations` SET `text` = ?, `texttype` = ? WHERE `multilingual` = ? AND `language` = ?",
+						$translation->text, $translation->texttype, $this->id, $lang);
+			}
+			
+			$this->to_be_deleted = array();
+			$this->to_be_created = array();
+		});
 	}
 	
 	/*
@@ -711,8 +743,11 @@ class Multilingual implements Countable, ArrayAccess, IteratorAggregate
 	 */
 	public function delete()
 	{
-		qdb("DELETE FROM `PREFIX_translations` WHERE `multilingual` = %d", $this->id);
-		qdb("DELETE FROM `PREFIX_multilingual` WHERE `id` = %d", $this->id);
+		transaction(function()
+		{
+			qdb("DELETE FROM `PREFIX_translations` WHERE `multilingual` = ?", $this->id);
+			qdb("DELETE FROM `PREFIX_multilingual` WHERE `id` = ?", $this->id);
+		});
 	}
 	
 	/* Countable interface implementation */
@@ -803,8 +838,8 @@ class Settings implements ArrayAccess, IteratorAggregate, Countable
 	private function __construct()
 	{
 		$this->buffer = array();
-		$result = qdb("SELECT `key`, `value` FROM `PREFIX_settings_kvstorage` WHERE 1");
-		while($sqlrow = mysql_fetch_assoc($result))
+		$stmt = qdb("SELECT `key`, `value` FROM `PREFIX_settings_kvstorage` WHERE 1");
+		while($sqlrow = $stmt->fetch())
 			$this->buffer[$sqlrow["key"]] = unserialize(base64_decode($sqlrow["value"]));
 		
 		$this->to_be_created = array();
@@ -814,15 +849,18 @@ class Settings implements ArrayAccess, IteratorAggregate, Countable
 	
 	public function save()
 	{
-		foreach($this->to_be_deleted as $k)
-			qdb("DELETE FROM `PREFIX_settings_kvstorage` WHERE `key` = '%s'", $k);
-		foreach($this->to_be_updated as $k)
-			qdb("UPDATE `PREFIX_settings_kvstorage` SET `value` = '%s' WHERE `key` = '%s'", base64_encode(serialize($this->buffer[$k])), $k);
-		foreach($this->to_be_created as $k)
-			qdb("INSERT INTO `PREFIX_settings_kvstorage` (`key`, `value`) VALUES ('%s', '%s')", $k, base64_encode(serialize($this->buffer[$k])));
-		$this->to_be_created = array();
-		$this->to_be_deleted = array();
-		$this->to_be_updated = array();
+		transaction(function(){
+			foreach($this->to_be_deleted as $k)
+				qdb("DELETE FROM `PREFIX_settings_kvstorage` WHERE `key` = ?", $k);
+			foreach($this->to_be_updated as $k)
+				qdb("UPDATE `PREFIX_settings_kvstorage` SET `value` = ? WHERE `key` = ?", base64_encode(serialize($this->buffer[$k])), $k);
+			foreach($this->to_be_created as $k)
+				qdb("INSERT INTO `PREFIX_settings_kvstorage` (`key`, `value`) VALUES (?, ?)", $k, base64_encode(serialize($this->buffer[$k])));
+		
+			$this->to_be_created = array();
+			$this->to_be_deleted = array();
+			$this->to_be_updated = array();
+		});
 	}
 	
 	/* ArrayAccess implementation */
@@ -886,9 +924,7 @@ class PluginKVStorage extends KVStorage
 	 */
 	public function __construct($plugin_id)
 	{
-		$this->init("PREFIX_plugin_kvstorage", array(
-			array("plugin", "%d", $plugin_id)
-		));
+		$this->init("PREFIX_plugin_kvstorage", array("plugin" => $plugin_id));
 	}
 }
 
@@ -943,18 +979,20 @@ class Comment extends BySQLRowEnabled
 	public static function create($article, $language)
 	{
 		global $ratatoeskr_settings;
+		global $db_con;
+		
 		$obj = new self();
+		$obj->timestamp = time();
 		
-		qdb("INSERT INTO `PREFIX_comments` (`article`, `language`, `author_name`, `author_mail`, `text`, `timestamp`, `visible`, `read_by_admin`) VALUES (%d, '%s', '', '', '', UNIX_TIMESTAMP(NOW()), %d, 0)",
-			$article->get_id(), $language, $ratatoeskr_settings["comment_visible_default"] ? 1 : 0);
+		qdb("INSERT INTO `PREFIX_comments` (`article`, `language`, `author_name`, `author_mail`, `text`, `timestamp`, `visible`, `read_by_admin`) VALUES (?, ?, '', '', '', ?, ?, 0)",
+			$article->get_id(), $language, $obj->timestamp, $ratatoeskr_settings["comment_visible_default"] ? 1 : 0);
 		
-		$obj->id            = mysql_insert_id();
+		$obj->id            = $db_con->lastInsertId();
 		$obj->article_id    = $article->get_id();
 		$obj->language      = $language;
 		$obj->author_name   = "";
 		$obj->author_mail   = "";
 		$obj->text          = "";
-		$obj->timestamp     = time();
 		$obj->visible       = $ratatoeskr_settings["comment_visible_default"];
 		$obj->read_by_admin = False;
 		
@@ -986,8 +1024,8 @@ class Comment extends BySQLRowEnabled
 	 */
 	public static function by_id($id)
 	{
-		$result = qdb("SELECT `id`, `article`, `language`, `author_name`, `author_mail`, `text`, `timestamp`, `visible`, `read_by_admin` FROM `PREFIX_comments` WHERE `id` = %d", $id);
-		$sqlrow = mysql_fetch_assoc($result);
+		$stmt = qdb("SELECT `id`, `article`, `language`, `author_name`, `author_mail`, `text`, `timestamp`, `visible`, `read_by_admin` FROM `PREFIX_comments` WHERE `id` = ?", $id);
+		$sqlrow = $stmt->fetch();
 		if($sqlrow === False)
 			throw new DoesNotExistError();
 		
@@ -1004,8 +1042,8 @@ class Comment extends BySQLRowEnabled
 	public static function all()
 	{
 		$rv = array();
-		$result = qdb("SELECT `id`, `article`, `language`, `author_name`, `author_mail`, `text`, `timestamp`, `visible`, `read_by_admin` FROM `PREFIX_comments` WHERE 1");
-		while($sqlrow = mysql_fetch_assoc($result))
+		$stmt = qdb("SELECT `id`, `article`, `language`, `author_name`, `author_mail`, `text`, `timestamp`, `visible`, `read_by_admin` FROM `PREFIX_comments` WHERE 1");
+		while($sqlrow = $stmt->fetch())
 			$rv[] = self::by_sqlrow($sqlrow);
 		return $rv;
 	}
@@ -1092,7 +1130,7 @@ class Comment extends BySQLRowEnabled
 	 */
 	public function save()
 	{
-		qdb("UPDATE `PREFIX_comments` SET `author_name` = '%s', `author_mail` = '%s', `text` = '%s', `visible` = %d, `read_by_admin` = %d WHERE `id` = %d",
+		qdb("UPDATE `PREFIX_comments` SET `author_name` = ?, `author_mail` = ?, `text` = ?, `visible` = ?, `read_by_admin` = ? WHERE `id` = ?",
 			$this->author_name, $this->author_mail, $this->text, ($this->visible ? 1 : 0), ($this->read_by_admin ? 1 : 0), $this->id);
 	}
 	
@@ -1101,7 +1139,7 @@ class Comment extends BySQLRowEnabled
 	 */
 	public function delete()
 	{
-		qdb("DELETE FROM `PREFIX_comments` WHERE `id` = %d", $this->id);
+		qdb("DELETE FROM `PREFIX_comments` WHERE `id` = ?", $this->id);
 	}
 }
 
@@ -1161,6 +1199,8 @@ class Style extends BySQLRowEnabled
 	 */
 	public static function create($name)
 	{
+		global $db_con;
+		
 		if(!self::test_name($name))
 			throw new InvalidDataError("invalid_style_name");
 			
@@ -1174,10 +1214,9 @@ class Style extends BySQLRowEnabled
 			$obj->name = $name;
 			$obj->code = "";
 		
-			qdb("INSERT INTO `PREFIX_styles` (`name`, `code`) VALUES ('%s', '')",
-				$name);
+			qdb("INSERT INTO `PREFIX_styles` (`name`, `code`) VALUES (?, '')", $name);
 		
-			$obj->id = mysql_insert_id();
+			$obj->id = $db_con->lastInsertId();
 			return $obj;
 		}
 		
@@ -1196,8 +1235,8 @@ class Style extends BySQLRowEnabled
 	 */
 	public static function by_id($id)
 	{
-		$result = qdb("SELECT `id`, `name`, `code` FROM `PREFIX_styles` WHERE `id` = %d", $id);
-		$sqlrow = mysql_fetch_assoc($result);
+		$stmt = qdb("SELECT `id`, `name`, `code` FROM `PREFIX_styles` WHERE `id` = ?", $id);
+		$sqlrow = $stmt->fetch();
 		if(!$sqlrow)
 			throw new DoesNotExistError();
 		
@@ -1216,8 +1255,8 @@ class Style extends BySQLRowEnabled
 	 */
 	public static function by_name($name)
 	{
-		$result = qdb("SELECT `id`, `name`, `code` FROM `PREFIX_styles` WHERE `name` = '%s'", $name);
-		$sqlrow = mysql_fetch_assoc($result);
+		$stmt = qdb("SELECT `id`, `name`, `code` FROM `PREFIX_styles` WHERE `name` = ?", $name);
+		$sqlrow = $stmt->fetch();
 		if(!$sqlrow)
 			throw new DoesNotExistError();
 		
@@ -1234,8 +1273,8 @@ class Style extends BySQLRowEnabled
 	public static function all()
 	{
 		$rv = array();
-		$result = qdb("SELECT `id`, `name`, `code` FROM `PREFIX_styles` WHERE 1");
-		while($sqlrow = mysql_fetch_assoc($result))
+		$stmt = qdb("SELECT `id`, `name`, `code` FROM `PREFIX_styles` WHERE 1");
+		while($sqlrow = $stmt->fetch())
 			$rv[] = self::by_sqlrow($sqlrow);
 		return $rv;
 	}
@@ -1249,16 +1288,19 @@ class Style extends BySQLRowEnabled
 	 */
 	public function save()
 	{
-		if(!self::test_name($name))
+		if(!self::test_name($this->name))
 			throw new InvalidDataError("invalid_style_name");
 		
-		$result = qdb("SELECT COUNT(*) AS `n` FROM `PREFIX_styles` WHERE `name` = '%s' AND `id` != %d", $this->name, $this->id);
-		$sqlrow = mysql_fetch_assoc($result);
-		if($sqlrow["n"] > 0)
-			throw new AlreadyExistsError();
-		
-		qdb("UPDATE `PREFIX_styles` SET `name` = '%s', `code` = '%s' WHERE `id` = %d",
-			$this->name, $this->code, $this->id);
+		transaction(function()
+		{
+			$stmt = qdb("SELECT COUNT(*) AS `n` FROM `PREFIX_styles` WHERE `name` = ? AND `id` != ?", $this->name, $this->id);
+			$sqlrow = $stmt->fetch();
+			if($sqlrow["n"] > 0)
+				throw new AlreadyExistsError();
+			
+			qdb("UPDATE `PREFIX_styles` SET `name` = ?, `code` = ? WHERE `id` = ?",
+				$this->name, $this->code, $this->id);
+		});
 	}
 	
 	/*
@@ -1266,8 +1308,10 @@ class Style extends BySQLRowEnabled
 	 */
 	public function delete()
 	{
-		qdb("DELETE FROM `PREFIX_styles` WHERE `id` = %d", $this->id);
-		qdb("DELETE FROM `PREFIX_section_style_relations` WHERE `style` = %d", $this->id);
+		transaction(function(){
+			qdb("DELETE FROM `PREFIX_styles` WHERE `id` = ?", $this->id);
+			qdb("DELETE FROM `PREFIX_section_style_relations` WHERE `style` = ?", $this->id);
+		});
 	}
 }
 
@@ -1321,7 +1365,7 @@ class Plugin extends BySQLRowEnabled
 	 */
 	public static function clean_db()
 	{
-		qdb("DELETE FROM `PREFIX_plugins` WHERE `installed` = 0 AND `added` < %d", (time() - (60*5)));
+		qdb("DELETE FROM `PREFIX_plugins` WHERE `installed` = 0 AND `added` < ?", (time() - (60*5)));
 	}
 	
 	/*
@@ -1335,9 +1379,11 @@ class Plugin extends BySQLRowEnabled
 	 */
 	public static function create()
 	{
+		global $db_con;
+		
 		$obj = new self();
-		qdb("INSERT INTO `PREFIX_plugins` (`added`) VALUES (%d)", time());
-		$obj->id = mysql_insert_id();
+		qdb("INSERT INTO `PREFIX_plugins` (`added`) VALUES (?)", time());
+		$obj->id = $db_con->lastInsertId();
 		return $obj;
 	}
 	
@@ -1403,8 +1449,8 @@ class Plugin extends BySQLRowEnabled
 	 */
 	public static function by_id($id)
 	{
-		$result = qdb("SELECT `id`, `name`, `author`, `versiontext`, `versioncount`, `short_description`, `updatepath`, `web`, `help`, `code`, `classname`, `active`, `license`, `installed`, `update`, `api` FROM `PREFIX_plugins` WHERE `id` = %d", $id);
-		$sqlrow = mysql_fetch_assoc($result);
+		$stmt = qdb("SELECT `id`, `name`, `author`, `versiontext`, `versioncount`, `short_description`, `updatepath`, `web`, `help`, `code`, `classname`, `active`, `license`, `installed`, `update`, `api` FROM `PREFIX_plugins` WHERE `id` = ?", $id);
+		$sqlrow = $stmt->fetch();
 		if($sqlrow === False)
 			throw new DoesNotExistError();
 		
@@ -1421,8 +1467,8 @@ class Plugin extends BySQLRowEnabled
 	public static function all()
 	{
 		$rv = array();
-		$result = qdb("SELECT `id`, `name`, `author`, `versiontext`, `versioncount`, `short_description`, `updatepath`, `web`, `help`, `code`, `classname`, `active`, `license`, `installed`, `update`, `api` FROM `PREFIX_plugins` WHERE 1");
-		while($sqlrow = mysql_fetch_assoc($result))
+		$stmt = qdb("SELECT `id`, `name`, `author`, `versiontext`, `versioncount`, `short_description`, `updatepath`, `web`, `help`, `code`, `classname`, `active`, `license`, `installed`, `update`, `api` FROM `PREFIX_plugins` WHERE 1");
+		while($sqlrow = $stmt->fetch())
 			$rv[] = self::by_sqlrow($sqlrow);
 		return $rv;
 	}
@@ -1432,7 +1478,7 @@ class Plugin extends BySQLRowEnabled
 	 */
 	public function save()
 	{
-		qdb("UPDATE `PREFIX_plugins` SET `name` = '%s', `author` = '%s', `code` = '%s', `classname` = '%s', `active` = %d, `versiontext` = '%s', `versioncount` = %d, `short_description` = '%s', `updatepath` = '%s', `web` = '%s', `help` = '%s', `installed` = %d, `update` = %d, `license` = '%s', `api` = %d WHERE `id` = %d",
+		qdb("UPDATE `PREFIX_plugins` SET `name` = ?, `author` = ?, `code` = ?, `classname` = ?, `active` = ?, `versiontext` = ?, `versioncount` = ?, `short_description` = ?, `updatepath` = ?, `web` = ?, `help` = ?, `installed` = ?, `update` = ?, `license` = ?, `api` = ? WHERE `id` = ?",
 			$this->name, $this->author, $this->code, $this->classname, ($this->active ? 1 : 0), $this->versiontext, $this->versioncount, $this->short_description, $this->updatepath, $this->web, $this->help, ($this->installed ? 1 : 0), ($this->update ? 1 : 0), $this->license, $this->api, $this->id);
 	}
 	
@@ -1441,9 +1487,13 @@ class Plugin extends BySQLRowEnabled
 	 */
 	public function delete()
 	{
-		qdb("DELETE FROM `PREFIX_plugins` WHERE `id` = %d", $this->id);
-		qdb("DELETE FROM `PREFIX_plugin_kvstorage` WHERE `plugin` = %d", $this->id);
-		qdb("DELETE FROM `PREFIX_article_extradata` WHERE `plugin` = %d", $this->id);
+		transaction(function()
+		{
+			qdb("DELETE FROM `PREFIX_plugins` WHERE `id` = ?", $this->id);
+			qdb("DELETE FROM `PREFIX_plugin_kvstorage` WHERE `plugin` = ?", $this->id);
+			qdb("DELETE FROM `PREFIX_article_extradata` WHERE `plugin` = ?", $this->id);
+		});
+		
 		if(is_dir(SITE_BASE_PATH . "/ratatoeskr/plugin_extradata/private/" . $this->id))
 			delete_directory(SITE_BASE_PATH . "/ratatoeskr/plugin_extradata/private/" . $this->id);
 		if(is_dir(SITE_BASE_PATH . "/ratatoeskr/plugin_extradata/public/" . $this->id))
@@ -1524,6 +1574,8 @@ class Section extends BySQLRowEnabled
 	 */
 	public static function create($name)
 	{
+		global $db_con;
+		
 		if(!self::test_name($name))
 			throw new InvalidDataError("invalid_section_name");
 			
@@ -1538,10 +1590,9 @@ class Section extends BySQLRowEnabled
 			$obj->title    = Multilingual::create();
 			$obj->template = "";
 			
-			$result = qdb("INSERT INTO `PREFIX_sections` (`name`, `title`, `template`) VALUES ('%s', %d, '')",
-				$name, $obj->title->get_id());
+			qdb("INSERT INTO `PREFIX_sections` (`name`, `title`, `template`) VALUES (?, ?, '')", $name, $obj->title->get_id());
 			
-			$obj->id = mysql_insert_id();
+			$obj->id = $db_con->lastInsertId();
 			
 			return $obj;
 		}
@@ -1564,8 +1615,8 @@ class Section extends BySQLRowEnabled
 	 */
 	public static function by_id($id)
 	{
-		$result = qdb("SELECT `id`, `name`, `title`, `template` FROM `PREFIX_sections` WHERE `id` = %d", $id);
-		$sqlrow = mysql_fetch_assoc($result);
+		$stmt = qdb("SELECT `id`, `name`, `title`, `template` FROM `PREFIX_sections` WHERE `id` = ?", $id);
+		$sqlrow = $stmt->fetch();
 		if($sqlrow === False)
 			throw new DoesNotExistError();
 		
@@ -1587,8 +1638,8 @@ class Section extends BySQLRowEnabled
 	 */
 	public static function by_name($name)
 	{
-		$result = qdb("SELECT `id`, `name`, `title`, `template` FROM `PREFIX_sections` WHERE `name` = '%s'", $name);
-		$sqlrow = mysql_fetch_assoc($result);
+		$stmt = qdb("SELECT `id`, `name`, `title`, `template` FROM `PREFIX_sections` WHERE `name` = ?", $name);
+		$sqlrow = $stmt->fetch();
 		if($sqlrow === False)
 			throw new DoesNotExistError();
 		
@@ -1605,8 +1656,8 @@ class Section extends BySQLRowEnabled
 	public static function all()
 	{
 		$rv = array();
-		$result = qdb("SELECT `id`, `name`, `title`, `template` FROM `PREFIX_sections` WHERE 1");
-		while($sqlrow = mysql_fetch_assoc($result))
+		$stmt = qdb("SELECT `id`, `name`, `title`, `template` FROM `PREFIX_sections` WHERE 1");
+		while($sqlrow = $stmt->fetch())
 			$rv[] = self::by_sqlrow($sqlrow);
 		return $rv;
 	}
@@ -1621,8 +1672,8 @@ class Section extends BySQLRowEnabled
 	public function get_styles()
 	{
 		$rv = array();
-		$result = qdb("SELECT `a`.`id` AS `id`, `a`.`name` AS `name`, `a`.`code` AS `code` FROM `PREFIX_styles` `a` INNER JOIN `PREFIX_section_style_relations` `b` ON `a`.`id` = `b`.`style` WHERE `b`.`section` = %d", $this->id);
-		while($sqlrow = mysql_fetch_assoc($result))
+		$stmt = qdb("SELECT `a`.`id` AS `id`, `a`.`name` AS `name`, `a`.`code` AS `code` FROM `PREFIX_styles` `a` INNER JOIN `PREFIX_section_style_relations` `b` ON `a`.`id` = `b`.`style` WHERE `b`.`section` = ?", $this->id);
+		while($sqlrow = $stmt->fetch())
 			$rv[] = Style::by_sqlrow($sqlrow);
 		return $rv;
 	}
@@ -1636,10 +1687,13 @@ class Section extends BySQLRowEnabled
 	 */
 	public function add_style($style)
 	{
-		$result = qdb("SELECT COUNT(*) AS `n` FROM `PREFIX_section_style_relations` WHERE `style` = %d AND `section` = %d", $style->get_id(), $this->id);
-		$sqlrow = mysql_fetch_assoc($result);
-		if($sqlrow["n"] == 0)
-			qdb("INSERT INTO `PREFIX_section_style_relations` (`section`, `style`) VALUES (%d, %d)", $this->id, $style->get_id());
+		transaction(function() use ($style)
+		{
+			$stmt = qdb("SELECT COUNT(*) AS `n` FROM `PREFIX_section_style_relations` WHERE `style` = ? AND `section` = ?", $style->get_id(), $this->id);
+			$sqlrow = $stmt->fetch();
+			if($sqlrow["n"] == 0)
+				qdb("INSERT INTO `PREFIX_section_style_relations` (`section`, `style`) VALUES (?, ?)", $this->id, $style->get_id());
+		});
 	}
 	
 	/*
@@ -1651,7 +1705,7 @@ class Section extends BySQLRowEnabled
 	 */
 	public function remove_style($style)
 	{
-		qdb("DELETE FROM `PREFIX_section_style_relations` WHERE `section` = %d AND `style` = %d", $this->id, $style->get_id());
+		qdb("DELETE FROM `PREFIX_section_style_relations` WHERE `section` = ? AND `style` = ?", $this->id, $style->get_id());
 	}
 	
 	/*
@@ -1662,17 +1716,20 @@ class Section extends BySQLRowEnabled
 	 */
 	public function save()
 	{
-		if(!self::test_name($name))
+		if(!self::test_name($this->name))
 			throw new InvalidDataError("invalid_section_name");
 		
-		$result = qdb("SELECT COUNT(*) AS `n` FROM `PREFIX_sections` WHERE `name` = '%s' AND `id` != %d", $this->name, $this->id);
-		$sqlrow = mysql_fetch_assoc($result);
-		if($sqlrow["n"] > 0)
-			throw new AlreadyExistsError();
-		
-		$this->title->save();
-		qdb("UPDATE `PREFIX_sections` SET `name` = '%s', `title` = %d, `template` = '%s' WHERE `id` = %d",
-			$this->name, $this->title->get_id(), $this->template, $this->id);
+		transaction(function()
+		{
+			$stmt = qdb("SELECT COUNT(*) AS `n` FROM `PREFIX_sections` WHERE `name` = ? AND `id` != ?", $this->name, $this->id);
+			$sqlrow = $stmt->fetch();
+			if($sqlrow["n"] > 0)
+				throw new AlreadyExistsError();
+			
+			$this->title->save();
+			qdb("UPDATE `PREFIX_sections` SET `name` = ?, `title` = ?, `template` = ? WHERE `id` = ?",
+				$this->name, $this->title->get_id(), $this->template, $this->id);
+		});
 	}
 	
 	/*
@@ -1680,9 +1737,12 @@ class Section extends BySQLRowEnabled
 	 */
 	public function delete()
 	{
-		$this->title->delete();
-		qdb("DELETE FROM `PREFIX_sections` WHERE `id` = %d", $this->id);
-		qdb("DELETE FROM `PREFIX_section_style_relations` WHERE `section` = %d", $this->id);
+		transaction(function()
+		{
+			$this->title->delete();
+			qdb("DELETE FROM `PREFIX_sections` WHERE `id` = ?", $this->id);
+			qdb("DELETE FROM `PREFIX_section_style_relations` WHERE `section` = ?", $this->id);
+		});
 	}
 	
 	/*
@@ -1695,8 +1755,8 @@ class Section extends BySQLRowEnabled
 	public function get_articles()
 	{
 		$rv = array();
-		$result = qdb("SELECT `id`, `urlname`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments` FROM `PREFIX_articles` WHERE `section` = %d", $this->id);
-		while($sqlrow = mysql_fetch_assoc($result))
+		$stmt = qdb("SELECT `id`, `urlname`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments` FROM `PREFIX_articles` WHERE `section` = ?", $this->id);
+		while($sqlrow = $stmt->fetch())
 			$rv[] = Article::by_sqlrow($sqlrow);
 		return $rv;
 	}
@@ -1758,6 +1818,7 @@ class Tag extends BySQLRowEnabled
 	 */
 	public static function create($name)
 	{
+		global $db_con;
 		if(!self::test_name($name))
 			throw new InvalidDataError("invalid_tag_name");
 			
@@ -1772,9 +1833,9 @@ class Tag extends BySQLRowEnabled
 			$obj->name  = $name;
 			$obj->title = Multilingual::create();
 			
-			qdb("INSERT INTO `PREFIX_tags` (`name`, `title`) VALUES ('%s', %d)",
+			qdb("INSERT INTO `PREFIX_tags` (`name`, `title`) VALUES (?, ?)",
 				$name, $obj->title->get_id());
-			$obj->id = mysql_insert_id();
+			$obj->id = $db_con->lastInsertId();
 			
 			return $obj;
 		}
@@ -1793,8 +1854,8 @@ class Tag extends BySQLRowEnabled
 	 */
 	public static function by_id($id)
 	{
-		$result = qdb("SELECT `id`, `name`, `title` FROM `PREFIX_tags` WHERE `id` = %d", $id);
-		$sqlrow = mysql_fetch_assoc($result);
+		$stmt = qdb("SELECT `id`, `name`, `title` FROM `PREFIX_tags` WHERE `id` = ?", $id);
+		$sqlrow = $stmt->fetch();
 		if($sqlrow === False)
 			throw new DoesNotExistError();
 		
@@ -1813,8 +1874,8 @@ class Tag extends BySQLRowEnabled
 	 */
 	public static function by_name($name)
 	{
-		$result = qdb("SELECT `id`, `name`, `title` FROM `PREFIX_tags` WHERE `name` = '%s'", $name);
-		$sqlrow = mysql_fetch_assoc($result);
+		$stmt = qdb("SELECT `id`, `name`, `title` FROM `PREFIX_tags` WHERE `name` = ?", $name);
+		$sqlrow = $stmt->fetch();
 		if($sqlrow === False)
 			throw new DoesNotExistError();
 		
@@ -1831,8 +1892,8 @@ class Tag extends BySQLRowEnabled
 	public static function all()
 	{
 		$rv = array();
-		$result = qdb("SELECT `id`, `name`, `title` FROM `PREFIX_tags` WHERE 1");
-		while($sqlrow = mysql_fetch_assoc($result))
+		$stmt = qdb("SELECT `id`, `name`, `title` FROM `PREFIX_tags` WHERE 1");
+		while($sqlrow = $stmt->fetch())
 			$rv[] = self::by_sqlrow($sqlrow);
 		return $rv;
 	}
@@ -1847,12 +1908,12 @@ class Tag extends BySQLRowEnabled
 	public function get_articles()
 	{
 		$rv = array();
-		$result = qdb(
+		$stmt = qdb(
 "SELECT `a`.`id` AS `id`, `a`.`urlname` AS `urlname`, `a`.`title` AS `title`, `a`.`text` AS `text`, `a`.`excerpt` AS `excerpt`, `a`.`meta` AS `meta`, `a`.`custom` AS `custom`, `a`.`article_image` AS `article_image`, `a`.`status` AS `status`, `a`.`section` AS `section`, `a`.`timestamp` AS `timestamp`, `a`.`allow_comments` AS `allow_comments`
 FROM `PREFIX_articles` `a`
 INNER JOIN `PREFIX_article_tag_relations` `b` ON `a`.`id` = `b`.`article`
-WHERE `b`.`tag` = '%d'" , $this->id);
-		while($sqlrow = mysql_fetch_assoc($result))
+WHERE `b`.`tag` = ?" , $this->id);
+		while($sqlrow = $stmt->fetch())
 			$rv[] = Article::by_sqlrow($sqlrow);
 		return $rv;
 	}
@@ -1865,8 +1926,8 @@ WHERE `b`.`tag` = '%d'" , $this->id);
 	 */
 	public function count_articles()
 	{
-		$result = qdb("SELECT COUNT(*) AS `num` FROM `PREFIX_article_tag_relations` WHERE `tag` = %d", $this->id);
-		$sqlrow = mysql_fetch_assoc($result);
+		$stmt = qdb("SELECT COUNT(*) AS `num` FROM `PREFIX_article_tag_relations` WHERE `tag` = ?", $this->id);
+		$sqlrow = $stmt->fetch();
 		return $sqlrow["num"];
 	}
 	
@@ -1878,17 +1939,20 @@ WHERE `b`.`tag` = '%d'" , $this->id);
 	 */
 	public function save()
 	{
-		if(!self::test_name($name))
+		if(!self::test_name($this->name))
 			throw new InvalidDataError("invalid_tag_name");
 		
-		$result = qdb("SELECT COUNT(*) AS `n` FROM `PREFIX_tags` WHERE `name` = '%s' AND `id` != %d", $this->name, $this->id);
-		$sqlrow = mysql_fetch_assoc($result);
-		if($sqlrow["n"] > 0)
-			throw new AlreadyExistsError();
-		
-		$this->title->save();
-		qdb("UPDATE `PREFIX_tags` SET `name` = '%s', `title` = %d WHERE `id` = %d",
-			$this->name, $this->title->get_id(), $this->id);
+		transaction(function()
+		{
+			$stmt = qdb("SELECT COUNT(*) AS `n` FROM `PREFIX_tags` WHERE `name` = ? AND `id` != ?", $this->name, $this->id);
+			$sqlrow = $stmt->fetch();
+			if($sqlrow["n"] > 0)
+				throw new AlreadyExistsError();
+			
+			$this->title->save();
+			qdb("UPDATE `PREFIX_tags` SET `name` = ?, `title` = ? WHERE `id` = ?",
+				$this->name, $this->title->get_id(), $this->id);
+		});
 	}
 	
 	/*
@@ -1896,9 +1960,12 @@ WHERE `b`.`tag` = '%d'" , $this->id);
 	 */
 	public function delete()
 	{
-		$this->title->delete();
-		qdb("DELETE FROM `PREFIX_article_tag_relations` WHERE `tag` = %d", $this->id);
-		qdb("DELETE FROM `PREFIX_tags` WHERE `id` = %d", $this->id);
+		transaction(function()
+		{
+			$this->title->delete();
+			qdb("DELETE FROM `PREFIX_article_tag_relations` WHERE `tag` = ?", $this->id);
+			qdb("DELETE FROM `PREFIX_tags` WHERE `id` = ?", $this->id);
+		});
 	}
 }
 
@@ -1966,19 +2033,14 @@ class Image extends BySQLRowEnabled
 		$obj->name = $name;
 		$obj->file = "0";
 		
-		qdb("INSERT INTO `PREFIX_images` (`name`, `file`) VALUES ('%s', '0')",
-			$name);
-		
-		$obj->id = mysql_insert_id();
-		try
+		transaction(function() use (&$obj, $name, $file)
 		{
+			global $db_con;
+			
+			qdb("INSERT INTO `PREFIX_images` (`name`, `file`) VALUES (?, '0')",	$name);
+			$obj->id = $db_con->lastInsertId();
 			$obj->exchange_image($file);
-		}
-		catch(Exception $e)
-		{
-			$obj->delete();
-			throw $e;
-		}
+		});
 		return $obj;
 	}
 	
@@ -1994,8 +2056,8 @@ class Image extends BySQLRowEnabled
 	 */
 	public static function by_id($id)
 	{
-		$result = qdb("SELECT `id`, `name`, `file` FROM `PREFIX_images` WHERE `id` = %d", $id);
-		$sqlrow = mysql_fetch_assoc($result);
+		$stmt = qdb("SELECT `id`, `name`, `file` FROM `PREFIX_images` WHERE `id` = ?", $id);
+		$sqlrow = $stmt->fetch();
 		if($sqlrow === False)
 			throw new DoesNotExistError();
 		
@@ -2012,8 +2074,8 @@ class Image extends BySQLRowEnabled
 	public function all()
 	{
 		$rv = array();
-		$result = qdb("SELECT `id`, `name`, `file` FROM `PREFIX_images` WHERE 1");
-		while($sqlrow = mysql_fetch_assoc($result))
+		$stmt = qdb("SELECT `id`, `name`, `file` FROM `PREFIX_images` WHERE 1");
+		while($sqlrow = $stmt->fetch())
 			$rv[] = self::by_sqlrow($sqlrow);
 		return $rv;
 	}
@@ -2082,7 +2144,7 @@ class Image extends BySQLRowEnabled
 	 */
 	public function save()
 	{
-		qdb("UPDATE `PREFIX_images` SET `name` = '%s', `file` = '%s' WHERE `id` = %d",
+		qdb("UPDATE `PREFIX_images` SET `name` = ?, `file` = ? WHERE `id` = ?",
 			$this->name, $this->file, $this->id);
 	}
 	
@@ -2091,17 +2153,17 @@ class Image extends BySQLRowEnabled
 	 */
 	public function delete()
 	{
+		qdb("DELETE FROM `PREFIX_images` WHERE `id` = ?", $this->id);
 		if(is_file(SITE_BASE_PATH . "/images/" . $this->file))
 			unlink(SITE_BASE_PATH . "/images/" . $this->file);
 		if(is_file(SITE_BASE_PATH . "/images/previews/{$this->id}.png"))
 			unlink(SITE_BASE_PATH . "/images/previews/{$this->id}.png");
-		qdb("DELETE FROM `PREFIX_images` WHERE `id` = %d", $this->id);
 	}
 }
 
 /*
  * Class: RepositoryUnreachableOrInvalid
- * A Exception that will be thrown, if the repository is aunreachable or seems to be an invalid repository.
+ * A Exception that will be thrown, if the repository is unreachable or seems to be an invalid repository.
  */
 class RepositoryUnreachableOrInvalid extends Exception { }
 
@@ -2162,9 +2224,15 @@ class Repository extends BySQLRowEnabled
 		$obj->baseurl = $matches[1];
 		$obj->refresh(True);
 		
-		qdb("INSERT INTO `ratatoeskr_repositories` () VALUES ()");
-		$obj->id = mysql_insert_id();
-		$obj->save();
+		transaction(function() use (&$obj)
+		{
+			global $db_con;
+			
+			qdb("INSERT INTO `ratatoeskr_repositories` () VALUES ()");
+			$obj->id = $db_con->lastInsertId();
+			$obj->save();
+		});
+		
 		return $obj;
 	}
 	
@@ -2190,8 +2258,8 @@ class Repository extends BySQLRowEnabled
 	 */
 	public static function by_id($id)
 	{
-		$result = qdb("SELECT `id`, `name`, `description`, `baseurl`, `pkgcache`, `lastrefresh` FROM `PREFIX_repositories` WHERE `id` = %d", $id);
-		$sqlrow = mysql_fetch_assoc($result);
+		$stmt = qdb("SELECT `id`, `name`, `description`, `baseurl`, `pkgcache`, `lastrefresh` FROM `PREFIX_repositories` WHERE `id` = ?", $id);
+		$sqlrow = $stmt->fetch();
 		if(!$sqlrow)
 			throw new DoesNotExistError();
 		
@@ -2208,15 +2276,15 @@ class Repository extends BySQLRowEnabled
 	public static function all()
 	{
 		$rv = array();
-		$result = qdb("SELECT `id`, `name`, `description`, `baseurl`, `pkgcache`, `lastrefresh` FROM `PREFIX_repositories` WHERE 1");
-		while($sqlrow = mysql_fetch_assoc($result))
+		$stmt = qdb("SELECT `id`, `name`, `description`, `baseurl`, `pkgcache`, `lastrefresh` FROM `PREFIX_repositories` WHERE 1");
+		while($sqlrow = $stmt->fetch())
 			$rv[] = self::by_sqlrow($sqlrow);
 		return $rv;
 	}
 	
 	private function save()
 	{
-		qdb("UPDATE `PREFIX_repositories` SET `baseurl` = '%s', `name` = '%s', `description` = '%s', `pkgcache` = '%s', `lastrefresh` = %d WHERE `id` = %d",
+		qdb("UPDATE `PREFIX_repositories` SET `baseurl` = ?, `name` = ?, `description` = ?, `pkgcache` = ?, `lastrefresh` = ? WHERE `id` = ?",
 		    $this->baseurl,
 		    $this->name,
 		    $this->description,
@@ -2231,7 +2299,7 @@ class Repository extends BySQLRowEnabled
 	 */
 	public function delete()
 	{
-		qdb("DELETE FROM `PREFIX_repositories` WHERE `id` = %d", $this->id);
+		qdb("DELETE FROM `PREFIX_repositories` WHERE `id` = ?", $this->id);
 	}
 	
 	/*
@@ -2442,6 +2510,7 @@ class Article extends BySQLRowEnabled
 	public static function create($urlname)
 	{
 		global $ratatoeskr_settings;
+		global $db_con;
 		
 		if(!self::test_urlname($urlname))
 			throw new InvalidDataError("invalid_urlname");
@@ -2465,7 +2534,7 @@ class Article extends BySQLRowEnabled
 			$obj->timestamp      = time();
 			$obj->allow_comments = $ratatoeskr_settings["allow_comments_default"];
 		
-			qdb("INSERT INTO `PREFIX_articles` (`urlname`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments`) VALUES ('', %d, %d, %d, '', '%s', 0, %d, %d, %d, %d)",
+			qdb("INSERT INTO `PREFIX_articles` (`urlname`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments`) VALUES ('', ?, ?, ?, '', ?, 0, ?, ?, ?, ?)",
 				$obj->title->get_id(),
 				$obj->text->get_id(),
 				$obj->excerpt->get_id(),
@@ -2474,7 +2543,7 @@ class Article extends BySQLRowEnabled
 				$obj->section_id,
 				$obj->timestamp,
 				$obj->allow_comments ? 1 : 0);
-			$obj->id = mysql_insert_id();
+			$obj->id = $db_con->lastInsertId();
 			return $obj;
 		}
 		
@@ -2493,8 +2562,8 @@ class Article extends BySQLRowEnabled
 	 */
 	public static function by_id($id)
 	{
-		$result = qdb("SELECT `id`, `urlname`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments` FROM `PREFIX_articles` WHERE `id` = %d", $id);
-		$sqlrow = mysql_fetch_assoc($result);
+		$stmt = qdb("SELECT `id`, `urlname`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments` FROM `PREFIX_articles` WHERE `id` = ?", $id);
+		$sqlrow = $stmt->fetch();
 		if($sqlrow === False)
 			throw new DoesNotExistError();
 		
@@ -2513,8 +2582,8 @@ class Article extends BySQLRowEnabled
 	 */
 	public static function by_urlname($urlname)
 	{
-		$result = qdb("SELECT `id`, `urlname`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments` FROM `PREFIX_articles` WHERE `urlname` = '%s'", $urlname);
-		$sqlrow = mysql_fetch_assoc($result);
+		$stmt = qdb("SELECT `id`, `urlname`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments` FROM `PREFIX_articles` WHERE `urlname` = ?", $urlname);
+		$sqlrow = $stmt->fetch();
 		if($sqlrow === False)
 			throw new DoesNotExistError();
 		
@@ -2541,17 +2610,38 @@ class Article extends BySQLRowEnabled
 	public static function by_multi($criterias, $sortby, $sortdir, $count, $offset, $perpage, $page, &$maxpage)
 	{
 		$subqueries = array();
+		$subparams = array();
 		foreach($criterias as $k => $v)
 		{
 			switch($k)
 			{
-				case "id":          $subqueries[] = qdb_fmt("`a`.`id`       =  %d",  $v);           break;
-				case "urlname":     $subqueries[] = qdb_fmt("`a`.`urlname`  = '%s'", $v);           break;
-				case "section":     $subqueries[] = qdb_fmt("`a`.`section`  =  %d",  $v->get_id()); break;
-				case "status":      $subqueries[] = qdb_fmt("`a`.`status`   =  %d",  $v);           break;
-				case "onlyvisible": $subqueries[] = "`a`.`status` != 0";                            break;
-				case "langavail":   $subqueries[] = qdb_fmt("`b`.`language` = '%s'", $v);           break;
-				case "tag":         $subqueries[] = qdb_fmt("`c`.`tag`      =  %d",  $v->get_id()); break;
+				case "id":
+					$subqueries[] = "`a`.`id` = ?";
+					$subparams[] = $v;
+					break;
+				case "urlname":
+					$subqueries[] = "`a`.`urlname` = ?";
+					$subparams[] = $v;
+					break;
+				case "section":
+					$subqueries[] = "`a`.`section` = ?";
+					$subparams[] = $v->get_id();
+					break;
+				case "status":
+					$subqueries[] = "`a`.`status` = ?";
+					$subparams[] = $v;
+					break;
+				case "onlyvisible":
+					$subqueries[] = "`a`.`status` != 0";
+					break;
+				case "langavail":
+					$subqueries[] = "`b`.`language` = ?";
+					$subparams[] = $v;
+					break;
+				case "tag":
+					$subqueries[] = "`c`.`tag` = ?";
+					$subparams[] = $v->get_id();
+					break;
 				default: continue;
 			}
 		}
@@ -2567,14 +2657,16 @@ class Article extends BySQLRowEnabled
 			case "title":     $sorting = "ORDER BY `b`.`text` $sortdir";      break;
 		}
 		
-		$result = qdb("SELECT `a`.`id` AS `id`, `a`.`urlname` AS `urlname`, `a`.`title` AS `title`, `a`.`text` AS `text`, `a`.`excerpt` AS `excerpt`, `a`.`meta` AS `meta`, `a`.`custom` AS `custom`, `a`.`article_image` AS `article_image`, `a`.`status` AS `status`, `a`.`section` AS `section`, `a`.`timestamp` AS `timestamp`, `a`.`allow_comments` AS `allow_comments` FROM `PREFIX_articles` `a`
+		$stmt = prep_stmt("SELECT `a`.`id` AS `id`, `a`.`urlname` AS `urlname`, `a`.`title` AS `title`, `a`.`text` AS `text`, `a`.`excerpt` AS `excerpt`, `a`.`meta` AS `meta`, `a`.`custom` AS `custom`, `a`.`article_image` AS `article_image`, `a`.`status` AS `status`, `a`.`section` AS `section`, `a`.`timestamp` AS `timestamp`, `a`.`allow_comments` AS `allow_comments` FROM `PREFIX_articles` `a`
 INNER JOIN `PREFIX_translations` `b` ON `a`.`title` = `b`.`multilingual`
 LEFT OUTER JOIN `PREFIX_article_tag_relations` `c` ON `a`.`id` = `c`.`article`
 WHERE " . implode(" AND ", $subqueries) . " $sorting");
 		
+		$stmt->execute($subparams);
+		
 		$rows = array();
 		$fetched_ids = array();
-		while($sqlrow = mysql_fetch_assoc($result))
+		while($sqlrow = $stmt->fetch())
 		{
 			if(!in_array($sqlrow["id"], $fetched_ids))
 			{
@@ -2609,8 +2701,8 @@ WHERE " . implode(" AND ", $subqueries) . " $sorting");
 	public static function all()
 	{
 		$rv = array();
-		$result = qdb("SELECT `id`, `urlname`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments` FROM `PREFIX_articles` WHERE 1");
-		while($sqlrow = mysql_fetch_assoc($result))
+		$stmt = qdb("SELECT `id`, `urlname`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments` FROM `PREFIX_articles` WHERE 1");
+		while($sqlrow = $stmt->fetch())
 			$rv[] = self::by_sqlrow($sqlrow);
 		return $rv;
 	}
@@ -2626,18 +2718,23 @@ WHERE " . implode(" AND ", $subqueries) . " $sorting");
 	 * Returns:
 	 * 	Array of <Comment> objects.
 	 */
-	public function get_comments($limit_lang = "", $only_visible = false)
+	public function get_comments($limit_lang = "", $only_visible = False)
 	{
 		$rv = array();
 		
-		$conditions = array(qdb_fmt("`article` = %d", $this->id));
+		$conditions = array("`article` = ?");
+		$arguments = array($this->id);
 		if($limit_lang != "")
-			$conditions[] = qdb_fmt("`language` = '%s'", $limit_lang);
+		{
+			$conditions[] = "`language` = ?";
+			$arguments[] = $limit_lang;
+		}
 		if($only_visible)
 			$conditions[] = "`visible` = 1";
 		
-		$result = qdb("SELECT `id`, `article`, `language`, `author_name`, `author_mail`, `text`, `timestamp`, `visible`, `read_by_admin` FROM `PREFIX_comments` WHERE " . implode(" AND ", $conditions));
-		while($sqlrow = mysql_fetch_assoc($result))
+		$stmt = prep_stmt("SELECT `id`, `article`, `language`, `author_name`, `author_mail`, `text`, `timestamp`, `visible`, `read_by_admin` FROM `PREFIX_comments` WHERE " . implode(" AND ", $conditions));
+		$stmt->execute($arguments);
+		while($sqlrow = $stmt->fetch())
 			$rv[] = Comment::by_sqlrow($sqlrow);
 		return $rv;
 	}
@@ -2652,8 +2749,8 @@ WHERE " . implode(" AND ", $subqueries) . " $sorting");
 	public function get_tags()
 	{
 		$rv = array();
-		$result = qdb("SELECT `a`.`id` AS `id`, `a`.`name` AS `name`, `a`.`title` AS `title` FROM `PREFIX_tags` `a` INNER JOIN `PREFIX_article_tag_relations` `b` ON `a`.`id` = `b`.`tag` WHERE `b`.`article` = %d", $this->id);
-		while($sqlrow = mysql_fetch_assoc($result))
+		$stmt = qdb("SELECT `a`.`id` AS `id`, `a`.`name` AS `name`, `a`.`title` AS `title` FROM `PREFIX_tags` `a` INNER JOIN `PREFIX_article_tag_relations` `b` ON `a`.`id` = `b`.`tag` WHERE `b`.`article` = ?", $this->id);
+		while($sqlrow = $stmt->fetch())
 			$rv[] = Tag::by_sqlrow($sqlrow);
 		return $rv;
 	}
@@ -2667,18 +2764,29 @@ WHERE " . implode(" AND ", $subqueries) . " $sorting");
 	 */
 	public function set_tags($tags)
 	{
-		foreach($tags as $tag)
-			$tag->save();
-		
-		qdb("DELETE FROM `PREFIX_article_tag_relations` WHERE `article`= %d", $this->id);
-		
-		$articleid = $this->id;
-		/* So we just need to fire one query instead of count($this->tags) queries. */
-		if(!empty($tags))
-			qdb(
-				"INSERT INTO `PREFIX_article_tag_relations` (`article`, `tag`) VALUES " .
-				implode(",", array_map(function($tag) use ($articleid){ return qdb_fmt("(%d, %d)", $articleid, $tag->get_id()); }, $tags))
-			);
+		transaction(function() use (&$tags)
+		{
+			foreach($tags as $tag)
+				$tag->save();
+			
+			qdb("DELETE FROM `PREFIX_article_tag_relations` WHERE `article`= ?", $this->id);
+			
+			$articleid = $this->id;
+			if(!empty($tags))
+			{
+				$stmt = prep_stmt(
+					"INSERT INTO `PREFIX_article_tag_relations` (`article`, `tag`) VALUES " .
+					implode(",", array_fill(0, count($tags), "(?,?)"))
+				);
+				$args = array();
+				foreach($tags as $tag)
+				{
+					$args[] = $articleid;
+					$args[] = $tag->get_id();
+				}
+				$stmt->execute($args);
+			}
+		});
 	}
 	
 	/*
@@ -2737,29 +2845,32 @@ WHERE " . implode(" AND ", $subqueries) . " $sorting");
 		if(!self::test_status($this->status))
 			throw new InvalidDataError("invalid_article_status");
 			
-		$result = qdb("SELECT COUNT(*) AS `n` FROM `PREFIX_articles` WHERE `urlname` = '%s' AND `id` != %d", $this->urlname, $this->id);
-		$sqlrow = mysql_fetch_assoc($result);
-		if($sqlrow["n"] > 0)
-			throw new AlreadyExistsError();
-		
-		$this->title->save();
-		$this->text->save();
-		$this->excerpt->save();
-		
-		qdb("UPDATE `PREFIX_articles` SET `urlname` = '%s', `title` = %d, `text` = %d, `excerpt` = %d, `meta` = '%s', `custom` = '%s', `article_image` = %d, `status` = %d, `section` = %d, `timestamp` = %d, `allow_comments` = %d WHERE `id` = %d",
-			$this->urlname,
-			$this->title->get_id(),
-			$this->text->get_id(),
-			$this->excerpt->get_id(),
-			$this->meta,
-			base64_encode(serialize($this->custom)),
-			$this->article_image === NULL ? 0 : $this->article_image->get_id(),
-			$this->status,
-			$this->section_id,
-			$this->timestamp,
-			$this->allow_comments ? 1 : 0,
-			$this->id
-		);
+		transaction(function()
+		{
+			$stmt = qdb("SELECT COUNT(*) AS `n` FROM `PREFIX_articles` WHERE `urlname` = ? AND `id` != ?", $this->urlname, $this->id);
+			$sqlrow = $stmt->fetch();
+			if($sqlrow["n"] > 0)
+				throw new AlreadyExistsError();
+			
+			$this->title->save();
+			$this->text->save();
+			$this->excerpt->save();
+			
+			qdb("UPDATE `PREFIX_articles` SET `urlname` = ?, `title` = ?, `text` = ?, `excerpt` = ?, `meta` = ?, `custom` = ?, `article_image` = ?, `status` = ?, `section` = ?, `timestamp` = ?, `allow_comments` = ? WHERE `id` = ?",
+				$this->urlname,
+				$this->title->get_id(),
+				$this->text->get_id(),
+				$this->excerpt->get_id(),
+				$this->meta,
+				base64_encode(serialize($this->custom)),
+				$this->article_image === NULL ? 0 : $this->article_image->get_id(),
+				$this->status,
+				$this->section_id,
+				$this->timestamp,
+				$this->allow_comments ? 1 : 0,
+				$this->id
+			);
+		});
 	}
 	
 	/*
@@ -2767,16 +2878,19 @@ WHERE " . implode(" AND ", $subqueries) . " $sorting");
 	 */
 	public function delete()
 	{
-		$this->title->delete();
-		$this->text->delete();
-		$this->excerpt->delete();
-		
-		foreach($this->get_comments() as $comment)
-			$comment->delete();
-		
-		qdb("DELETE FROM `PREFIX_article_tag_relations` WHERE `article` = %d", $this->id);
-		qdb("DELETE FROM `PREFIX_article_extradata` WHERE `article` = %d", $this->id);
-		qdb("DELETE FROM `PREFIX_articles` WHERE `id` = %d", $this->id);
+		transaction(function()
+		{
+			$this->title->delete();
+			$this->text->delete();
+			$this->excerpt->delete();
+			
+			foreach($this->get_comments() as $comment)
+				$comment->delete();
+			
+			qdb("DELETE FROM `PREFIX_article_tag_relations` WHERE `article` = ?", $this->id);
+			qdb("DELETE FROM `PREFIX_article_extradata` WHERE `article` = ?", $this->id);
+			qdb("DELETE FROM `PREFIX_articles` WHERE `id` = ?", $this->id);
+		});
 	}
 }
 
@@ -2800,8 +2914,8 @@ class ArticleExtradata extends KVStorage
 	public function __construct($article_id, $plugin_id)
 	{
 		$this->init("PREFIX_article_extradata", array(
-			array("article", "%d", $article_id),
-			array("plugin",  "%d", $plugin_id)
+			"article" => $article_id,
+			"plugin" => $plugin_id,
 		));
 	}
 }
@@ -2816,12 +2930,14 @@ class ArticleExtradata extends KVStorage
 function dbversion()
 {
 	/* Is the meta table present? If no, the version is 0. */
-	$result = qdb("SHOW TABLES LIKE 'PREFIX_meta'");
-	if(mysql_num_rows($result) == 0)
+	$stmt = qdb("SELECT COUNT(*) FROM `information_schema`.`tables` WHERE `table_schema` = ? AND `table_name` = ?",
+		$config["mysql"]["db"], sub_prefix("PREFIX_meta"));
+	list($n) = $stmt->fetch();
+	if($n == 0)
 		return 0;
 	
-	$result = qdb("SELECT `value` FROM `PREFIX_meta` WHERE `key` = 'dbversion'");
-	$sqlrow = mysql_fetch_assoc($result);
+	$stmt = qdb("SELECT `value` FROM `PREFIX_meta` WHERE `key` = 'dbversion'");
+	$sqlrow = $stmt->fetch();
 	return unserialize(base64_decode($sqlrow["value"]));
 }
 
