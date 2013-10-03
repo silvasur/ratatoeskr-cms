@@ -87,34 +87,51 @@ function qdb()
 }
 
 /*
- * Function: transaction
+ * Class: Transaction
  * 
- * Executes function $f and wraps it in a transaction.
- * If $f has thrown an exception, the transactrion will be rolled back and the excetion will be re-thrown.
- * Otherwise the transaction will be committed.
- * 
- * Parameters:
- * 	$f - A function / callback.
+ * Makes using transactions easier.
  */
-function transaction($f)
+class Transaction
 {
-	global $db_con;
+	public $startedhere;
 	
-	if($db_con->inTransaction())
-		call_user_func($f);
-	else
+	/*
+	 * Constructor: __construct
+	 * 
+	 * Start a new transaction.
+	 */
+	public function __construct()
 	{
-		try
-		{
+		global $db_con;
+		$this->startedhere = !($db_con->inTransaction());
+		if($this->startedhere)
 			$db_con->beginTransaction();
-			call_user_func($f);
+	}
+	
+	/*
+	 * Function: commit
+	 * 
+	 * Commit the transaction.
+	 */
+	public function commit()
+	{
+		global $db_con;
+		
+		if($this->startedhere)
 			$db_con->commit();
-		}
-		catch(Exception $e)
-		{
+	}
+	
+	/*
+	 * Function: rollback
+	 * 
+	 * Toll the transaction back.
+	 */
+	public function rollback()
+	{
+		global $db_con;
+		
+		if($this->startedhere)
 			$db_con->rollBack();
-			throw $e;
-		}
 	}
 }
 
