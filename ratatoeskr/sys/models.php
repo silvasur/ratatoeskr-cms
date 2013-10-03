@@ -117,6 +117,8 @@ abstract class KVStorage implements Countable, ArrayAccess, Iterator
 	
 	final protected function init($sqltable, $common)
 	{
+		$sqltable = sub_prefix($sqltable);
+		
 		$this->silent_mode = False;
 		$this->keybuffer = array();
 		
@@ -134,7 +136,7 @@ abstract class KVStorage implements Countable, ArrayAccess, Iterator
 		$this->stmt_update = prep_stmt("UPDATE `$sqltable` SET `value` = ? $selector `key` = ?");
 		$this->stmt_create = prep_stmt("INSERT INTO `$sqltable` (`key`, `value` $fields) VALUES (?,?" . str_repeat(",?", count($common)) . ")");
 		
-		$get_keys = prep_stmt("SELECT `key` FROM `$sqltable` $selector");
+		$get_keys = prep_stmt("SELECT `key` FROM `$sqltable` $selector 1");
 		$get_keys->execute($this->common_vals);
 		while($sqlrow = $get_keys->fetch())
 			$this->keybuffer[] = $sqlrow["key"];
@@ -359,7 +361,8 @@ class User extends BySQLRowEnabled
 	 */
 	public function save()
 	{
-		transaction(function()
+		$tx = new Transaction();
+		try
 		{
 			$stmt = qdb("SELECT COUNT(*) AS `n` FROM `PREFIX_users` WHERE `username` = ? AND `id` != ?", $this->username, $this->id);
 			$sqlrow = $stmt->fetch();
@@ -368,7 +371,13 @@ class User extends BySQLRowEnabled
 			
 			qdb("UPDATE `PREFIX_users` SET `username` = ?, `pwhash` = ?, `mail` = ?, `fullname` = ?, `language` = ? WHERE `id` = ?",
 				$this->username, $this->pwhash, $this->mail, $this->fullname, $this->language, $this->id);
-		});
+			$tx->commit();
+		}
+		catch(Exception $e)
+		{
+			$tx->rollback();
+			throw $e;
+		}
 	}
 	
 	/*
@@ -378,11 +387,18 @@ class User extends BySQLRowEnabled
 	 */
 	public function delete()
 	{
-		transaction(function()
+		$tx = new Transaction();
+		try
 		{
 			qdb("DELETE FROM `PREFIX_group_members` WHERE `user` = ?", $this->id);
 			qdb("DELETE FROM `PREFIX_users` WHERE `id` = ?", $this->id);
-		});
+			$tx->commit();
+		}
+		catch(Exception $e)
+		{
+			$tx->rollback();
+			throw $e;
+		}
 	}
 	
 	/*
@@ -548,11 +564,18 @@ class Group extends BySQLRowEnabled
 	 */
 	public function delete()
 	{
-		transaction(function()
+		$tx = new Transaction();
+		try
 		{
 			qdb("DELETE FROM `PREFIX_group_members` WHERE `group` = ?", $this->id);
 			qdb("DELETE FROM `PREFIX_groups` WHERE `id` = ?", $this->id);
-		});
+			$tx->commit();
+		}
+		catch(Exception $e)
+		{
+			$tx->rollback();
+			throw $e;
+		}
 	}
 	
 	/*
@@ -716,7 +739,8 @@ class Multilingual implements Countable, ArrayAccess, IteratorAggregate
 	 */
 	public function save()
 	{
-		transaction(function()
+		$tx = new Transaction();
+		try
 		{
 			foreach($this->to_be_deleted as $deletelang)
 				qdb("DELETE FROM `PREFIX_translations` WHERE `multilingual` = ? AND `language` = ?", $this->id, $deletelang);
@@ -734,7 +758,13 @@ class Multilingual implements Countable, ArrayAccess, IteratorAggregate
 			
 			$this->to_be_deleted = array();
 			$this->to_be_created = array();
-		});
+			$tx->commit();
+		}
+		catch(Exception $e)
+		{
+			$tx->rollback();
+			throw $e;
+		}
 	}
 	
 	/*
@@ -743,11 +773,18 @@ class Multilingual implements Countable, ArrayAccess, IteratorAggregate
 	 */
 	public function delete()
 	{
-		transaction(function()
+		$tx = new Transaction();
+		try
 		{
 			qdb("DELETE FROM `PREFIX_translations` WHERE `multilingual` = ?", $this->id);
 			qdb("DELETE FROM `PREFIX_multilingual` WHERE `id` = ?", $this->id);
-		});
+			$tx->commit();
+		}
+		catch(Exception $e)
+		{
+			$tx->rollback();
+			throw $e;
+		}
 	}
 	
 	/* Countable interface implementation */
@@ -849,7 +886,9 @@ class Settings implements ArrayAccess, IteratorAggregate, Countable
 	
 	public function save()
 	{
-		transaction(function(){
+		$tx = new Transaction();
+		try
+		{
 			foreach($this->to_be_deleted as $k)
 				qdb("DELETE FROM `PREFIX_settings_kvstorage` WHERE `key` = ?", $k);
 			foreach($this->to_be_updated as $k)
@@ -860,7 +899,13 @@ class Settings implements ArrayAccess, IteratorAggregate, Countable
 			$this->to_be_created = array();
 			$this->to_be_deleted = array();
 			$this->to_be_updated = array();
-		});
+			$tx->commit();
+		}
+		catch(Exception $e)
+		{
+			$tx->rollback();
+			throw $e;
+		}
 	}
 	
 	/* ArrayAccess implementation */
@@ -1291,7 +1336,8 @@ class Style extends BySQLRowEnabled
 		if(!self::test_name($this->name))
 			throw new InvalidDataError("invalid_style_name");
 		
-		transaction(function()
+		$tx = new Transaction();
+		try
 		{
 			$stmt = qdb("SELECT COUNT(*) AS `n` FROM `PREFIX_styles` WHERE `name` = ? AND `id` != ?", $this->name, $this->id);
 			$sqlrow = $stmt->fetch();
@@ -1300,7 +1346,13 @@ class Style extends BySQLRowEnabled
 			
 			qdb("UPDATE `PREFIX_styles` SET `name` = ?, `code` = ? WHERE `id` = ?",
 				$this->name, $this->code, $this->id);
-		});
+			$tx->commit();
+		}
+		catch(Exception $e)
+		{
+			$tx->rollback();
+			throw $e;
+		}
 	}
 	
 	/*
@@ -1308,10 +1360,18 @@ class Style extends BySQLRowEnabled
 	 */
 	public function delete()
 	{
-		transaction(function(){
+		$tx = new Transaction();
+		try
+		{
 			qdb("DELETE FROM `PREFIX_styles` WHERE `id` = ?", $this->id);
 			qdb("DELETE FROM `PREFIX_section_style_relations` WHERE `style` = ?", $this->id);
-		});
+			$tx->commit();
+		}
+		catch(Exception $e)
+		{
+			$tx->rollback();
+			throw $e;
+		}
 	}
 }
 
@@ -1487,12 +1547,19 @@ class Plugin extends BySQLRowEnabled
 	 */
 	public function delete()
 	{
-		transaction(function()
+		$tx = new Transaction();
+		try
 		{
 			qdb("DELETE FROM `PREFIX_plugins` WHERE `id` = ?", $this->id);
 			qdb("DELETE FROM `PREFIX_plugin_kvstorage` WHERE `plugin` = ?", $this->id);
 			qdb("DELETE FROM `PREFIX_article_extradata` WHERE `plugin` = ?", $this->id);
-		});
+			$tx->commit();
+		}
+		catch(Exception $e)
+		{
+			$tx->rollback();
+			throw $e;
+		}
 		
 		if(is_dir(SITE_BASE_PATH . "/ratatoeskr/plugin_extradata/private/" . $this->id))
 			delete_directory(SITE_BASE_PATH . "/ratatoeskr/plugin_extradata/private/" . $this->id);
@@ -1687,13 +1754,20 @@ class Section extends BySQLRowEnabled
 	 */
 	public function add_style($style)
 	{
-		transaction(function() use ($style)
+		$tx = new Transaction();
+		try
 		{
 			$stmt = qdb("SELECT COUNT(*) AS `n` FROM `PREFIX_section_style_relations` WHERE `style` = ? AND `section` = ?", $style->get_id(), $this->id);
 			$sqlrow = $stmt->fetch();
 			if($sqlrow["n"] == 0)
 				qdb("INSERT INTO `PREFIX_section_style_relations` (`section`, `style`) VALUES (?, ?)", $this->id, $style->get_id());
-		});
+			$tx->commit();
+		}
+		catch(Exception $e)
+		{
+			$tx->rollback();
+			throw $e;
+		}
 	}
 	
 	/*
@@ -1719,7 +1793,8 @@ class Section extends BySQLRowEnabled
 		if(!self::test_name($this->name))
 			throw new InvalidDataError("invalid_section_name");
 		
-		transaction(function()
+		$tx = new Transaction();
+		try
 		{
 			$stmt = qdb("SELECT COUNT(*) AS `n` FROM `PREFIX_sections` WHERE `name` = ? AND `id` != ?", $this->name, $this->id);
 			$sqlrow = $stmt->fetch();
@@ -1729,7 +1804,13 @@ class Section extends BySQLRowEnabled
 			$this->title->save();
 			qdb("UPDATE `PREFIX_sections` SET `name` = ?, `title` = ?, `template` = ? WHERE `id` = ?",
 				$this->name, $this->title->get_id(), $this->template, $this->id);
-		});
+			$tx->commit();
+		}
+		catch(Exception $e)
+		{
+			$tx->rollback();
+			throw $e;
+		}
 	}
 	
 	/*
@@ -1737,12 +1818,19 @@ class Section extends BySQLRowEnabled
 	 */
 	public function delete()
 	{
-		transaction(function()
+		$tx = new Transaction();
+		try
 		{
 			$this->title->delete();
 			qdb("DELETE FROM `PREFIX_sections` WHERE `id` = ?", $this->id);
 			qdb("DELETE FROM `PREFIX_section_style_relations` WHERE `section` = ?", $this->id);
-		});
+			$tx->commit();
+		}
+		catch(Exception $e)
+		{
+			$tx->rollback();
+			throw $e;
+		}
 	}
 	
 	/*
@@ -1942,7 +2030,8 @@ WHERE `b`.`tag` = ?" , $this->id);
 		if(!self::test_name($this->name))
 			throw new InvalidDataError("invalid_tag_name");
 		
-		transaction(function()
+		$tx = new Transaction();
+		try
 		{
 			$stmt = qdb("SELECT COUNT(*) AS `n` FROM `PREFIX_tags` WHERE `name` = ? AND `id` != ?", $this->name, $this->id);
 			$sqlrow = $stmt->fetch();
@@ -1952,7 +2041,13 @@ WHERE `b`.`tag` = ?" , $this->id);
 			$this->title->save();
 			qdb("UPDATE `PREFIX_tags` SET `name` = ?, `title` = ? WHERE `id` = ?",
 				$this->name, $this->title->get_id(), $this->id);
-		});
+			$tx->commit();
+		}
+		catch(Exception $e)
+		{
+			$tx->rollback();
+			throw $e;
+		}
 	}
 	
 	/*
@@ -1960,12 +2055,19 @@ WHERE `b`.`tag` = ?" , $this->id);
 	 */
 	public function delete()
 	{
-		transaction(function()
+		$tx = new Transaction();
+		try
 		{
 			$this->title->delete();
 			qdb("DELETE FROM `PREFIX_article_tag_relations` WHERE `tag` = ?", $this->id);
 			qdb("DELETE FROM `PREFIX_tags` WHERE `id` = ?", $this->id);
-		});
+			$tx->commit();
+		}
+		catch(Exception $e)
+		{
+			$tx->rollback();
+			throw $e;
+		}
 	}
 }
 
@@ -2033,14 +2135,21 @@ class Image extends BySQLRowEnabled
 		$obj->name = $name;
 		$obj->file = "0";
 		
-		transaction(function() use (&$obj, $name, $file)
+		$tx = new Transaction();
+		try
 		{
 			global $db_con;
 			
 			qdb("INSERT INTO `PREFIX_images` (`name`, `file`) VALUES (?, '0')",	$name);
 			$obj->id = $db_con->lastInsertId();
 			$obj->exchange_image($file);
-		});
+			$tx->commit();
+		}
+		catch(Exception $e)
+		{
+			$tx->rollback();
+			throw $e;
+		}
 		return $obj;
 	}
 	
@@ -2224,14 +2333,21 @@ class Repository extends BySQLRowEnabled
 		$obj->baseurl = $matches[1];
 		$obj->refresh(True);
 		
-		transaction(function() use (&$obj)
+		$tx = new Transaction();
+		try
 		{
 			global $db_con;
 			
 			qdb("INSERT INTO `ratatoeskr_repositories` () VALUES ()");
 			$obj->id = $db_con->lastInsertId();
 			$obj->save();
-		});
+			$tx->commit();
+		}
+		catch(Exception $e)
+		{
+			$tx->rollback();
+			throw $e;
+		}
 		
 		return $obj;
 	}
@@ -2764,7 +2880,8 @@ WHERE " . implode(" AND ", $subqueries) . " $sorting");
 	 */
 	public function set_tags($tags)
 	{
-		transaction(function() use (&$tags)
+		$tx = new Transaction();
+		try
 		{
 			foreach($tags as $tag)
 				$tag->save();
@@ -2786,7 +2903,13 @@ WHERE " . implode(" AND ", $subqueries) . " $sorting");
 				}
 				$stmt->execute($args);
 			}
-		});
+			$tx->commit();
+		}
+		catch(Exception $e)
+		{
+			$tx->rollback();
+			throw $e;
+		}
 	}
 	
 	/*
@@ -2845,7 +2968,8 @@ WHERE " . implode(" AND ", $subqueries) . " $sorting");
 		if(!self::test_status($this->status))
 			throw new InvalidDataError("invalid_article_status");
 			
-		transaction(function()
+		$tx = new Transaction();
+		try
 		{
 			$stmt = qdb("SELECT COUNT(*) AS `n` FROM `PREFIX_articles` WHERE `urlname` = ? AND `id` != ?", $this->urlname, $this->id);
 			$sqlrow = $stmt->fetch();
@@ -2870,7 +2994,13 @@ WHERE " . implode(" AND ", $subqueries) . " $sorting");
 				$this->allow_comments ? 1 : 0,
 				$this->id
 			);
-		});
+			$tx->commit();
+		}
+		catch(Exception $e)
+		{
+			$tx->rollback();
+			throw $e;
+		}
 	}
 	
 	/*
@@ -2878,7 +3008,8 @@ WHERE " . implode(" AND ", $subqueries) . " $sorting");
 	 */
 	public function delete()
 	{
-		transaction(function()
+		$tx = new Transaction();
+		try
 		{
 			$this->title->delete();
 			$this->text->delete();
@@ -2890,7 +3021,13 @@ WHERE " . implode(" AND ", $subqueries) . " $sorting");
 			qdb("DELETE FROM `PREFIX_article_tag_relations` WHERE `article` = ?", $this->id);
 			qdb("DELETE FROM `PREFIX_article_extradata` WHERE `article` = ?", $this->id);
 			qdb("DELETE FROM `PREFIX_articles` WHERE `id` = ?", $this->id);
-		});
+			$tx->commit();
+		}
+		catch(Exception $e)
+		{
+			$tx->rollback();
+			throw $e;
+		}
 	}
 }
 
