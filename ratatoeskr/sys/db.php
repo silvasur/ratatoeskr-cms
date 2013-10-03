@@ -28,7 +28,7 @@ function db_connect()
 	global $db_con;
 	
 	$db_con = new PDO(
-		"mysql:host=" . $config["mysql"]["server"] . ",dbname=" . $config["mysql"]["db"] . ",charset=utf8",
+		"mysql:host=" . $config["mysql"]["server"] . ";dbname=" . $config["mysql"]["db"] . ";charset=utf8",
 		$config["mysql"]["user"],
 		$config["mysql"]["passwd"],
 		array(
