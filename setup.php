@@ -33,7 +33,6 @@ $files = array(
 	"/ratatoeskr/templates/src/systemtemplates/tag_addtranslation.html",
 	"/ratatoeskr/templates/src/systemtemplates/settings.html",
 	"/ratatoeskr/templates/src/systemtemplates/tag_deleted.html",
-	"/ratatoeskr/templates/src/systemtemplates/areyousure.html",
 	"/ratatoeskr/templates/src/systemtemplates/articles.html",
 	"/ratatoeskr/templates/src/systemtemplates/image_list.html",
 	"/ratatoeskr/templates/src/systemtemplates/repos.html",
