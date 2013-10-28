@@ -5,7 +5,7 @@ Step 0: Requirements
 --------------------
 
 * Apache Webserver with PHP 5.3
-* These PHP modules (usually installed): gd, hash, session, mysql
+* These PHP modules (usually installed): gd, hash, session, pdo
 * A MySQL server.
 
 Step 1: Get additional libraries
@@ -13,11 +13,11 @@ Step 1: Get additional libraries
 
 You need these libraries to run Ratatöskr (it is probably already bundled with these):
 
-1. Stupid Template Engine (STE)
+1. STE Template Engine (STE)
    
-   Place "stupid_template_engine.php" directly into this directory.
+   Place "ste.php" directly into this directory.
    
-   STE can be found here: <https://github.com/kch42/Stupid-Template-Engine>
+   STE can be found here: <https://github.com/kch42/ste>
 
 2. PHP Markdown
    
@@ -30,6 +30,12 @@ You need these libraries to run Ratatöskr (it is probably already bundled with 
    Place "kses.php" from the archive directly into this directory.
    
    kses can be found at <http://sourceforge.net/projects/kses/>
+
+4. jQuery
+   
+   Place jquery.min.js into this folder.
+   
+   jQuery can be found at <http://jquery.com>
 
 Step 2: Copy files to your Webspace
 -----------------------------------

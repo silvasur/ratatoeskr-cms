@@ -60,7 +60,7 @@ $files = array(
 	"/ratatoeskr/translations/en.php",
 	"/ratatoeskr/backend.php",
 	"/ratatoeskr/libs/markdown.php",
-	"/ratatoeskr/libs/stupid_template_engine.php",
+	"/ratatoeskr/libs/ste.php",
 	"/ratatoeskr/libs/kses.php",
 	"/ratatoeskr/.htaccess",
 	"/ratatoeskr/setup/create_tables.php",

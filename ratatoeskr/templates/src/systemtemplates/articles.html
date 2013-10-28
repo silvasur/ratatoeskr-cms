@@ -37,32 +37,27 @@
 				</th>
 			</tr></thead>
 			<tbody>
-				<ste:set var="articles_n"><ste:arraylen array="articles" /></ste:set>
-				<ste:if>~{$articles_n|gt|0}
-					<ste:then>
-						<ste:foreach array="articles" value="article">
-							<tr>
-								<td><input type="checkbox" name="article_multiselect[]" value="$article[urlname]" /></td>
-								<td><a href="$rel_path_to_root/backend/content/write/$article[urlname]">$article[urlname]</a></td>
-								<td>
-									<ste:foreach array="article[languages]" value="lang" counter="i">
-										?{~{$i|eq|0}||, }<a href="$rel_path_to_root/backend/content/write/$article[urlname]/$lang">$lang</a>
-									</ste:foreach>
-								</td>
-								<td><ste:date timestamp="$article[date]">%Y-%m-%d %H:%M:%S</ste:date></td>
-								<td>
-									<ste:foreach array="article[tags]" value="tag" counter="i">
-										?{~{$i|eq|0}||, } <ste:escape>$tag</ste:escape>
-									</ste:foreach>
-								</td>
-								<td><ste:escape>$article[section][name]</ste:escape></td>
-							</tr>
-						</ste:foreach>
-					</ste:then>
+				<ste:foreach array="articles" value="article">
+					<tr>
+						<td><input type="checkbox" name="article_multiselect[]" value="$article[urlname]" /></td>
+						<td><a href="$rel_path_to_root/backend/content/write/$article[urlname]">$article[urlname]</a></td>
+						<td>
+							<ste:foreach array="article[languages]" value="lang" counter="i">
+								?{~{$i|eq|0}||, }<a href="$rel_path_to_root/backend/content/write/$article[urlname]/$lang">$lang</a>
+							</ste:foreach>
+						</td>
+						<td><ste:date timestamp="$article[date]">%Y-%m-%d %H:%M:%S</ste:date></td>
+						<td>
+							<ste:foreach array="article[tags]" value="tag" counter="i">
+								?{~{$i|eq|0}||, } <ste:escape>$tag</ste:escape>
+							</ste:foreach>
+						</td>
+						<td><ste:escape>$article[section][name]</ste:escape></td>
+					</tr>
 					<ste:else>
 						<tr><td colspan="6" style="text-align: center;"><em><ste:get_translation for="no_articles" /></em></td></tr>
 					</ste:else>
-				</ste:if>
+				</ste:foreach>
 			</tbody>
 		</table>
 		<div>
