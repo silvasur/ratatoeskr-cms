@@ -12,7 +12,7 @@ mkdir plugin_extradata/public
 mkdir templates/src/plugintemplates
 mkdir templates/transc
 cd libs
-wget https://raw.github.com/kch42/ste/ste.php
+wget https://raw.github.com/kch42/ste/master/ste.php
 wget http://michelf.com/docs/projets/php-markdown-1.0.1o.zip
 unzip php-markdown-*.zip
 mv PHP\ Markdown\ */markdown.php .
