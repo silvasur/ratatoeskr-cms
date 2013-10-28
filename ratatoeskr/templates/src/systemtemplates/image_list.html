@@ -26,24 +26,19 @@
 						<th><ste:get_translation for="image_getmarkup" /></th>
 					</tr></thead>
 					<tbody>
-						<ste:set var="images_n"><ste:arraylen array="images" /></ste:set>
-						<ste:if>~{$images_n|gt|0}
-							<ste:then>
-								<ste:foreach array="images" value="image">
-									<tr>
-										<td><input type="checkbox" name="image_multiselect[]" value="$image[id]" /></td>
-										<td><img src="$rel_path_to_root/images/previews/${image[id]}.png" alt="" /></td>
-										<td><a href="$rel_path_to_root/images/$image[file]"><ste:escape>$image[name]</ste:escape></a></td>
-										<td>
-											<a href="$rel_path_to_root/backend/content/images/$image[id]/markdown">Markdown</a> - <a href="$rel_path_to_root/backend/content/images/$image[id]/html">HTML</a> - <a href="$rel_path_to_root/backend/content/images/$image[id]/ste">STE</a>
-										</td>
-									</tr>
-								</ste:foreach>
-							</ste:then>
+						<ste:foreach array="images" value="image">
+							<tr>
+								<td><input type="checkbox" name="image_multiselect[]" value="$image[id]" /></td>
+								<td><img src="$rel_path_to_root/images/previews/${image[id]}.png" alt="" /></td>
+								<td><a href="$rel_path_to_root/images/$image[file]"><ste:escape>$image[name]</ste:escape></a></td>
+								<td>
+									<a href="$rel_path_to_root/backend/content/images/$image[id]/markdown">Markdown</a> - <a href="$rel_path_to_root/backend/content/images/$image[id]/html">HTML</a> - <a href="$rel_path_to_root/backend/content/images/$image[id]/ste">STE</a>
+								</td>
+							</tr>
 							<ste:else>
 								<tr><td colspan="5" style="text-align: center;"><em><ste:get_translation for="no_images" /></em></td></tr>
 							</ste:else>
-						</ste:if>
+						</ste:foreach>
 					</tbody>
 				</table>
 				<div>

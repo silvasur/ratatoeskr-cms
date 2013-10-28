@@ -23,25 +23,19 @@
 				</tr>
 			</thead>
 			<tbody>
-				<ste:set var="repos_n"><ste:arraylen array="repos" /></ste:set>
-				<ste:if>
-					~{$repos_n|gt|0}
-					<ste:then>
-						<ste:foreach array="repos" value="repo">
-							<tr>
-								<td><input type="checkbox" name="repos_multiselect[]" value="$repo[id]" /></td>
-								<td><ste:escape>$repo[name]</ste:escape></td>
-								<td><ste:escape>$repo[description]</ste:escape></td>
-								<td><ste:escape>$repo[baseurl]</ste:escape></td>
-							</tr>
-						</ste:foreach>
-					</ste:then>
+				<ste:foreach array="repos" value="repo">
+					<tr>
+						<td><input type="checkbox" name="repos_multiselect[]" value="$repo[id]" /></td>
+						<td><ste:escape>$repo[name]</ste:escape></td>
+						<td><ste:escape>$repo[description]</ste:escape></td>
+						<td><ste:escape>$repo[baseurl]</ste:escape></td>
+					</tr>
 					<ste:else>
 						<tr>
 							<td colspan="4" style="font-style: italic; text-align: center;"><ste:get_translation for="no_repos" /></td>
 						</tr>
 					</ste:else>
-				</ste:if>
+				</ste:foreach>
 			</tbody>
 		</table>
 		<div>

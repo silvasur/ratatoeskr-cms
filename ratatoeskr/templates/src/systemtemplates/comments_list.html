@@ -39,26 +39,21 @@
 				</tr>
 			</thead>
 			<tbody>
-				<ste:set var="comments_n"><ste:arraylen array="comments" /></ste:set>
-				<ste:if>~{$comments_n|gt|0}
-					<ste:then>
-						<ste:foreach array="comments" value="comment">
-							<tr>
-								<td><input type="checkbox" name="comment_multiselect[]" value="$comment[id]" /></td>
-								<td>?{$comment[read_by_admin]|<ste:get_translation for="yes" />|<strong><ste:get_translation for="no" /></strong>}</td>
-								<td>?{$comment[visible]|<ste:get_translation for="yes" />|<ste:get_translation for="no" />}</td>
-								<td><em><ste:escape>$comment[excerpt]</ste:escape>...</em> <a href="$rel_path_to_root/backend/content/comments/$comment[id]"><ste:get_translation for="read_more" /></a></td>
-								<td>$comment[language]</td>
-								<td><ste:escape>$comment[author]</ste:escape></td>
-								<td><ste:date timestamp="$comment[date]">%Y-%m-%d %H:%M:%S</ste:date></td>
-								<td><a href="$rel_path_to_root/backend/content/write/<ste:escape>$comment[article]</ste:escape>"><ste:escape>$comment[article]</ste:escape></a></td>
-							</tr>
-						</ste:foreach>
-					</ste:then>
+				<ste:foreach array="comments" value="comment">
+					<tr>
+						<td><input type="checkbox" name="comment_multiselect[]" value="$comment[id]" /></td>
+						<td>?{$comment[read_by_admin]|<ste:get_translation for="yes" />|<strong><ste:get_translation for="no" /></strong>}</td>
+						<td>?{$comment[visible]|<ste:get_translation for="yes" />|<ste:get_translation for="no" />}</td>
+						<td><em><ste:escape>$comment[excerpt]</ste:escape>...</em> <a href="$rel_path_to_root/backend/content/comments/$comment[id]"><ste:get_translation for="read_more" /></a></td>
+						<td>$comment[language]</td>
+						<td><ste:escape>$comment[author]</ste:escape></td>
+						<td><ste:date timestamp="$comment[date]">%Y-%m-%d %H:%M:%S</ste:date></td>
+						<td><a href="$rel_path_to_root/backend/content/write/<ste:escape>$comment[article]</ste:escape>"><ste:escape>$comment[article]</ste:escape></a></td>
+					</tr>
 					<ste:else>
 						<tr><td colspan="8" style="text-align: center"><em><ste:get_translation for="no_comments" /></em></td></tr>
 					</ste:else>
-				</ste:if>
+				</ste:foreach>
 			</tbody>
 		</table>
 		<div>
