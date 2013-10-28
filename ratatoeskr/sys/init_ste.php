@@ -11,7 +11,7 @@
  * See "ratatoeskr/licenses/ratatoeskr" for more information.
  */
 
-require_once(dirname(__FILE__) . "/../libs/stupid_template_engine.php");
+require_once(dirname(__FILE__) . "/../libs/ste.php");
 
 $tpl_basedir = dirname(__FILE__) . "/../templates";
 
@@ -20,7 +20,7 @@ if(!isset($ste))
 	/*
 	 * Variable: $ste
 	 * 
-	 * The global STECore (Stupid Template Engine) instance.
+	 * The global STECore instance.
 	 */
 	$ste = new \ste\STECore(new \ste\FilesystemStorageAccess("$tpl_basedir/src", "$tpl_basedir/transc"));
 	if(defined("__DEBUG__") && __DEBUG__)

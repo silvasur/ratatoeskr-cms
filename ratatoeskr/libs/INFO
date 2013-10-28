@@ -1,10 +1,10 @@
 This directory will hold some libraries Ratatöskr needs.
 
-1. Stupid Template Engine (STE)
+1. STE Template Engine (STE)
    
-   Place "stupid_template_engine.php" directly into this directory.
+   Place "ste.php" directly into this directory.
    
-   STE can be found here: <https://github.com/kch42/Stupid-Template-Engine>
+   STE can be found here: <https://github.com/kch42/ste>
 
 2. PHP Markdown
    
