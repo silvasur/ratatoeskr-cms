@@ -2,7 +2,7 @@ This directory will hold some libraries Ratatöskr needs.
 
 1. STE Template Engine (STE)
    
-   Place "ste.php" directly into this directory.
+   Place the STE files into the subdirectory "ste" (create it, if it doesn't exist). At least "ste.php" and the "src" directory of STE are needed!
    
    STE can be found here: <https://github.com/kch42/ste>
 

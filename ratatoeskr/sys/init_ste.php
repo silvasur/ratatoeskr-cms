@@ -11,7 +11,7 @@
  * See "ratatoeskr/licenses/ratatoeskr" for more information.
  */
 
-require_once(dirname(__FILE__) . "/../libs/ste.php");
+require_once(dirname(__FILE__) . "/../libs/ste/ste.php");
 
 $tpl_basedir = dirname(__FILE__) . "/../templates";
 
