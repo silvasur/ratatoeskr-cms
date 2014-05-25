@@ -12,7 +12,14 @@ mkdir plugin_extradata/public
 mkdir templates/src/plugintemplates
 mkdir templates/transc
 cd libs
-wget https://raw.github.com/kch42/ste/master/ste.php
+test -d ste || mkdir ste
+cd ste
+wget https://github.com/kch42/ste/archive/master.zip
+unzip master.zip
+cp ste-master/ste.php .
+cp -r ste-master/src .
+rm -rf ste-master master.zip
+cd ..
 wget http://michelf.com/docs/projets/php-markdown-1.0.1o.zip
 unzip php-markdown-*.zip
 mv PHP\ Markdown\ */markdown.php .
