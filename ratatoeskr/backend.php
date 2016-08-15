@@ -1139,7 +1139,6 @@ $backend_subactions = url_action_subactions(array(
 				}
 				catch(DoesNotExistError $e)
 				{
-					continue;
 				}
 			}
 			
@@ -1165,7 +1164,6 @@ $backend_subactions = url_action_subactions(array(
 				}
 				catch(DoesNotExistError $e)
 				{
-					continue;
 				}
 			}
 			
@@ -1180,7 +1178,6 @@ $backend_subactions = url_action_subactions(array(
 				}
 				catch(DoesNotExistError $e)
 				{
-					continue;
 				}
 			}
 			
@@ -1201,7 +1198,6 @@ $backend_subactions = url_action_subactions(array(
 				}
 				catch(DoesNotExistError $e)
 				{
-					continue;
 				}
 			}
 			
@@ -1217,7 +1213,6 @@ $backend_subactions = url_action_subactions(array(
 				}
 				catch(DoesNotExistError $e)
 				{
-					continue;
 				}
 			}
 			
@@ -1240,7 +1235,6 @@ $backend_subactions = url_action_subactions(array(
 					}
 					catch(DoesNotExistError $e)
 					{
-						continue;
 					}
 				}
 			}

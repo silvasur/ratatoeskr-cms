@@ -231,8 +231,8 @@ STYLE;
 			
 			try
 			{
-				Repository::create("http://r7r-repo-community.kch42.net/");
-				Repository::create("http://r7r-repo-official.kch42.net/");
+				Repository::create("http://r7r-repo-community.silvasur.net/");
+				Repository::create("http://r7r-repo-official.silvasur.net/");
 			}
 			catch(RepositoryUnreachableOrInvalid $e)
 			{
