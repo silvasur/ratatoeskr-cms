@@ -14,7 +14,7 @@ mkdir templates/transc
 cd libs
 test -d ste || mkdir ste
 cd ste
-wget https://github.com/kch42/ste/archive/master.zip
+wget https://github.com/silvasur/ste/archive/master.zip
 unzip master.zip
 cp ste-master/ste.php .
 cp -r ste-master/src .

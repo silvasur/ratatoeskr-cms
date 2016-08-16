@@ -17,7 +17,7 @@ You need these libraries to run Ratatöskr (it is probably already bundled with 
    
    Place "ste.php" directly into this directory.
    
-   STE can be found here: <https://github.com/kch42/ste>
+   STE can be found here: <https://github.com/silvasur/ste>
 
 2. PHP Markdown
    

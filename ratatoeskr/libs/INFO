@@ -4,7 +4,7 @@ This directory will hold some libraries Ratatöskr needs.
    
    Place the STE files into the subdirectory "ste" (create it, if it doesn't exist). At least "ste.php" and the "src" directory of STE are needed!
    
-   STE can be found here: <https://github.com/kch42/ste>
+   STE can be found here: <https://github.com/silvasur/ste>
 
 2. PHP Markdown
    
