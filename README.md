@@ -24,6 +24,17 @@ Wish List
 * Better multi-user support (e.g. access control lists)
 * Version management of articles.
 
+Other repositories
+------------------
+
+* [r7r-atom-feed](https://github.com/silvasur/r7r-atom-feed) - A plugin for providing an Atom feed.
+* [r7r-custom-translation](https://github.com/silvasur/r7r-custom-translation) - A plugin for custom translations.
+* [r7r-new-comment-notifier](https://github.com/silvasur/r7r-new-comment-notifier) - A plugin to send you an email when there is a new comment.
+* [r7r-gravatar](https://github.com/silvasur/r7r-gravatar) - A plugin for gravatars.
+* [r7r-plugin-packer](https://github.com/silvasur/r7r-plugin-packer) - Script to package up you own plugins.
+* [r7r-repo](https://github.com/silvasur/r7r-repo) - The software to host your own plugin repository.
+* [ste](https://github.com/silvasur/ste) - The STE Template Engine. The template engine that is used by Ratatöskr.
+
 What does "Ratatöskr" mean?
 ---------------------------
 
