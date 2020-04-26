@@ -199,5 +199,3 @@ die();
 endif;
 
 require_once(dirname(__FILE__) . "/ratatoeskr/setup/setup.php");
-
-?>

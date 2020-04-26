@@ -277,5 +277,3 @@ abstract class RatatoeskrPlugin
     public function uninstall() {}
     public function update() {}
 }
-
-?>

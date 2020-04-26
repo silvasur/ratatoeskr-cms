@@ -203,4 +203,3 @@ $languages = array(
     "zh" => array("language" => "中文, 汉语, 漢語", "translation_exist" => False),
     "zu" => array("language" => "isiZulu", "translation_exist" => False)
 );
-?>

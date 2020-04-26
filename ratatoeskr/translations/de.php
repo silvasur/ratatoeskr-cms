@@ -348,5 +348,3 @@ mit zweil Leerzeichen ab.</code>
 </p>
 CHEATSHEET
 );
-
-?>

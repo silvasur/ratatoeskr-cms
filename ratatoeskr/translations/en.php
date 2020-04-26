@@ -347,5 +347,3 @@ Header 2<br />
 </p>
 CHEATSHEET
 );
-
-?>

@@ -880,5 +880,3 @@ function frontend_url_handler(&$data, $url_now, &$url_next)
  *  <register_comment_validator>
  */
 class CommentRejected extends Exception {}
-
-?>

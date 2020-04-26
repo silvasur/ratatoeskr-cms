@@ -109,5 +109,3 @@ function _ratatoeskr()
     }
     $ratatoeskr_settings->save();
 }
-
-?>

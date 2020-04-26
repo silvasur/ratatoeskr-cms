@@ -177,5 +177,3 @@ function create_mysql_tables()
 
     qdb("INSERT INTO `PREFIX_meta` (`key`, `value`) VALUES ('dbversion', ?)", base64_encode(serialize(1)));
 }
-
-?>

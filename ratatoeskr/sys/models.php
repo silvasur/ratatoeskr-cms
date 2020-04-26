@@ -3091,5 +3091,3 @@ function clean_database()
         $ratatoeskr_settings["last_db_cleanup"] = time();
     }
 }
-
-?>

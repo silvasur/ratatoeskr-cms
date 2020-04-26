@@ -63,5 +63,3 @@ function load_language($lang=NULL)
 
     $GLOBALS["translation"] = $translation;
 }
-
-?>

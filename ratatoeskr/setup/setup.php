@@ -252,5 +252,3 @@ STYLE;
 }
 
 echo $ste->exectemplate("/systemtemplates/setup_dbsetup.html");
-
-?>

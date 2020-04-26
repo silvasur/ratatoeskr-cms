@@ -226,4 +226,3 @@ function delete_directory($dir)
  * The Base path of this ratatoeskr site.
  */
 define("SITE_BASE_PATH", dirname(dirname(dirname(__FILE__))));
-?>

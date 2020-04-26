@@ -74,5 +74,3 @@ if(!isset($textprocessors))
         "HTML" => array(function($text) { return $text; }, True)
     );
 }
-
-?>

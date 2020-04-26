@@ -175,5 +175,3 @@ class Redirect extends Exception
  * An Exception
  */
 class NotFoundError extends Exception { }
-
-?>

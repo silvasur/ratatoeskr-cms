@@ -284,5 +284,3 @@ class PluginPackageMeta
     public $web        = NULL;
     public $license    = NULL;
 }
-
-?>

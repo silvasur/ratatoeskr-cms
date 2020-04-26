@@ -70,5 +70,3 @@ class PasswordHash
         return self::hash($password, pack("H*", $hexsalt), $iterations) == $pwhash;
     }
 }
-
-?>

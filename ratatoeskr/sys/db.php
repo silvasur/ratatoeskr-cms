@@ -134,5 +134,3 @@ class Transaction
             $db_con->rollBack();
     }
 }
-
-?>
