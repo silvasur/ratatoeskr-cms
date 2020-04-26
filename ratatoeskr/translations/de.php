@@ -1,6 +1,6 @@
 <?php
 
-$translation = array(
+$translation = [
     "username" => "Benutzername",
     "password" => "Passwort",
     "login_form_header" => "Login",
@@ -347,4 +347,4 @@ mit zweil Leerzeichen ab.</code>
     <a href="http://daringfireball.net/projects/markdown/dingus">Markdown testen</a>
 </p>
 CHEATSHEET
-);
+];

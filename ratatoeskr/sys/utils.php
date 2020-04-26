@@ -24,9 +24,10 @@
  */
 function array_repeat($val, $n)
 {
-    $rv = array();
-    for($i = 0; $i < $n; ++$i)
+    $rv = [];
+    for ($i = 0; $i < $n; ++$i) {
         array_push($rv, $val);
+    }
     return $rv;
 }
 
@@ -44,19 +45,17 @@ function array_blend()
 {
     $arrays = array_filter(func_get_args(), "is_array");
 
-    switch(count($arrays))
-    {
-        case 0:  return array(); break;
+    switch (count($arrays)) {
+        case 0:  return []; break;
         case 1:  return $arrays[0]; break;
         default:
-            $rv = array();
-            while(array_sum(array_map("count", $arrays)) > 0)
-            {
-                for($i = 0; $i < count($arrays); ++$i)
-                {
+            $rv = [];
+            while (array_sum(array_map("count", $arrays)) > 0) {
+                for ($i = 0; $i < count($arrays); ++$i) {
                     $val = array_shift($arrays[$i]);
-                    if($val === NULL)
+                    if ($val === null) {
                         continue;
+                    }
                     array_push($rv, $val);
                 }
             }
@@ -80,7 +79,9 @@ function array_blend()
  */
 function array_filter_empty($input)
 {
-    return array_filter($input, function($x){return !empty($x);});
+    return array_filter($input, function ($x) {
+        return !empty($x);
+    });
 }
 
 /*
@@ -90,13 +91,18 @@ function array_filter_empty($input)
  */
 function array_filter_keys($input, $callback)
 {
-    if(!is_array($input))
+    if (!is_array($input)) {
         throw new InvalidArgumentException("Argument 1 must be an array");
-    if(empty($input))
-        return array();
-    $delete_keys = array_filter(array_keys($input), function ($x) use ($callback) { return !$callback($x);});
-    foreach($delete_keys as $key)
+    }
+    if (empty($input)) {
+        return [];
+    }
+    $delete_keys = array_filter(array_keys($input), function ($x) use ($callback) {
+        return !$callback($x);
+    });
+    foreach ($delete_keys as $key) {
         unset($input[$key]);
+    }
     return $input;
 }
 
@@ -112,9 +118,10 @@ function array_filter_keys($input, $callback)
  */
 function array_kvpairs_to_assoc($input)
 {
-    $rv = array();
-    foreach($input as $kvpair)
+    $rv = [];
+    foreach ($input as $kvpair) {
         $rv[$kvpair[0]] = $kvpair[1];
+    }
     return $rv;
 }
 
@@ -161,7 +168,9 @@ function ucount($array, $callback)
  */
 function vcount($array, $value)
 {
-    return ucount($array, function($x){return $x===$value;});
+    return ucount($array, function ($x) {
+        return $x===$value;
+    });
 }
 
 /*
@@ -171,7 +180,8 @@ function vcount($array, $value)
  *
  * From: http://dev.kanngard.net/Permalinks/ID_20050507183447.html
  */
-function self_url() {
+function self_url()
+{
     $s = empty($_SERVER["HTTPS"]) ? ''
         : ($_SERVER["HTTPS"] == "on") ? "s"
         : "";
@@ -180,7 +190,8 @@ function self_url() {
         : (":".$_SERVER["SERVER_PORT"]);
     return $protocol."://".$_SERVER['SERVER_NAME'].$port.$_SERVER['REQUEST_URI'];
 }
-function strleft($s1, $s2) {
+function strleft($s1, $s2)
+{
     return substr($s1, 0, strpos($s1, $s2));
 }
 
@@ -206,17 +217,18 @@ function htmlesc($text)
 function delete_directory($dir)
 {
     $dir_content = scandir($dir);
-    foreach($dir_content as $f)
-    {
-        if(($f == "..") or ($f == "."))
+    foreach ($dir_content as $f) {
+        if (($f == "..") or ($f == ".")) {
             continue;
+        }
 
         $f = "$dir/$f";
 
-        if(is_dir($f))
+        if (is_dir($f)) {
             delete_directory($f);
-        else
+        } else {
             unlink($f);
+        }
     }
     rmdir($dir);
 }

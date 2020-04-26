@@ -1,7 +1,8 @@
 <?php
 session_start();
-if(isset($_POST['session']))
+if (isset($_POST['session'])) {
     $_SESSION = json_decode($_POST['session']);
+}
 $s_json = json_encode($_SESSION);
 ?>
 <html>

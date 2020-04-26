@@ -1,6 +1,6 @@
 <?php
 
-define("SETUP", True);
+define("SETUP", true);
 
 require_once(dirname(__FILE__) . "/../sys/init_ste.php");
 require_once(dirname(__FILE__) . "/../sys/translation.php");
@@ -12,36 +12,32 @@ require_once(dirname(__FILE__) . "/create_tables.php");
 $rel_path_to_root = ".";
 $ste->vars["rel_path_to_root"] = $rel_path_to_root;
 
-$ste->vars["translations"] = array();
-foreach($languages as $langcode => $langinfo)
-{
-    if($langinfo["translation_exist"])
+$ste->vars["translations"] = [];
+foreach ($languages as $langcode => $langinfo) {
+    if ($langinfo["translation_exist"]) {
         $ste->vars["translations"][$langcode] = $langinfo["language"];
+    }
 }
 
-if(isset($_GET["lang"]) and (@$languages[$_GET["lang"]]["translation_exist"]))
-{
+if (isset($_GET["lang"]) and (@$languages[$_GET["lang"]]["translation_exist"])) {
     load_language($_GET["lang"]);
     $lang = $_GET["lang"];
     $ste->vars["lang"] = $_GET["lang"];
-}
-else
+} else {
     die($ste->exectemplate("/systemtemplates/setup_select_lang.html"));
+}
 
-if(isset($_POST["apply_setup"]))
-{
-    if(empty($_POST["admin_username"]) or empty($_POST["admin_init_password"]))
+if (isset($_POST["apply_setup"])) {
+    if (empty($_POST["admin_username"]) or empty($_POST["admin_init_password"])) {
         $ste->vars["error"] = $translation["admin_data_must_be_filled_out"];
-    else
-    {
+    } else {
         $config["mysql"]["server"] = $_POST["mysql_host"];
         $config["mysql"]["db"]     = $_POST["mysql_database"];
         $config["mysql"]["user"]   = $_POST["mysql_user"];
         $config["mysql"]["passwd"] = $_POST["mysql_password"];
         $config["mysql"]["prefix"] = $_POST["table_prefix"];
 
-        try
-        {
+        try {
             db_connect();
             create_mysql_tables();
 
@@ -49,12 +45,12 @@ if(isset($_POST["apply_setup"]))
             require_once(dirname(__FILE__) . "/../sys/models.php");
 
             $ratatoeskr_settings["default_language"] = $lang;
-            $ratatoeskr_settings["comment_visible_defaut"] = True;
-            $ratatoeskr_settings["allow_comments_default"] = True;
+            $ratatoeskr_settings["comment_visible_defaut"] = true;
+            $ratatoeskr_settings["allow_comments_default"] = true;
             $ratatoeskr_settings["comment_textprocessor"] = "Markdown";
-            $ratatoeskr_settings["languages"] = $lang == "en" ? array("en") : array($lang, "en");
+            $ratatoeskr_settings["languages"] = $lang == "en" ? ["en"] : [$lang, "en"];
             $ratatoeskr_settings["last_db_cleanup"] = time();
-            $ratatoeskr_settings["debugmode"] = False;
+            $ratatoeskr_settings["debugmode"] = false;
 
             $style = Style::create("default");
             $style->code = <<<STYLE
@@ -204,8 +200,9 @@ STYLE;
 
             $section = Section::create("home");
             $section->title["en"] = new Translation("Home", "");
-            if($lang != "en")
+            if ($lang != "en") {
                 $section->title[$lang] = new Translation("Home", "");
+            }
             $section->template = "standard.html";
             $section->add_style($style);
             $section->save();
@@ -225,17 +222,14 @@ STYLE;
             $article->excerpt["en"] = new Translation("Congratulations! You have just installed Ratatöskr!", "Markdown");
             $article->status = ARTICLE_STATUS_LIVE;
             $article->timestamp = time();
-            $article->allow_comments = True;
+            $article->allow_comments = true;
             $article->set_section($section);
             $article->save();
 
-            try
-            {
+            try {
                 Repository::create("http://r7r-repo-community.silvasur.net/");
                 Repository::create("http://r7r-repo-official.silvasur.net/");
-            }
-            catch(RepositoryUnreachableOrInvalid $e)
-            {
+            } catch (RepositoryUnreachableOrInvalid $e) {
                 $ste->vars["notice"] = $translation["could_not_initialize_repos"];
             }
 
@@ -243,9 +237,7 @@ STYLE;
             $config = "<?php\n\ndefine(\"__DEBUG__\", False);\ndefine(\"CONFIG_FILLED_OUT\", True);\ndefine(\"PLUGINS_ENABLED\", True);\n\n\$config[\"mysql\"][\"server\"] = '" . addcslashes($config["mysql"]["server"], "'") . "';\n\$config[\"mysql\"][\"db\"]     = '" . addcslashes($config["mysql"]["db"], "'") . "';\n\$config[\"mysql\"][\"user\"]   = '" . addcslashes($config["mysql"]["user"], "'") . "';\n\$config[\"mysql\"][\"passwd\"] = '" . addcslashes($config["mysql"]["passwd"], "'") . "';\n\$config[\"mysql\"][\"prefix\"] = '" . addcslashes($config["mysql"]["prefix"], "'") . "';\n\n?>";
             $ste->vars["config"] = $config;
             die($ste->exectemplate("/systemtemplates/setup_done.html"));
-        }
-        catch(MySQLException $e)
-        {
+        } catch (MySQLException $e) {
             $ste->vars["error"] = $e->getMessage();
         }
     }

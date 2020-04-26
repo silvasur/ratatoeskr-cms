@@ -11,16 +11,14 @@
 
 require_once(dirname(__FILE__) . "/ratatoeskr/sys/models.php");
 
-if(!isset($_GET["name"]))
+if (!isset($_GET["name"])) {
     die();
-try
-{
+}
+try {
     $style = Style::by_name($_GET["name"]);
     header("Content-Type: text/css; charset=UTF-8");
     echo str_replace("%root%", ".", $style->code);
-}
-catch(DoesNotExistError $e)
-{
+} catch (DoesNotExistError $e) {
     header("HTTP/1.1 404 Not Found");
     header("Content-Type: text/plain; charset=UTF-8");
     echo "404 - Not found.";

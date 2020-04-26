@@ -1,8 +1,8 @@
 <?php
 
-define("__DEBUG__", False);
-define("CONFIG_FILLED_OUT", False);
-define("PLUGINS_ENABLED", True);
+define("__DEBUG__", false);
+define("CONFIG_FILLED_OUT", false);
+define("PLUGINS_ENABLED", true);
 
 $config["mysql"]["server"] = 'localhost';
 $config["mysql"]["db"]     = '';

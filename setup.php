@@ -2,28 +2,28 @@
 
 /* Check some files/directories before continue.... */
 
-$dirs = array(
-    "/ratatoeskr"                               => False,
-    "/ratatoeskr/templates"                     => False,
-    "/ratatoeskr/templates/transc"              => True,
-    "/ratatoeskr/templates/src"                 => False,
-    "/ratatoeskr/templates/src/usertemplates"   => True,
-    "/ratatoeskr/templates/src/plugintemplates" => True,
-    "/ratatoeskr/templates/src/systemtemplates" => False,
-    "/ratatoeskr/translations"                  => False,
-    "/ratatoeskr/licenses"                      => False,
-    "/ratatoeskr/libs"                          => False,
-    "/ratatoeskr/sys"                           => False,
-    "/ratatoeskr/setup"                         => False,
-    "/ratatoeskr/cms_style"                     => False,
-    "/ratatoeskr/cms_style/images"              => False,
-    "/ratatoeskr/plugin_extradata"              => True,
-    "/ratatoeskr/plugin_extradata/public"       => True,
-    "/ratatoeskr/plugin_extradata/private"      => True,
-    "/images"                                   => True,
-    "/images/previews"                          => True
-);
-$files = array(
+$dirs = [
+    "/ratatoeskr"                               => false,
+    "/ratatoeskr/templates"                     => false,
+    "/ratatoeskr/templates/transc"              => true,
+    "/ratatoeskr/templates/src"                 => false,
+    "/ratatoeskr/templates/src/usertemplates"   => true,
+    "/ratatoeskr/templates/src/plugintemplates" => true,
+    "/ratatoeskr/templates/src/systemtemplates" => false,
+    "/ratatoeskr/translations"                  => false,
+    "/ratatoeskr/licenses"                      => false,
+    "/ratatoeskr/libs"                          => false,
+    "/ratatoeskr/sys"                           => false,
+    "/ratatoeskr/setup"                         => false,
+    "/ratatoeskr/cms_style"                     => false,
+    "/ratatoeskr/cms_style/images"              => false,
+    "/ratatoeskr/plugin_extradata"              => true,
+    "/ratatoeskr/plugin_extradata/public"       => true,
+    "/ratatoeskr/plugin_extradata/private"      => true,
+    "/images"                                   => true,
+    "/images/previews"                          => true
+];
+$files = [
     "/.htaccess",
     "/ratatoeskr/templates/src/systemtemplates/users.html",
     "/ratatoeskr/templates/src/systemtemplates/pluginlist.html",
@@ -60,7 +60,7 @@ $files = array(
     "/ratatoeskr/translations/en.php",
     "/ratatoeskr/backend.php",
     "/ratatoeskr/libs/markdown.php",
-    "/ratatoeskr/libs/ste.php",
+    "/ratatoeskr/libs/ste/ste.php",
     "/ratatoeskr/libs/kses.php",
     "/ratatoeskr/.htaccess",
     "/ratatoeskr/setup/create_tables.php",
@@ -96,58 +96,64 @@ $files = array(
     "/index.php",
     "/setup.php",
     "/css.php"
-);
+];
 
-$missing_files = array();
-$missing_dirs = array();
-$missing_perms = array();
+$missing_files = [];
+$missing_dirs = [];
+$missing_perms = [];
 
-foreach($dirs as $dir => $needs_w_perms)
-{
-    if(!is_dir(dirname(__FILE__) . $dir))
+foreach ($dirs as $dir => $needs_w_perms) {
+    if (!is_dir(dirname(__FILE__) . $dir)) {
         $missing_dirs[] = $dir;
-    elseif($needs_w_perms and (!@is_writable(dirname(__FILE__) . $dir)))
+    } elseif ($needs_w_perms and (!@is_writable(dirname(__FILE__) . $dir))) {
         $missing_perms[] = $dir;
+    }
 }
 
-foreach($files as $file)
-{
-    if(!is_file(dirname(__FILE__) . $file))
+foreach ($files as $file) {
+    if (!is_file(dirname(__FILE__) . $file)) {
         $missing_files[] = $file;
+    }
 }
 
 /* Also check for the correct PHP version, some PHP extensions and if we are running on apache. */
-$missing_requirements = array();
+$missing_requirements = [];
 
-if(!defined('PHP_VERSION_ID'))
-{
+if (!defined('PHP_VERSION_ID')) {
     $version = explode('.', PHP_VERSION);
     define('PHP_VERSION_ID', ($version[0] * 10000 + $version[1] * 100 + $version[2]));
 }
 
-if(PHP_VERSION_ID < 50300)
+if (PHP_VERSION_ID < 50300) {
     $missing_requirements[] = "You need PHP version 5.3.0 or later.";
+}
 
 $available_extensions = get_loaded_extensions();
 
-if(strpos($_SERVER["SERVER_SOFTWARE"], "Apache") === False)
+if (!(defined("DEV_SKIP_APACHE_CHK") && DEV_SKIP_APACHE_CHK) && strpos($_SERVER["SERVER_SOFTWARE"], "Apache") === false) {
     $missing_requirements[] = "You need an Apache WWW server for Ratatöskr.";
+}
 
-if(!in_array("gd", $available_extensions))
+if (!in_array("gd", $available_extensions)) {
     $missing_requirements[] = "You need the gd PHP extension.";
-if(!in_array("session", $available_extensions))
+}
+if (!in_array("session", $available_extensions)) {
     $missing_requirements[] = "You need the session PHP extension.";
-if(!in_array("PDO", $available_extensions))
+}
+if (!in_array("PDO", $available_extensions)) {
     $missing_requirements[] = "You need the PDO PHP extension.";
-if(!in_array("pdo_mysql", $available_extensions))
+}
+if (!in_array("pdo_mysql", $available_extensions)) {
     $missing_requirements[] = "You need the pdo_mysql PHP extension.";
+}
 
-if(!in_array("hash", $available_extensions))
+if (!in_array("hash", $available_extensions)) {
     $missing_requirements[] = "You need the hash PHP extension.";
-elseif(!in_array("sha1", hash_algos()))
+} elseif (!in_array("sha1", hash_algos())) {
     $missing_requirements[] = "The SHA1 hash algorythm must be available.";
+}
 
-if((!empty($missing_dirs)) or (!empty($missing_files)) or (!empty($missing_perms)) or (!empty($missing_requirements))):
+if ((!empty($missing_dirs)) or (!empty($missing_files)) or (!empty($missing_perms)) or (!empty($missing_requirements))):
 ?>
 <html>
 <head>
@@ -155,38 +161,38 @@ if((!empty($missing_dirs)) or (!empty($missing_files)) or (!empty($missing_perms
 </head>
 <body>
     <h1>Ratatöskr can not be installed, because...</h1>
-    <?php if(!empty($missing_requirements)): ?>
+    <?php if (!empty($missing_requirements)): ?>
 
         <h2>...these requirements are not met:</h2>
         <ul>
-            <?php foreach($missing_requirements as $req): ?>
+            <?php foreach ($missing_requirements as $req): ?>
                 <li><?php echo htmlspecialchars($req); ?></li>
             <?php endforeach; ?>
         </ul>
 
-    <?php endif; if(!empty($missing_dirs)): ?>
+    <?php endif; if (!empty($missing_dirs)): ?>
 
         <h2>...these directories are missing:</h2>
         <ul>
-            <?php foreach($missing_dirs as $dir): ?>
+            <?php foreach ($missing_dirs as $dir): ?>
                 <li><?php echo htmlspecialchars($dir); ?></li>
             <?php endforeach; ?>
         </ul>
 
-    <?php endif; if(!empty($missing_files)): ?>
+    <?php endif; if (!empty($missing_files)): ?>
 
         <h2>...these files are missing:</h2>
         <ul>
-            <?php foreach($missing_files as $file): ?>
+            <?php foreach ($missing_files as $file): ?>
                 <li><?php echo htmlspecialchars($file); ?></li>
             <?php endforeach; ?>
         </ul>
 
-    <?php endif; if(!empty($missing_perms)): ?>
+    <?php endif; if (!empty($missing_perms)): ?>
 
         <h2>...we do not have writing permissions to these directories:</h2>
         <ul>
-            <?php foreach($missing_perms as $dir): ?>
+            <?php foreach ($missing_perms as $dir): ?>
                 <li><?php echo htmlspecialchars($dir); ?></li>
             <?php endforeach; ?>
         </ul>

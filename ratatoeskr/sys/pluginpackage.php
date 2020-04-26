@@ -24,16 +24,17 @@
  */
 function dir2array($dir)
 {
-    $rv = array();
-    foreach(scandir($dir) as $fn)
-    {
-        if(($fn == ".") or ($fn == ".."))
+    $rv = [];
+    foreach (scandir($dir) as $fn) {
+        if (($fn == ".") or ($fn == "..")) {
             continue;
+        }
         $fn_new = $dir . "/" . $fn;
-        if(is_dir($fn_new))
+        if (is_dir($fn_new)) {
             $rv[$fn] = dir2array($fn_new);
-        elseif(is_file($fn_new))
+        } elseif (is_file($fn_new)) {
             $rv[$fn] = file_get_contents($fn_new);
+        }
     }
     return $rv;
 }
@@ -48,41 +49,49 @@ function dir2array($dir)
  */
 function array2dir($a, $dir)
 {
-    if(!is_dir($dir))
+    if (!is_dir($dir)) {
         mkdir($dir);
+    }
 
-    foreach($a as $k => $v)
-    {
+    foreach ($a as $k => $v) {
         $k = "$dir/$k";
-        if(is_array($v))
+        if (is_array($v)) {
             array2dir($v, $k);
-        else
+        } else {
             file_put_contents($k, $v);
+        }
     }
 }
 
-function validate_url     ($u) { return preg_match("/^http[s]{0,1}:\\/\\/.*$/", $u) != 0; }
+function validate_url($u)
+{
+    return preg_match("/^http[s]{0,1}:\\/\\/.*$/", $u) != 0;
+}
 function validate_arraydir($a)
 {
-    if(!is_array($a))
-        return False;
-    foreach($a as $k=>$v)
-    {
-        if(!is_string($k))
-            return False;
-        if(is_array($v) and (!validate_arraydir($v)))
-            return False;
-        elseif(!is_string($v))
-            return False;
+    if (!is_array($a)) {
+        return false;
     }
-    return True;
+    foreach ($a as $k=>$v) {
+        if (!is_string($k)) {
+            return false;
+        }
+        if (is_array($v) and (!validate_arraydir($v))) {
+            return false;
+        } elseif (!is_string($v)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 /*
  * Class: InvalidPackage
  * An Exception that <PluginPackage>'s function can throw, if the package is invalid.
  */
-class InvalidPackage extends Exception {}
+class InvalidPackage extends Exception
+{
+}
 
 /*
  * Class: PluginPackage
@@ -104,14 +113,14 @@ class PluginPackage
      * $api               - The used API version
      * $short_description - A short description.
      */
-    public $code              = NULL;
-    public $classname         = NULL;
-    public $name              = NULL;
-    public $author            = NULL;
-    public $versiontext       = NULL;
-    public $versioncount      = NULL;
-    public $api               = NULL;
-    public $short_description = NULL;
+    public $code              = null;
+    public $classname         = null;
+    public $name              = null;
+    public $author            = null;
+    public $versiontext       = null;
+    public $versioncount      = null;
+    public $api               = null;
+    public $short_description = null;
 
     /*
      * Variables: Optional values
@@ -124,13 +133,13 @@ class PluginPackage
      * $custompriv - <dir2array> 'd directory that contains custom private data.
      * $tpls       - <dir2array> 'd directory containing custom STE templates.
      */
-    public $updatepath = NULL;
-    public $web        = NULL;
-    public $license    = NULL;
-    public $help       = NULL;
-    public $custompub  = NULL;
-    public $custompriv = NULL;
-    public $tpls       = NULL;
+    public $updatepath = null;
+    public $web        = null;
+    public $license    = null;
+    public $help       = null;
+    public $custompub  = null;
+    public $custompriv = null;
+    public $tpls       = null;
 
     /*
      * Function: validate
@@ -139,38 +148,53 @@ class PluginPackage
      */
     public function validate()
     {
-        if(!is_string($this->code))
+        if (!is_string($this->code)) {
             throw new InvalidPackage("Invalid code value.");
-        if(!is_string($this->classname))
+        }
+        if (!is_string($this->classname)) {
             throw new InvalidPackage("Invalid classname value.");
-        if(preg_match("/^[a-zA-Z0-9_\\-]+$/", $this->name) == 0)
+        }
+        if (preg_match("/^[a-zA-Z0-9_\\-]+$/", $this->name) == 0) {
             throw new InvalidPackage("Invalid name value (must be at least 1 character, accepted chars: a-z A-Z 0-9 - _).");
-        if(!is_string($this->author))
+        }
+        if (!is_string($this->author)) {
             throw new InvalidPackage("Invalid author value.");
-        if(!is_string($this->versiontext))
+        }
+        if (!is_string($this->versiontext)) {
             throw new InvalidPackage("Invalid versiontext value.");
-        if(!is_numeric($this->versioncount))
+        }
+        if (!is_numeric($this->versioncount)) {
             throw new InvalidPackage("Invalid versioncount value. Must be a number.");
-        if(!is_numeric($this->api))
+        }
+        if (!is_numeric($this->api)) {
             throw new InvalidPackage("Invalid api value. Must be a number.");
-        if(!is_string($this->short_description))
+        }
+        if (!is_string($this->short_description)) {
             throw new InvalidPackage("Invalid short_description value.");
+        }
 
-        if((!empty($this->updatepath)) and (!validate_url($this->updatepath)))
+        if ((!empty($this->updatepath)) and (!validate_url($this->updatepath))) {
             throw new InvalidPackage("Invalid updatepath value. Must be an URL. " .$this->updatepath);
-        if((!empty($this->web)) and (!validate_url($this->web)))
+        }
+        if ((!empty($this->web)) and (!validate_url($this->web))) {
             throw new InvalidPackage("Invalid web value. Must be an URL.");
-        if(($this->license !== NULL) and (!is_string($this->license)))
+        }
+        if (($this->license !== null) and (!is_string($this->license))) {
             throw new InvalidPackage("Invalid license value.");
-        if(($this->help !== NULL) and (!is_string($this->help)))
+        }
+        if (($this->help !== null) and (!is_string($this->help))) {
             throw new InvalidPackage("Invalid help value.");
-        if(($this->custompub !== NULL) and (!validate_arraydir($this->custompub)))
+        }
+        if (($this->custompub !== null) and (!validate_arraydir($this->custompub))) {
             throw new InvalidPackage("Invalid custompub value.");
-        if(($this->custompriv !== NULL) and (!validate_arraydir($this->custompriv)))
+        }
+        if (($this->custompriv !== null) and (!validate_arraydir($this->custompriv))) {
             throw new InvalidPackage("Invalid custompriv value.");
-        if(($this->tpls !== NULL) and (!validate_arraydir($this->tpls)))
+        }
+        if (($this->tpls !== null) and (!validate_arraydir($this->tpls))) {
             throw new InvalidPackage("Invalid tpls value.");
-        return True;
+        }
+        return true;
     }
 
     /*
@@ -190,18 +214,21 @@ class PluginPackage
     {
         /* Read and compare magic number */
         $magic = substr($plugin_raw, 0, strlen(self::$magic));
-        if($magic != self::$magic)
+        if ($magic != self::$magic) {
             throw new InvalidPackage("Wrong magic number");
+        }
 
         /* Read sha1sum and uncompress serialized plugin, then compare the hash */
         $sha1sum   = substr($plugin_raw, strlen(self::$magic), 20);
         $pluginser = gzuncompress(substr($plugin_raw, strlen(self::$magic) + 20));
-        if(sha1($pluginser, True) != $sha1sum)
+        if (sha1($pluginser, true) != $sha1sum) {
             throw new InvalidPackage("Wrong SHA1 hash");
+        }
 
         $plugin = @unserialize($pluginser);
-        if(!($plugin instanceof self))
+        if (!($plugin instanceof self)) {
             throw new InvalidPackage("Not the correct class or not unserializeable.");
+        }
 
         $plugin->validate();
 
@@ -222,7 +249,7 @@ class PluginPackage
     {
         $this->validate();
         $ser = serialize($this);
-        return self::$magic . sha1($ser, True) . gzcompress($ser, 9);
+        return self::$magic . sha1($ser, true) . gzcompress($ser, 9);
     }
 
     /*
@@ -266,12 +293,12 @@ class PluginPackageMeta
      * $api               - The used API version
      * $short_description - A short description.
      */
-    public $name              = NULL;
-    public $author            = NULL;
-    public $versiontext       = NULL;
-    public $versioncount      = NULL;
-    public $api               = NULL;
-    public $short_description = NULL;
+    public $name              = null;
+    public $author            = null;
+    public $versiontext       = null;
+    public $versioncount      = null;
+    public $api               = null;
+    public $short_description = null;
 
     /*
      * Variables: Optional values
@@ -280,7 +307,7 @@ class PluginPackageMeta
      * $web        - A URL to the webpage for the plugin. If left empty, the default repository software will set this to the description page of your plugin.
      * $license    - The license text of your plugin.
      */
-    public $updatepath = NULL;
-    public $web        = NULL;
-    public $license    = NULL;
+    public $updatepath = null;
+    public $web        = null;
+    public $license    = null;
 }

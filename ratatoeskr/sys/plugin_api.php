@@ -23,9 +23,9 @@ define("APIVERSION", 6);
  * Array: $api_compat
  * Array of API versions, this version is compatible to (including itself).
  */
-$api_compat = array(3, 4, 5, 6);
+$api_compat = [3, 4, 5, 6];
 
-$url_handlers = array(); /* master URL handler */
+$url_handlers = []; /* master URL handler */
 
 /*
  * Function: register_url_handler
@@ -41,9 +41,9 @@ function register_url_handler($name, $callback)
     $url_handlers[$name] = $callback;
 }
 
-$pluginpages_handlers = array();
+$pluginpages_handlers = [];
 
-$articleeditor_plugins = array();
+$articleeditor_plugins = [];
 
 /*
  * Class: RatatoeskrPlugin
@@ -91,11 +91,26 @@ abstract class RatatoeskrPlugin
      * get_custompub_url - Get URL (can be accessed from the web) to the custompub directory of your plugin.
      * get_template_dir - Get path to your template directory to be used with STE.
      */
-    final public function    get_id()             { return $this->id;                                                                         }
-    final protected function get_custompriv_dir() { return SITE_BASE_PATH . "/ratatoeskr/plugin_extradata/private/" . $this->id;              }
-    final protected function get_custompub_dir()  { return SITE_BASE_PATH . "/ratatoeskr/plugin_extradata/public/" . $this->id;               }
-    final protected function get_custompub_url()  { return $GLOBALS["rel_path_to_root"] . "/ratatoeskr/plugin_extradata/public/" . $this->id; }
-    final protected function get_template_dir()   { return "/plugintemplates/" . $this->id;                                                   }
+    final public function get_id()
+    {
+        return $this->id;
+    }
+    final protected function get_custompriv_dir()
+    {
+        return SITE_BASE_PATH . "/ratatoeskr/plugin_extradata/private/" . $this->id;
+    }
+    final protected function get_custompub_dir()
+    {
+        return SITE_BASE_PATH . "/ratatoeskr/plugin_extradata/public/" . $this->id;
+    }
+    final protected function get_custompub_url()
+    {
+        return $GLOBALS["rel_path_to_root"] . "/ratatoeskr/plugin_extradata/public/" . $this->id;
+    }
+    final protected function get_template_dir()
+    {
+        return "/plugintemplates/" . $this->id;
+    }
 
     /*
      * Function: register_url_handler
@@ -132,7 +147,7 @@ abstract class RatatoeskrPlugin
      *  $fx                 - Function to register (function($input), returns HTML).
      *  $visible_in_backend - Should this textprocessor be visible in the backend? Defaults to True.
      */
-    final protected function register_textprocessor($name, $fx, $visible_in_backend=True)
+    final protected function register_textprocessor($name, $fx, $visible_in_backend=true)
     {
         textprocessor_register($name, $fx, $visible_in_backend);
     }
@@ -186,11 +201,10 @@ abstract class RatatoeskrPlugin
         $this->ste->vars["pluginpages"][$this->id] = $label;
         asort($this->ste->vars["pluginpages"]);
         $pluginid = $this->id;
-        $pluginpages_handlers["p{$this->id}"] = function(&$data, $url_now, &$url_next) use($pluginid, $fx)
-        {
+        $pluginpages_handlers["p{$this->id}"] = function (&$data, $url_now, &$url_next) use ($pluginid, $fx) {
             global $ste, $rel_path_to_root;
             $ste->vars["rel_path_to_pluginpage"] = "$rel_path_to_root/backend/pluginpages/p$pluginid";
-            $rv = call_user_func_array($fx, array(&$data, $url_now, &$url_next));
+            $rv = call_user_func_array($fx, [&$data, $url_now, &$url_next]);
             unset($ste->vars["rel_path_to_pluginpage"]);
             return $rv;
         };
@@ -215,12 +229,12 @@ abstract class RatatoeskrPlugin
     {
         global $articleeditor_plugins;
 
-        $articleeditor_plugins[] = array(
+        $articleeditor_plugins[] = [
             "label"    => $label,
             "fx"       => $fx,
             "template" => $this->get_template_dir() . "/" . $template,
-            "display"  => $template != NULL
-        );
+            "display"  => $template != null
+        ];
     }
 
     /*
@@ -271,9 +285,19 @@ abstract class RatatoeskrPlugin
      * uninstall - Will be called during uninstallation. If you used the install function you should undo your custom installation stuff.
      * update    - Will be called after your plugin was updated to a new version.
      */
-    public function init() {}
-    public function atexit() {}
-    public function install() {}
-    public function uninstall() {}
-    public function update() {}
+    public function init()
+    {
+    }
+    public function atexit()
+    {
+    }
+    public function install()
+    {
+    }
+    public function uninstall()
+    {
+    }
+    public function update()
+    {
+    }
 }

@@ -22,15 +22,11 @@
  */
 function url_action_simple($function)
 {
-    return function(&$data, $url_now, &$url_next) use ($function)
-    {
-        try
-        {
+    return function (&$data, $url_now, &$url_next) use ($function) {
+        try {
             $data = call_user_func($function, $data);
-            $url_next = array();
-        }
-        catch(Redirect $e)
-        {
+            $url_next = [];
+        } catch (Redirect $e) {
             $url_next = $e->nextpath;
         }
     };
@@ -48,13 +44,13 @@ function url_action_simple($function)
  */
 function url_action_subactions($actions)
 {
-    return function(&$data, $url_now, &$url_next) use ($actions)
-    {
+    return function (&$data, $url_now, &$url_next) use ($actions) {
         $result = url_process($url_next, $actions, $data);
-        if($result !== NULL)
+        if ($result !== null) {
             $url_next = $result;
-        else
-            $url_next = array();
+        } else {
+            $url_next = [];
+        }
     };
 }
 
@@ -70,8 +66,7 @@ function url_action_subactions($actions)
  */
 function url_action_alias($for)
 {
-    return function(&$data, $url_now, &$url_next) use($for)
-    {
+    return function (&$data, $url_now, &$url_next) use ($for) {
         $url_next = array_merge($for, $url_next);
     };
 }
@@ -96,64 +91,66 @@ function url_action_alias($for)
 function url_process($url, $actions, &$data)
 {
     $epilog_running = 0;
-    if(is_string($url))
+    if (is_string($url)) {
         $url = explode("/", $url);
-    $url = array_filter($url, function($x) { return !empty($x); });
-    if(count($url) == 0)
-        $url = array("_index");
+    }
+    $url = array_filter($url, function ($x) {
+        return !empty($x);
+    });
+    if (count($url) == 0) {
+        $url = ["_index"];
+    }
 
-    if(isset($actions["_prelude"]))
-        $url = array_merge(array("_prelude"), $url);
+    if (isset($actions["_prelude"])) {
+        $url = array_merge(["_prelude"], $url);
+    }
 
     $url_now  = $url[0];
     $url_next = array_slice($url, 1);
 
-    while(is_string($url_now) and ($url_now != "") and ($url_now != ".."))
-    {
-        $cb = NULL;
-        if(empty($url_now))
+    while (is_string($url_now) and ($url_now != "") and ($url_now != "..")) {
+        $cb = null;
+        if (empty($url_now)) {
             $url_now = "_index";
-        if(isset($actions[$url_now]))
+        }
+        if (isset($actions[$url_now])) {
             $cb = $actions[$url_now];
-        else if(isset($actions["_default"]))
+        } elseif (isset($actions["_default"])) {
             $cb = $actions["_default"];
-        else if(isset($actions["_notfound"]))
+        } elseif (isset($actions["_notfound"])) {
             $cb = $actions["_notfound"];
-        else
+        } else {
             throw new NotFoundError();
-
-        try
-        {
-            call_user_func_array($cb, array(&$data, $url_now, &$url_next));
         }
-        catch(NotFoundError $e)
-        {
-            if(isset($actions["_notfound"]))
-                $url_next = array("_notfound");
-            else
+
+        try {
+            call_user_func_array($cb, [&$data, $url_now, &$url_next]);
+        } catch (NotFoundError $e) {
+            if (isset($actions["_notfound"])) {
+                $url_next = ["_notfound"];
+            } else {
                 throw $e;
+            }
         }
 
-        if(count($url_next) > 0)
-        {
+        if (count($url_next) > 0) {
             $url_now  = $url_next[0];
             $url_next = array_slice($url_next, 1);
-        }
-        else if(isset($actions["_epilog"]) and ($epilog_running <= 0))
-        {
+        } elseif (isset($actions["_epilog"]) and ($epilog_running <= 0)) {
             $epilog_running = 2;
             $url_now        = "_epilog";
-        }
-        else
+        } else {
             $url_now = "";
+        }
 
         --$epilog_running;
     }
 
-    if($url_now == "..")
+    if ($url_now == "..") {
         return $url_next;
-    else
-        return NULL;
+    } else {
+        return null;
+    }
 }
 
 /*
@@ -174,4 +171,6 @@ class Redirect extends Exception
  * Class: NotFoundError
  * An Exception
  */
-class NotFoundError extends Exception { }
+class NotFoundError extends Exception
+{
+}

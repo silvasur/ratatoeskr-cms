@@ -12,23 +12,23 @@
 require_once(dirname(__FILE__) . "/utils.php");
 require_once(dirname(__FILE__) . "/init_ste.php");
 
-if(!defined("SETUP"))
+if (!defined("SETUP")) {
     require_once(dirname(__FILE__) . "/models.php");
+}
 
-if(!defined("TRANSLATION_PLUGIN_LOADED"))
-{
+if (!defined("TRANSLATION_PLUGIN_LOADED")) {
     $ste->register_tag(
         "get_translation",
-        function($ste, $params, $sub)
-        {
+        function ($ste, $params, $sub) {
             global $translation;
-            if((!isset($translation)) or empty($params["for"]) or (!isset($translation[$params["for"]])))
+            if ((!isset($translation)) or empty($params["for"]) or (!isset($translation[$params["for"]]))) {
                 return "";
+            }
             $rv = $translation[$params["for"]];
             return (!empty($params["raw"])) ? $rv : htmlesc($rv);
         }
     );
-    define("TRANSLATION_PLUGIN_LOADED", True);
+    define("TRANSLATION_PLUGIN_LOADED", true);
 }
 
 /*
@@ -38,18 +38,17 @@ if(!defined("TRANSLATION_PLUGIN_LOADED"))
  * Parameters:
  *  $lang - The language (2-Letter code, e.g. "en", "de", "it" ...) to load. NULL for default (from database).
  */
-function load_language($lang=NULL)
+function load_language($lang=null)
 {
-    if(!defined("SETUP"))
-    {
+    if (!defined("SETUP")) {
         global $ratatoeskr_settings;
-        if($lang === NULL)
+        if ($lang === null) {
             $lang = $ratatoeskr_settings["default_language"];
-    }
-    else
-    {
-        if($lang === NULL)
+        }
+    } else {
+        if ($lang === null) {
             $lang = "en";
+        }
     }
 
     /*

@@ -21,10 +21,10 @@ require_once(dirname(__FILE__) . "/utils.php");
  *  $fx                 - The textprocessor function (function($input), returns HTML)
  *  $visible_in_backend - Should this textprocessor be visible in the backend? Defaults to True.
  */
-function textprocessor_register($name, $fx, $visible_in_backend=True)
+function textprocessor_register($name, $fx, $visible_in_backend=true)
 {
     global $textprocessors;
-    $textprocessors[$name] = array($fx, $visible_in_backend);
+    $textprocessors[$name] = [$fx, $visible_in_backend];
 }
 
 /*
@@ -41,12 +41,14 @@ function textprocessor_register($name, $fx, $visible_in_backend=True)
 function textprocessor_apply($text, $textprocessor)
 {
     global $textprocessors;
-    if(!isset($textprocessors[$textprocessor]))
+    if (!isset($textprocessors[$textprocessor])) {
         throw new Exception("Unknown Textprocessor: $textprocessor");
+    }
 
     $fx = @$textprocessors[$textprocessor][0];
-    if(!is_callable($fx))
+    if (!is_callable($fx)) {
         throw new Exception("Invalid Textprocessor: $textprocessor");
+    }
 
     return call_user_func($fx, $text);
 }
@@ -66,11 +68,14 @@ function textprocessor_apply_translation($translationobj)
     return textprocessor_apply($translationobj->text, $translationobj->texttype);
 }
 
-if(!isset($textprocessors))
-{
-    $textprocessors = array(
-        "Markdown" => array("Markdown", True),
-        "Plain Text" => array(function($text) { return str_replace(array("\r\n", "\n"), array("<br />", "<br />"), htmlesc($text)); }, True),
-        "HTML" => array(function($text) { return $text; }, True)
-    );
+if (!isset($textprocessors)) {
+    $textprocessors = [
+        "Markdown" => ["Markdown", true],
+        "Plain Text" => [function ($text) {
+            return str_replace(["\r\n", "\n"], ["<br />", "<br />"], htmlesc($text));
+        }, true],
+        "HTML" => [function ($text) {
+            return $text;
+        }, true]
+    ];
 }

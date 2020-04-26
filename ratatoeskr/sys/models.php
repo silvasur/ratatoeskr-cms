@@ -21,14 +21,14 @@ db_connect();
  * Array: $imagetype_file_extensions
  * Array of default file extensions for most IMAGETYPE_* constants
  */
-$imagetype_file_extensions = array(
+$imagetype_file_extensions = [
     IMAGETYPE_GIF     => "gif",
     IMAGETYPE_JPEG    => "jpg",
     IMAGETYPE_PNG     => "png",
     IMAGETYPE_BMP     => "bmp",
     IMAGETYPE_TIFF_II => "tif",
     IMAGETYPE_TIFF_MM => "tif",
-);
+];
 
 /*
  * Variable: $ratatoeskr_settings
@@ -43,7 +43,7 @@ $imagetype_file_extensions = array(
  * "languages"               - Array of activated languages.
  * "last_db_cleanup"         - Timestamp of the last database cleanup.
  */
-$ratatoeskr_settings = NULL;
+$ratatoeskr_settings = null;
 
 /*
  * Constants: ARTICLE_STATUS_
@@ -54,36 +54,46 @@ $ratatoeskr_settings = NULL;
  * ARTICLE_STATUS_STICKY - Article is sticky (Numeric: 2)
  */
 define("ARTICLE_STATUS_HIDDEN", 0);
-define("ARTICLE_STATUS_LIVE",   1);
+define("ARTICLE_STATUS_LIVE", 1);
 define("ARTICLE_STATUS_STICKY", 2);
 
 /*
  * Class: DoesNotExistError
  * This Exception is thrown by an ::by_*-constructor or any array-like object if the desired object is not present in the database.
  */
-class DoesNotExistError extends Exception { }
+class DoesNotExistError extends Exception
+{
+}
 
 /*
  * Class: AlreadyExistsError
  * This Exception is thrown by an ::create-constructor or a save-method, if the creation/modification of the object would result in duplicates.
  */
-class AlreadyExistsError extends Exception { }
+class AlreadyExistsError extends Exception
+{
+}
 
 /*
  * Class: NotAllowedError
  */
-class NotAllowedError extends Exception { }
+class NotAllowedError extends Exception
+{
+}
 
 /*
  * Class: InvalidDataError
  * Exception that will be thrown, if a object with invalid data (e.g. urlname in this form not allowed) should have been saved / created.
  * Unless something else is said at a function, the exception message is a translation key.
  */
-class InvalidDataError extends Exception { }
+class InvalidDataError extends Exception
+{
+}
 
 abstract class BySQLRowEnabled
 {
-    protected function __construct() {  }
+    protected function __construct()
+    {
+    }
 
     abstract protected function populate_by_sqlrow($sqlrow);
 
@@ -119,13 +129,12 @@ abstract class KVStorage implements Countable, ArrayAccess, Iterator
     {
         $sqltable = sub_prefix($sqltable);
 
-        $this->silent_mode = False;
-        $this->keybuffer = array();
+        $this->silent_mode = false;
+        $this->keybuffer = [];
 
         $selector = "WHERE ";
         $fields = "";
-        foreach($common as $field => $val)
-        {
+        foreach ($common as $field => $val) {
             $selector .= "`$field` = ? AND ";
             $fields .= ", `$field`";
             $this->common_vals[] = $val;
@@ -138,8 +147,9 @@ abstract class KVStorage implements Countable, ArrayAccess, Iterator
 
         $get_keys = prep_stmt("SELECT `key` FROM `$sqltable` $selector 1");
         $get_keys->execute($this->common_vals);
-        while($sqlrow = $get_keys->fetch())
+        while ($sqlrow = $get_keys->fetch()) {
             $this->keybuffer[] = $sqlrow["key"];
+        }
 
         $this->counter = 0;
     }
@@ -152,59 +162,81 @@ abstract class KVStorage implements Countable, ArrayAccess, Iterator
      * enable_silent_mode  - Enable the silent mode.
      * disable_silent_mode - Disable the silent mode (default).
      */
-    final public function enable_silent_mode()  { $this->silent_mode = True;  }
-    final public function disable_silent_mode() { $this->silent_mode = False; }
+    final public function enable_silent_mode()
+    {
+        $this->silent_mode = true;
+    }
+    final public function disable_silent_mode()
+    {
+        $this->silent_mode = false;
+    }
 
     /* Countable interface implementation */
-    final public function count() { return count($this->keybuffer); }
+    final public function count()
+    {
+        return count($this->keybuffer);
+    }
 
     /* ArrayAccess interface implementation */
-    final public function offsetExists($offset) { return in_array($offset, $this->keybuffer); }
+    final public function offsetExists($offset)
+    {
+        return in_array($offset, $this->keybuffer);
+    }
     final public function offsetGet($offset)
     {
-        if($this->offsetExists($offset))
-        {
-            $this->stmt_get->execute(array_merge($this->common_vals, array($offset)));
+        if ($this->offsetExists($offset)) {
+            $this->stmt_get->execute(array_merge($this->common_vals, [$offset]));
             $sqlrow = $this->stmt_get->fetch();
             $this->stmt_get->closeCursor();
             return unserialize(base64_decode($sqlrow["value"]));
-        }
-        elseif($this->silent_mode)
-            return NULL;
-        else
+        } elseif ($this->silent_mode) {
+            return null;
+        } else {
             throw new DoesNotExistError();
+        }
     }
     final public function offsetUnset($offset)
     {
-        if($this->offsetExists($offset))
-        {
+        if ($this->offsetExists($offset)) {
             unset($this->keybuffer[array_search($offset, $this->keybuffer)]);
             $this->keybuffer = array_merge($this->keybuffer);
-            $this->stmt_unset->execute(array_merge($this->common_vals, array($offset)));
+            $this->stmt_unset->execute(array_merge($this->common_vals, [$offset]));
             $this->stmt_unset->closeCursor();
         }
     }
     final public function offsetSet($offset, $value)
     {
-        if($this->offsetExists($offset))
-        {
-            $this->stmt_update->execute(array_merge(array(base64_encode(serialize($value))), $this->common_vals, array($offset)));
+        if ($this->offsetExists($offset)) {
+            $this->stmt_update->execute(array_merge([base64_encode(serialize($value))], $this->common_vals, [$offset]));
             $this->stmt_update->closeCursor();
-        }
-        else
-        {
-            $this->stmt_create->execute(array_merge(array($offset, base64_encode(serialize($value))), $this->common_vals));
+        } else {
+            $this->stmt_create->execute(array_merge([$offset, base64_encode(serialize($value))], $this->common_vals));
             $this->stmt_create->closeCursor();
             $this->keybuffer[] = $offset;
         }
     }
 
     /* Iterator interface implementation */
-    final public function rewind()  { return $this->counter = 0; }
-    final public function current() { return $this->offsetGet($this->keybuffer[$this->counter]); }
-    final public function key()     { return $this->keybuffer[$this->counter]; }
-    final public function next()    { ++$this->counter; }
-    final public function valid()   { return isset($this->keybuffer[$this->counter]); }
+    final public function rewind()
+    {
+        return $this->counter = 0;
+    }
+    final public function current()
+    {
+        return $this->offsetGet($this->keybuffer[$this->counter]);
+    }
+    final public function key()
+    {
+        return $this->keybuffer[$this->counter];
+    }
+    final public function next()
+    {
+        ++$this->counter;
+    }
+    final public function valid()
+    {
+        return isset($this->keybuffer[$this->counter]);
+    }
 }
 
 /*
@@ -248,15 +280,16 @@ class User extends BySQLRowEnabled
     {
         global $ratatoeskr_settings;
         global $db_con;
-        try
-        {
+        try {
             $obj = self::by_name($username);
-        }
-        catch(DoesNotExistError $e)
-        {
+        } catch (DoesNotExistError $e) {
             global $ratatoeskr_settings;
-            qdb("INSERT INTO `PREFIX_users` (`username`, `pwhash`, `mail`, `fullname`, `language`) VALUES (?, ?, '', '', ?)",
-                $username, $pwhash, $ratatoeskr_settings["default_language"]);
+            qdb(
+                "INSERT INTO `PREFIX_users` (`username`, `pwhash`, `mail`, `fullname`, `language`) VALUES (?, ?, '', '', ?)",
+                $username,
+                $pwhash,
+                $ratatoeskr_settings["default_language"]
+            );
             $obj = new self();
 
             $obj->id       = $db_con->lastInsertId();
@@ -298,8 +331,9 @@ class User extends BySQLRowEnabled
     {
         $stmt = qdb("SELECT `id`, `username`, `pwhash`, `mail`, `fullname`, `language` FROM `PREFIX_users` WHERE `id` = ?", $id);
         $sqlrow = $stmt->fetch();
-        if(!$sqlrow)
+        if (!$sqlrow) {
             throw new DoesNotExistError();
+        }
 
         return self::by_sqlrow($sqlrow);
     }
@@ -321,8 +355,9 @@ class User extends BySQLRowEnabled
     {
         $stmt = qdb("SELECT `id`, `username`, `pwhash`, `mail`, `fullname`, `language` FROM `PREFIX_users` WHERE `username` = ?", $username);
         $sqlrow = $stmt->fetch();
-        if(!$sqlrow)
+        if (!$sqlrow) {
             throw new DoesNotExistError();
+        }
 
         return self::by_sqlrow($sqlrow);
     }
@@ -333,11 +368,12 @@ class User extends BySQLRowEnabled
      */
     public static function all()
     {
-        $rv = array();
+        $rv = [];
 
         $stmt = qdb("SELECT `id`, `username`, `pwhash`, `mail`, `fullname`, `language` FROM `PREFIX_users` WHERE 1");
-        while($sqlrow = $stmt->fetch())
+        while ($sqlrow = $stmt->fetch()) {
             $rv[] = self::by_sqlrow($sqlrow);
+        }
 
         return $rv;
     }
@@ -362,19 +398,24 @@ class User extends BySQLRowEnabled
     public function save()
     {
         $tx = new Transaction();
-        try
-        {
+        try {
             $stmt = qdb("SELECT COUNT(*) AS `n` FROM `PREFIX_users` WHERE `username` = ? AND `id` != ?", $this->username, $this->id);
             $sqlrow = $stmt->fetch();
-            if($sqlrow["n"] > 0)
+            if ($sqlrow["n"] > 0) {
                 throw new AlreadyExistsError();
+            }
 
-            qdb("UPDATE `PREFIX_users` SET `username` = ?, `pwhash` = ?, `mail` = ?, `fullname` = ?, `language` = ? WHERE `id` = ?",
-                $this->username, $this->pwhash, $this->mail, $this->fullname, $this->language, $this->id);
+            qdb(
+                "UPDATE `PREFIX_users` SET `username` = ?, `pwhash` = ?, `mail` = ?, `fullname` = ?, `language` = ? WHERE `id` = ?",
+                $this->username,
+                $this->pwhash,
+                $this->mail,
+                $this->fullname,
+                $this->language,
+                $this->id
+            );
             $tx->commit();
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             $tx->rollback();
             throw $e;
         }
@@ -388,14 +429,11 @@ class User extends BySQLRowEnabled
     public function delete()
     {
         $tx = new Transaction();
-        try
-        {
+        try {
             qdb("DELETE FROM `PREFIX_group_members` WHERE `user` = ?", $this->id);
             qdb("DELETE FROM `PREFIX_users` WHERE `id` = ?", $this->id);
             $tx->commit();
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             $tx->rollback();
             throw $e;
         }
@@ -408,10 +446,11 @@ class User extends BySQLRowEnabled
      */
     public function get_groups()
     {
-        $rv = array();
+        $rv = [];
         $stmt = qdb("SELECT `a`.`id` AS `id`, `a`.`name` AS `name` FROM `PREFIX_groups` `a` INNER JOIN `PREFIX_group_members` `b` ON `a`.`id` = `b`.`group` WHERE `b`.`user` = ?", $this->id);
-        while($sqlrow = $stmt->fetch())
+        while ($sqlrow = $stmt->fetch()) {
             $rv[] = Group::by_sqlrow($sqlrow);
+        }
         return $rv;
     }
 
@@ -464,12 +503,9 @@ class Group extends BySQLRowEnabled
     public static function create($name)
     {
         global $db_con;
-        try
-        {
+        try {
             $obj = self::by_name($name);
-        }
-        catch(DoesNotExistError $e)
-        {
+        } catch (DoesNotExistError $e) {
             qdb("INSERT INTO `PREFIX_groups` (`name`) VALUES (?)", $name);
             $obj = new self();
 
@@ -504,8 +540,9 @@ class Group extends BySQLRowEnabled
     {
         $stmt =  qdb("SELECT `id`, `name` FROM `PREFIX_groups` WHERE `id` = ?", $id);
         $sqlrow = $stmt->fetch();
-        if(!$sqlrow)
+        if (!$sqlrow) {
             throw new DoesNotExistError();
+        }
 
         return self::by_sqlrow($sqlrow);
     }
@@ -527,8 +564,9 @@ class Group extends BySQLRowEnabled
     {
         $stmt = qdb("SELECT `id`, `name` FROM `PREFIX_groups` WHERE `name` = ?", $name);
         $sqlrow = $stmt->fetch();
-        if(!$sqlrow)
+        if (!$sqlrow) {
             throw new DoesNotExistError();
+        }
 
         return self::by_sqlrow($sqlrow);
     }
@@ -539,11 +577,12 @@ class Group extends BySQLRowEnabled
      */
     public static function all()
     {
-        $rv = array();
+        $rv = [];
 
         $stmt = qdb("SELECT `id`, `name` FROM `PREFIX_groups` WHERE 1");
-        while($sqlrow = $stmt->fetch())
+        while ($sqlrow = $stmt->fetch()) {
             $rv[] = self::by_sqlrow($sqlrow);
+        }
 
         return $rv;
     }
@@ -565,14 +604,11 @@ class Group extends BySQLRowEnabled
     public function delete()
     {
         $tx = new Transaction();
-        try
-        {
+        try {
             qdb("DELETE FROM `PREFIX_group_members` WHERE `group` = ?", $this->id);
             qdb("DELETE FROM `PREFIX_groups` WHERE `id` = ?", $this->id);
             $tx->commit();
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             $tx->rollback();
             throw $e;
         }
@@ -587,12 +623,13 @@ class Group extends BySQLRowEnabled
      */
     public function get_members()
     {
-        $rv = array();
+        $rv = [];
         $stmt = qdb("SELECT `a`.`id` AS `id`, `a`.`username` AS `username`, `a`.`pwhash` AS `pwhash`, `a`.`mail` AS `mail`, `a`.`fullname` AS `fullname`, `a`.`language` AS `language`
 FROM `PREFIX_users` `a` INNER JOIN `PREFIX_group_members` `b` ON `a`.`id` = `b`.`user`
 WHERE `b`.`group` = ?", $this->id);
-        while($sqlrow = $stmt->fetch())
+        while ($sqlrow = $stmt->fetch()) {
             $rv[] = User::by_sqlrow($sqlrow);
+        }
         return $rv;
     }
 
@@ -617,8 +654,9 @@ WHERE `b`.`group` = ?", $this->id);
      */
     public function include_user($user)
     {
-        if(!$user->member_of($this))
+        if (!$user->member_of($this)) {
             qdb("INSERT INTO `PREFIX_group_members` (`user`, `group`) VALUES (?, ?)", $user->get_id(), $this->id);
+        }
     }
 }
 
@@ -673,9 +711,9 @@ class Multilingual implements Countable, ArrayAccess, IteratorAggregate
 
     private function __construct()
     {
-        $this->translations  = array();
-        $this->to_be_deleted = array();
-        $this->to_be_created = array();
+        $this->translations  = [];
+        $this->to_be_deleted = [];
+        $this->to_be_created = [];
     }
 
     /*
@@ -722,13 +760,15 @@ class Multilingual implements Countable, ArrayAccess, IteratorAggregate
         $obj = new self();
         $stmt = qdb("SELECT `id` FROM `PREFIX_multilingual` WHERE `id` = ?", $id);
         $sqlrow = $stmt->fetch();
-        if($sqlrow == False)
+        if ($sqlrow == false) {
             throw new DoesNotExistError();
+        }
         $obj->id = $id;
 
         $stmt = qdb("SELECT `language`, `text`, `texttype` FROM `PREFIX_translations` WHERE `multilingual` = ?", $id);
-        while($sqlrow = $stmt->fetch())
+        while ($sqlrow = $stmt->fetch()) {
             $obj->translations[$sqlrow["language"]] = new Translation($sqlrow["text"], $sqlrow["texttype"]);
+        }
 
         return $obj;
     }
@@ -740,28 +780,37 @@ class Multilingual implements Countable, ArrayAccess, IteratorAggregate
     public function save()
     {
         $tx = new Transaction();
-        try
-        {
-            foreach($this->to_be_deleted as $deletelang)
+        try {
+            foreach ($this->to_be_deleted as $deletelang) {
                 qdb("DELETE FROM `PREFIX_translations` WHERE `multilingual` = ? AND `language` = ?", $this->id, $deletelang);
-
-            foreach($this->to_be_created as $lang)
-                qdb("INSERT INTO `PREFIX_translations` (`multilingual`, `language`, `text`, `texttype`) VALUES (?, ?, ?, ?)",
-                    $this->id, $lang, $this->translations[$lang]->text, $this->translations[$lang]->texttype);
-
-            foreach($this->translations as $lang => $translation)
-            {
-                if(!in_array($lang, $this->to_be_created))
-                    qdb("UPDATE `PREFIX_translations` SET `text` = ?, `texttype` = ? WHERE `multilingual` = ? AND `language` = ?",
-                        $translation->text, $translation->texttype, $this->id, $lang);
             }
 
-            $this->to_be_deleted = array();
-            $this->to_be_created = array();
+            foreach ($this->to_be_created as $lang) {
+                qdb(
+                    "INSERT INTO `PREFIX_translations` (`multilingual`, `language`, `text`, `texttype`) VALUES (?, ?, ?, ?)",
+                    $this->id,
+                    $lang,
+                    $this->translations[$lang]->text,
+                    $this->translations[$lang]->texttype
+                );
+            }
+
+            foreach ($this->translations as $lang => $translation) {
+                if (!in_array($lang, $this->to_be_created)) {
+                    qdb(
+                        "UPDATE `PREFIX_translations` SET `text` = ?, `texttype` = ? WHERE `multilingual` = ? AND `language` = ?",
+                        $translation->text,
+                        $translation->texttype,
+                        $this->id,
+                        $lang
+                    );
+                }
+            }
+
+            $this->to_be_deleted = [];
+            $this->to_be_created = [];
             $tx->commit();
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             $tx->rollback();
             throw $e;
         }
@@ -774,53 +823,61 @@ class Multilingual implements Countable, ArrayAccess, IteratorAggregate
     public function delete()
     {
         $tx = new Transaction();
-        try
-        {
+        try {
             qdb("DELETE FROM `PREFIX_translations` WHERE `multilingual` = ?", $this->id);
             qdb("DELETE FROM `PREFIX_multilingual` WHERE `id` = ?", $this->id);
             $tx->commit();
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             $tx->rollback();
             throw $e;
         }
     }
 
     /* Countable interface implementation */
-    public function count() { return count($this->languages); }
+    public function count()
+    {
+        return count($this->languages);
+    }
 
     /* ArrayAccess interface implementation */
-    public function offsetExists($offset) { return isset($this->translations[$offset]); }
+    public function offsetExists($offset)
+    {
+        return isset($this->translations[$offset]);
+    }
     public function offsetGet($offset)
     {
-        if(isset($this->translations[$offset]))
+        if (isset($this->translations[$offset])) {
             return $this->translations[$offset];
-        else
+        } else {
             throw new DoesNotExistError();
+        }
     }
     public function offsetUnset($offset)
     {
         unset($this->translations[$offset]);
-        if(in_array($offset, $this->to_be_created))
+        if (in_array($offset, $this->to_be_created)) {
             unset($this->to_be_created[array_search($offset, $this->to_be_created)]);
-        else
+        } else {
             $this->to_be_deleted[] = $offset;
+        }
     }
     public function offsetSet($offset, $value)
     {
-        if(!isset($this->translations[$offset]))
-        {
-            if(in_array($offset, $this->to_be_deleted))
+        if (!isset($this->translations[$offset])) {
+            if (in_array($offset, $this->to_be_deleted)) {
                 unset($this->to_be_deleted[array_search($offset, $this->to_be_deleted)]);
-            else
+            } else {
                 $this->to_be_created[] = $offset;
+            }
         }
         $this->translations[$offset] = $value;
     }
 
     /* IteratorAggregate interface implementation */
-    public function getIterator() { return new ArrayIterator($this->translations); }
+    public function getIterator()
+    {
+        return new ArrayIterator($this->translations);
+    }
 }
 
 class SettingsIterator implements Iterator
@@ -837,11 +894,26 @@ class SettingsIterator implements Iterator
     }
 
     /* Iterator implementation */
-    public function current() { return $this->settings_obj[$this->keys[$this->index]]; }
-    public function key()     { return $this->keys[$this->index]; }
-    public function next()    { ++$this->index; }
-    public function rewind()  { $this->index = 0; }
-    public function valid()   { return $this->index < count($this->keys); }
+    public function current()
+    {
+        return $this->settings_obj[$this->keys[$this->index]];
+    }
+    public function key()
+    {
+        return $this->keys[$this->index];
+    }
+    public function next()
+    {
+        ++$this->index;
+    }
+    public function rewind()
+    {
+        $this->index = 0;
+    }
+    public function valid()
+    {
+        return $this->index < count($this->keys);
+    }
 }
 
 /*
@@ -852,8 +924,10 @@ class SettingsIterator implements Iterator
 class Settings implements ArrayAccess, IteratorAggregate, Countable
 {
     /* Singleton implementation */
-    private function __copy() {}
-    private static $instance = NULL;
+    private function __copy()
+    {
+    }
+    private static $instance = null;
     /*
      * Constructor: get_instance
      * Get an instance of this class.
@@ -862,8 +936,9 @@ class Settings implements ArrayAccess, IteratorAggregate, Countable
      */
     public static function get_instance()
     {
-        if(self::$instance === NULL)
+        if (self::$instance === null) {
             self::$instance = new self;
+        }
         return self::$instance;
     }
 
@@ -874,35 +949,36 @@ class Settings implements ArrayAccess, IteratorAggregate, Countable
 
     private function __construct()
     {
-        $this->buffer = array();
+        $this->buffer = [];
         $stmt = qdb("SELECT `key`, `value` FROM `PREFIX_settings_kvstorage` WHERE 1");
-        while($sqlrow = $stmt->fetch())
+        while ($sqlrow = $stmt->fetch()) {
             $this->buffer[$sqlrow["key"]] = unserialize(base64_decode($sqlrow["value"]));
+        }
 
-        $this->to_be_created = array();
-        $this->to_be_deleted = array();
-        $this->to_be_updated = array();
+        $this->to_be_created = [];
+        $this->to_be_deleted = [];
+        $this->to_be_updated = [];
     }
 
     public function save()
     {
         $tx = new Transaction();
-        try
-        {
-            foreach($this->to_be_deleted as $k)
+        try {
+            foreach ($this->to_be_deleted as $k) {
                 qdb("DELETE FROM `PREFIX_settings_kvstorage` WHERE `key` = ?", $k);
-            foreach($this->to_be_updated as $k)
+            }
+            foreach ($this->to_be_updated as $k) {
                 qdb("UPDATE `PREFIX_settings_kvstorage` SET `value` = ? WHERE `key` = ?", base64_encode(serialize($this->buffer[$k])), $k);
-            foreach($this->to_be_created as $k)
+            }
+            foreach ($this->to_be_created as $k) {
                 qdb("INSERT INTO `PREFIX_settings_kvstorage` (`key`, `value`) VALUES (?, ?)", $k, base64_encode(serialize($this->buffer[$k])));
+            }
 
-            $this->to_be_created = array();
-            $this->to_be_deleted = array();
-            $this->to_be_updated = array();
+            $this->to_be_created = [];
+            $this->to_be_deleted = [];
+            $this->to_be_updated = [];
             $tx->commit();
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             $tx->rollback();
             throw $e;
         }
@@ -917,36 +993,41 @@ class Settings implements ArrayAccess, IteratorAggregate, Countable
     {
         return $this->buffer[$offset];
     }
-    public function offsetSet ($offset, $value)
+    public function offsetSet($offset, $value)
     {
-        if(!$this->offsetExists($offset))
-        {
-            if(in_array($offset, $this->to_be_deleted))
-            {
+        if (!$this->offsetExists($offset)) {
+            if (in_array($offset, $this->to_be_deleted)) {
                 $this->to_be_updated[] = $offset;
                 unset($this->to_be_deleted[array_search($offset, $this->to_be_deleted)]);
-            }
-            else
+            } else {
                 $this->to_be_created[] = $offset;
-        }
-        elseif((!in_array($offset, $this->to_be_created)) and (!in_array($offset, $this->to_be_updated)))
+            }
+        } elseif ((!in_array($offset, $this->to_be_created)) and (!in_array($offset, $this->to_be_updated))) {
             $this->to_be_updated[] = $offset;
+        }
         $this->buffer[$offset] = $value;
     }
     public function offsetUnset($offset)
     {
-        if(in_array($offset, $this->to_be_created))
+        if (in_array($offset, $this->to_be_created)) {
             unset($this->to_be_created[array_search($offset, $this->to_be_created)]);
-        else
+        } else {
             $this->to_be_deleted[] = $offset;
+        }
         unset($this->buffer[$offset]);
     }
 
     /* IteratorAggregate implementation */
-    public function getIterator() { return new SettingsIterator($this, array_keys($this->buffer)); }
+    public function getIterator()
+    {
+        return new SettingsIterator($this, array_keys($this->buffer));
+    }
 
     /* Countable implementation */
-    public function count() { return count($this->buffer); }
+    public function count()
+    {
+        return count($this->buffer);
+    }
 }
 
 $ratatoeskr_settings = Settings::get_instance();
@@ -969,7 +1050,7 @@ class PluginKVStorage extends KVStorage
      */
     public function __construct($plugin_id)
     {
-        $this->init("PREFIX_plugin_kvstorage", array("plugin" => $plugin_id));
+        $this->init("PREFIX_plugin_kvstorage", ["plugin" => $plugin_id]);
     }
 }
 
@@ -1007,10 +1088,22 @@ class Comment extends BySQLRowEnabled
      * get_language  - Gets the language.
      * get_timestamp - Gets the timestamp.
      */
-    public function get_id()        { return $this->id;                           }
-    public function get_article()   { return Article::by_id($this->article_id);   }
-    public function get_language()  { return $this->language;                     }
-    public function get_timestamp() { return $this->timestamp;                    }
+    public function get_id()
+    {
+        return $this->id;
+    }
+    public function get_article()
+    {
+        return Article::by_id($this->article_id);
+    }
+    public function get_language()
+    {
+        return $this->language;
+    }
+    public function get_timestamp()
+    {
+        return $this->timestamp;
+    }
 
     /*
      * Constructor: create
@@ -1029,8 +1122,13 @@ class Comment extends BySQLRowEnabled
         $obj = new self();
         $obj->timestamp = time();
 
-        qdb("INSERT INTO `PREFIX_comments` (`article`, `language`, `author_name`, `author_mail`, `text`, `timestamp`, `visible`, `read_by_admin`) VALUES (?, ?, '', '', '', ?, ?, 0)",
-            $article->get_id(), $language, $obj->timestamp, $ratatoeskr_settings["comment_visible_default"] ? 1 : 0);
+        qdb(
+            "INSERT INTO `PREFIX_comments` (`article`, `language`, `author_name`, `author_mail`, `text`, `timestamp`, `visible`, `read_by_admin`) VALUES (?, ?, '', '', '', ?, ?, 0)",
+            $article->get_id(),
+            $language,
+            $obj->timestamp,
+            $ratatoeskr_settings["comment_visible_default"] ? 1 : 0
+        );
 
         $obj->id            = $db_con->lastInsertId();
         $obj->article_id    = $article->get_id();
@@ -1039,7 +1137,7 @@ class Comment extends BySQLRowEnabled
         $obj->author_mail   = "";
         $obj->text          = "";
         $obj->visible       = $ratatoeskr_settings["comment_visible_default"];
-        $obj->read_by_admin = False;
+        $obj->read_by_admin = false;
 
         return $obj;
     }
@@ -1071,8 +1169,9 @@ class Comment extends BySQLRowEnabled
     {
         $stmt = qdb("SELECT `id`, `article`, `language`, `author_name`, `author_mail`, `text`, `timestamp`, `visible`, `read_by_admin` FROM `PREFIX_comments` WHERE `id` = ?", $id);
         $sqlrow = $stmt->fetch();
-        if($sqlrow === False)
+        if ($sqlrow === false) {
             throw new DoesNotExistError();
+        }
 
         return self::by_sqlrow($sqlrow);
     }
@@ -1086,10 +1185,11 @@ class Comment extends BySQLRowEnabled
      */
     public static function all()
     {
-        $rv = array();
+        $rv = [];
         $stmt = qdb("SELECT `id`, `article`, `language`, `author_name`, `author_mail`, `text`, `timestamp`, `visible`, `read_by_admin` FROM `PREFIX_comments` WHERE 1");
-        while($sqlrow = $stmt->fetch())
+        while ($sqlrow = $stmt->fetch()) {
             $rv[] = self::by_sqlrow($sqlrow);
+        }
         return $rv;
     }
 
@@ -1108,53 +1208,53 @@ class Comment extends BySQLRowEnabled
     {
         global $ratatoeskr_settings;
 
-        return kses(textprocessor_apply($text, $ratatoeskr_settings["comment_textprocessor"]), array(
-            "a" => array("href" => 1, "hreflang" => 1, "title" => 1, "rel" => 1, "rev" => 1),
-            "b" => array(),
-            "i" => array(),
-            "u" => array(),
-            "strong" => array(),
-            "em" => array(),
-            "p" => array("align" => 1),
-            "br" => array(),
-            "abbr" => array(),
-            "acronym" => array(),
-            "code" => array(),
-            "pre" => array(),
-            "blockquote" => array("cite" => 1),
-            "h1" => array(),
-            "h2" => array(),
-            "h3" => array(),
-            "h4" => array(),
-            "h5" => array(),
-            "h6" => array(),
-            "img" => array("src" => 1, "alt" => 1, "width" => 1, "height" => 1),
-            "s" => array(),
-            "q" => array("cite" => 1),
-            "samp" => array(),
-            "ul" => array(),
-            "ol" => array(),
-            "li" => array(),
-            "del" => array(),
-            "ins" => array(),
-            "dl" => array(),
-            "dd" => array(),
-            "dt" => array(),
-            "dfn" => array(),
-            "div" => array(),
-            "dir" => array(),
-            "kbd" => array("prompt" => 1),
-            "strike" => array(),
-            "sub" => array(),
-            "sup" => array(),
-            "table" => array("style" => 1),
-            "tbody" => array(), "thead" => array(), "tfoot" => array(),
-            "tr" => array(),
-            "td" => array("colspan" => 1, "rowspan" => 1),
-            "th" => array("colspan" => 1, "rowspan" => 1),
-            "tt" => array(),
-            "var" => array()
-        ));
+        return kses(textprocessor_apply($text, $ratatoeskr_settings["comment_textprocessor"]), [
+            "a" => ["href" => 1, "hreflang" => 1, "title" => 1, "rel" => 1, "rev" => 1],
+            "b" => [],
+            "i" => [],
+            "u" => [],
+            "strong" => [],
+            "em" => [],
+            "p" => ["align" => 1],
+            "br" => [],
+            "abbr" => [],
+            "acronym" => [],
+            "code" => [],
+            "pre" => [],
+            "blockquote" => ["cite" => 1],
+            "h1" => [],
+            "h2" => [],
+            "h3" => [],
+            "h4" => [],
+            "h5" => [],
+            "h6" => [],
+            "img" => ["src" => 1, "alt" => 1, "width" => 1, "height" => 1],
+            "s" => [],
+            "q" => ["cite" => 1],
+            "samp" => [],
+            "ul" => [],
+            "ol" => [],
+            "li" => [],
+            "del" => [],
+            "ins" => [],
+            "dl" => [],
+            "dd" => [],
+            "dt" => [],
+            "dfn" => [],
+            "div" => [],
+            "dir" => [],
+            "kbd" => ["prompt" => 1],
+            "strike" => [],
+            "sub" => [],
+            "sup" => [],
+            "table" => ["style" => 1],
+            "tbody" => [], "thead" => [], "tfoot" => [],
+            "tr" => [],
+            "td" => ["colspan" => 1, "rowspan" => 1],
+            "th" => ["colspan" => 1, "rowspan" => 1],
+            "tt" => [],
+            "var" => []
+        ]);
     }
 
     /*
@@ -1175,8 +1275,15 @@ class Comment extends BySQLRowEnabled
      */
     public function save()
     {
-        qdb("UPDATE `PREFIX_comments` SET `author_name` = ?, `author_mail` = ?, `text` = ?, `visible` = ?, `read_by_admin` = ? WHERE `id` = ?",
-            $this->author_name, $this->author_mail, $this->text, ($this->visible ? 1 : 0), ($this->read_by_admin ? 1 : 0), $this->id);
+        qdb(
+            "UPDATE `PREFIX_comments` SET `author_name` = ?, `author_mail` = ?, `text` = ?, `visible` = ?, `read_by_admin` = ? WHERE `id` = ?",
+            $this->author_name,
+            $this->author_mail,
+            $this->text,
+            ($this->visible ? 1 : 0),
+            ($this->read_by_admin ? 1 : 0),
+            $this->id
+        );
     }
 
     /*
@@ -1230,7 +1337,10 @@ class Style extends BySQLRowEnabled
     /*
      * Function: get_id
      */
-    public function get_id() { return $this->id; }
+    public function get_id()
+    {
+        return $this->id;
+    }
 
     /*
      * Constructor: create
@@ -1246,15 +1356,13 @@ class Style extends BySQLRowEnabled
     {
         global $db_con;
 
-        if(!self::test_name($name))
+        if (!self::test_name($name)) {
             throw new InvalidDataError("invalid_style_name");
-
-        try
-        {
-            self::by_name($name);
         }
-        catch(DoesNotExistError $e)
-        {
+
+        try {
+            self::by_name($name);
+        } catch (DoesNotExistError $e) {
             $obj = new self();
             $obj->name = $name;
             $obj->code = "";
@@ -1282,8 +1390,9 @@ class Style extends BySQLRowEnabled
     {
         $stmt = qdb("SELECT `id`, `name`, `code` FROM `PREFIX_styles` WHERE `id` = ?", $id);
         $sqlrow = $stmt->fetch();
-        if(!$sqlrow)
+        if (!$sqlrow) {
             throw new DoesNotExistError();
+        }
 
         return self::by_sqlrow($sqlrow);
     }
@@ -1302,8 +1411,9 @@ class Style extends BySQLRowEnabled
     {
         $stmt = qdb("SELECT `id`, `name`, `code` FROM `PREFIX_styles` WHERE `name` = ?", $name);
         $sqlrow = $stmt->fetch();
-        if(!$sqlrow)
+        if (!$sqlrow) {
             throw new DoesNotExistError();
+        }
 
         return self::by_sqlrow($sqlrow);
     }
@@ -1317,10 +1427,11 @@ class Style extends BySQLRowEnabled
      */
     public static function all()
     {
-        $rv = array();
+        $rv = [];
         $stmt = qdb("SELECT `id`, `name`, `code` FROM `PREFIX_styles` WHERE 1");
-        while($sqlrow = $stmt->fetch())
+        while ($sqlrow = $stmt->fetch()) {
             $rv[] = self::by_sqlrow($sqlrow);
+        }
         return $rv;
     }
 
@@ -1333,23 +1444,26 @@ class Style extends BySQLRowEnabled
      */
     public function save()
     {
-        if(!self::test_name($this->name))
+        if (!self::test_name($this->name)) {
             throw new InvalidDataError("invalid_style_name");
+        }
 
         $tx = new Transaction();
-        try
-        {
+        try {
             $stmt = qdb("SELECT COUNT(*) AS `n` FROM `PREFIX_styles` WHERE `name` = ? AND `id` != ?", $this->name, $this->id);
             $sqlrow = $stmt->fetch();
-            if($sqlrow["n"] > 0)
+            if ($sqlrow["n"] > 0) {
                 throw new AlreadyExistsError();
+            }
 
-            qdb("UPDATE `PREFIX_styles` SET `name` = ?, `code` = ? WHERE `id` = ?",
-                $this->name, $this->code, $this->id);
+            qdb(
+                "UPDATE `PREFIX_styles` SET `name` = ?, `code` = ? WHERE `id` = ?",
+                $this->name,
+                $this->code,
+                $this->id
+            );
             $tx->commit();
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             $tx->rollback();
             throw $e;
         }
@@ -1361,14 +1475,11 @@ class Style extends BySQLRowEnabled
     public function delete()
     {
         $tx = new Transaction();
-        try
-        {
+        try {
             qdb("DELETE FROM `PREFIX_styles` WHERE `id` = ?", $this->id);
             qdb("DELETE FROM `PREFIX_section_style_relations` WHERE `style` = ?", $this->id);
             $tx->commit();
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             $tx->rollback();
             throw $e;
         }
@@ -1431,7 +1542,10 @@ class Plugin extends BySQLRowEnabled
     /*
      * Function: get_id
      */
-    public function get_id() { return $this->id; }
+    public function get_id()
+    {
+        return $this->id;
+    }
 
     /*
      * Constructor: create
@@ -1469,12 +1583,15 @@ class Plugin extends BySQLRowEnabled
         $this->help              = $pkg->help;
         $this->api               = $pkg->api;
 
-        if(!empty($pkg->custompub))
+        if (!empty($pkg->custompub)) {
             array2dir($pkg->custompub, dirname(__FILE__) . "/../plugin_extradata/public/" . $this->get_id());
-        if(!empty($pkg->custompriv))
+        }
+        if (!empty($pkg->custompriv)) {
             array2dir($pkg->custompriv, dirname(__FILE__) . "/../plugin_extradata/private/" . $this->get_id());
-        if(!empty($pkg->tpls))
+        }
+        if (!empty($pkg->tpls)) {
             array2dir($pkg->tpls, dirname(__FILE__) . "/../templates/src/plugintemplates/" . $this->get_id());
+        }
     }
 
     protected function populate_by_sqlrow($sqlrow)
@@ -1511,8 +1628,9 @@ class Plugin extends BySQLRowEnabled
     {
         $stmt = qdb("SELECT `id`, `name`, `author`, `versiontext`, `versioncount`, `short_description`, `updatepath`, `web`, `help`, `code`, `classname`, `active`, `license`, `installed`, `update`, `api` FROM `PREFIX_plugins` WHERE `id` = ?", $id);
         $sqlrow = $stmt->fetch();
-        if($sqlrow === False)
+        if ($sqlrow === false) {
             throw new DoesNotExistError();
+        }
 
         return self::by_sqlrow($sqlrow);
     }
@@ -1526,10 +1644,11 @@ class Plugin extends BySQLRowEnabled
      */
     public static function all()
     {
-        $rv = array();
+        $rv = [];
         $stmt = qdb("SELECT `id`, `name`, `author`, `versiontext`, `versioncount`, `short_description`, `updatepath`, `web`, `help`, `code`, `classname`, `active`, `license`, `installed`, `update`, `api` FROM `PREFIX_plugins` WHERE 1");
-        while($sqlrow = $stmt->fetch())
+        while ($sqlrow = $stmt->fetch()) {
             $rv[] = self::by_sqlrow($sqlrow);
+        }
         return $rv;
     }
 
@@ -1538,8 +1657,25 @@ class Plugin extends BySQLRowEnabled
      */
     public function save()
     {
-        qdb("UPDATE `PREFIX_plugins` SET `name` = ?, `author` = ?, `code` = ?, `classname` = ?, `active` = ?, `versiontext` = ?, `versioncount` = ?, `short_description` = ?, `updatepath` = ?, `web` = ?, `help` = ?, `installed` = ?, `update` = ?, `license` = ?, `api` = ? WHERE `id` = ?",
-            $this->name, $this->author, $this->code, $this->classname, ($this->active ? 1 : 0), $this->versiontext, $this->versioncount, $this->short_description, $this->updatepath, $this->web, $this->help, ($this->installed ? 1 : 0), ($this->update ? 1 : 0), $this->license, $this->api, $this->id);
+        qdb(
+            "UPDATE `PREFIX_plugins` SET `name` = ?, `author` = ?, `code` = ?, `classname` = ?, `active` = ?, `versiontext` = ?, `versioncount` = ?, `short_description` = ?, `updatepath` = ?, `web` = ?, `help` = ?, `installed` = ?, `update` = ?, `license` = ?, `api` = ? WHERE `id` = ?",
+            $this->name,
+            $this->author,
+            $this->code,
+            $this->classname,
+            ($this->active ? 1 : 0),
+            $this->versiontext,
+            $this->versioncount,
+            $this->short_description,
+            $this->updatepath,
+            $this->web,
+            $this->help,
+            ($this->installed ? 1 : 0),
+            ($this->update ? 1 : 0),
+            $this->license,
+            $this->api,
+            $this->id
+        );
     }
 
     /*
@@ -1548,25 +1684,25 @@ class Plugin extends BySQLRowEnabled
     public function delete()
     {
         $tx = new Transaction();
-        try
-        {
+        try {
             qdb("DELETE FROM `PREFIX_plugins` WHERE `id` = ?", $this->id);
             qdb("DELETE FROM `PREFIX_plugin_kvstorage` WHERE `plugin` = ?", $this->id);
             qdb("DELETE FROM `PREFIX_article_extradata` WHERE `plugin` = ?", $this->id);
             $tx->commit();
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             $tx->rollback();
             throw $e;
         }
 
-        if(is_dir(SITE_BASE_PATH . "/ratatoeskr/plugin_extradata/private/" . $this->id))
+        if (is_dir(SITE_BASE_PATH . "/ratatoeskr/plugin_extradata/private/" . $this->id)) {
             delete_directory(SITE_BASE_PATH . "/ratatoeskr/plugin_extradata/private/" . $this->id);
-        if(is_dir(SITE_BASE_PATH . "/ratatoeskr/plugin_extradata/public/" . $this->id))
+        }
+        if (is_dir(SITE_BASE_PATH . "/ratatoeskr/plugin_extradata/public/" . $this->id)) {
             delete_directory(SITE_BASE_PATH . "/ratatoeskr/plugin_extradata/public/" . $this->id);
-        if(is_dir(SITE_BASE_PATH . "/ratatoeskr/templates/src/plugintemplates/" . $this->id))
+        }
+        if (is_dir(SITE_BASE_PATH . "/ratatoeskr/templates/src/plugintemplates/" . $this->id)) {
             delete_directory(SITE_BASE_PATH . "/ratatoeskr/templates/src/plugintemplates/" . $this->id);
+        }
     }
 
     /*
@@ -1627,7 +1763,10 @@ class Section extends BySQLRowEnabled
     /*
      * Function: get_id
      */
-    public function get_id() { return $this->id; }
+    public function get_id()
+    {
+        return $this->id;
+    }
 
     /*
      * Constructor: create
@@ -1643,15 +1782,13 @@ class Section extends BySQLRowEnabled
     {
         global $db_con;
 
-        if(!self::test_name($name))
+        if (!self::test_name($name)) {
             throw new InvalidDataError("invalid_section_name");
-
-        try
-        {
-            $obj = self::by_name($name);
         }
-        catch(DoesNotExistError $e)
-        {
+
+        try {
+            $obj = self::by_name($name);
+        } catch (DoesNotExistError $e) {
             $obj           = new self();
             $obj->name     = $name;
             $obj->title    = Multilingual::create();
@@ -1684,8 +1821,9 @@ class Section extends BySQLRowEnabled
     {
         $stmt = qdb("SELECT `id`, `name`, `title`, `template` FROM `PREFIX_sections` WHERE `id` = ?", $id);
         $sqlrow = $stmt->fetch();
-        if($sqlrow === False)
+        if ($sqlrow === false) {
             throw new DoesNotExistError();
+        }
 
         return self::by_sqlrow($sqlrow);
     }
@@ -1707,8 +1845,9 @@ class Section extends BySQLRowEnabled
     {
         $stmt = qdb("SELECT `id`, `name`, `title`, `template` FROM `PREFIX_sections` WHERE `name` = ?", $name);
         $sqlrow = $stmt->fetch();
-        if($sqlrow === False)
+        if ($sqlrow === false) {
             throw new DoesNotExistError();
+        }
 
         return self::by_sqlrow($sqlrow);
     }
@@ -1722,10 +1861,11 @@ class Section extends BySQLRowEnabled
      */
     public static function all()
     {
-        $rv = array();
+        $rv = [];
         $stmt = qdb("SELECT `id`, `name`, `title`, `template` FROM `PREFIX_sections` WHERE 1");
-        while($sqlrow = $stmt->fetch())
+        while ($sqlrow = $stmt->fetch()) {
             $rv[] = self::by_sqlrow($sqlrow);
+        }
         return $rv;
     }
 
@@ -1738,10 +1878,11 @@ class Section extends BySQLRowEnabled
      */
     public function get_styles()
     {
-        $rv = array();
+        $rv = [];
         $stmt = qdb("SELECT `a`.`id` AS `id`, `a`.`name` AS `name`, `a`.`code` AS `code` FROM `PREFIX_styles` `a` INNER JOIN `PREFIX_section_style_relations` `b` ON `a`.`id` = `b`.`style` WHERE `b`.`section` = ?", $this->id);
-        while($sqlrow = $stmt->fetch())
+        while ($sqlrow = $stmt->fetch()) {
             $rv[] = Style::by_sqlrow($sqlrow);
+        }
         return $rv;
     }
 
@@ -1755,16 +1896,14 @@ class Section extends BySQLRowEnabled
     public function add_style($style)
     {
         $tx = new Transaction();
-        try
-        {
+        try {
             $stmt = qdb("SELECT COUNT(*) AS `n` FROM `PREFIX_section_style_relations` WHERE `style` = ? AND `section` = ?", $style->get_id(), $this->id);
             $sqlrow = $stmt->fetch();
-            if($sqlrow["n"] == 0)
+            if ($sqlrow["n"] == 0) {
                 qdb("INSERT INTO `PREFIX_section_style_relations` (`section`, `style`) VALUES (?, ?)", $this->id, $style->get_id());
+            }
             $tx->commit();
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             $tx->rollback();
             throw $e;
         }
@@ -1790,24 +1929,28 @@ class Section extends BySQLRowEnabled
      */
     public function save()
     {
-        if(!self::test_name($this->name))
+        if (!self::test_name($this->name)) {
             throw new InvalidDataError("invalid_section_name");
+        }
 
         $tx = new Transaction();
-        try
-        {
+        try {
             $stmt = qdb("SELECT COUNT(*) AS `n` FROM `PREFIX_sections` WHERE `name` = ? AND `id` != ?", $this->name, $this->id);
             $sqlrow = $stmt->fetch();
-            if($sqlrow["n"] > 0)
+            if ($sqlrow["n"] > 0) {
                 throw new AlreadyExistsError();
+            }
 
             $this->title->save();
-            qdb("UPDATE `PREFIX_sections` SET `name` = ?, `title` = ?, `template` = ? WHERE `id` = ?",
-                $this->name, $this->title->get_id(), $this->template, $this->id);
+            qdb(
+                "UPDATE `PREFIX_sections` SET `name` = ?, `title` = ?, `template` = ? WHERE `id` = ?",
+                $this->name,
+                $this->title->get_id(),
+                $this->template,
+                $this->id
+            );
             $tx->commit();
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             $tx->rollback();
             throw $e;
         }
@@ -1819,15 +1962,12 @@ class Section extends BySQLRowEnabled
     public function delete()
     {
         $tx = new Transaction();
-        try
-        {
+        try {
             $this->title->delete();
             qdb("DELETE FROM `PREFIX_sections` WHERE `id` = ?", $this->id);
             qdb("DELETE FROM `PREFIX_section_style_relations` WHERE `section` = ?", $this->id);
             $tx->commit();
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             $tx->rollback();
             throw $e;
         }
@@ -1842,10 +1982,11 @@ class Section extends BySQLRowEnabled
      */
     public function get_articles()
     {
-        $rv = array();
+        $rv = [];
         $stmt = qdb("SELECT `id`, `urlname`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments` FROM `PREFIX_articles` WHERE `section` = ?", $this->id);
-        while($sqlrow = $stmt->fetch())
+        while ($sqlrow = $stmt->fetch()) {
             $rv[] = Article::by_sqlrow($sqlrow);
+        }
         return $rv;
     }
 }
@@ -1879,13 +2020,16 @@ class Tag extends BySQLRowEnabled
      */
     public static function test_name($name)
     {
-        return (strpos($name, ",") === False) and (strpos($name, " ") === False);
+        return (strpos($name, ",") === false) and (strpos($name, " ") === false);
     }
 
     /*
      * Function: get_id
      */
-    public function get_id() { return $this->id; }
+    public function get_id()
+    {
+        return $this->id;
+    }
 
     protected function populate_by_sqlrow($sqlrow)
     {
@@ -1907,22 +2051,23 @@ class Tag extends BySQLRowEnabled
     public static function create($name)
     {
         global $db_con;
-        if(!self::test_name($name))
+        if (!self::test_name($name)) {
             throw new InvalidDataError("invalid_tag_name");
-
-        try
-        {
-            $obj = self::by_name($name);
         }
-        catch(DoesNotExistError $e)
-        {
+
+        try {
+            $obj = self::by_name($name);
+        } catch (DoesNotExistError $e) {
             $obj = new self();
 
             $obj->name  = $name;
             $obj->title = Multilingual::create();
 
-            qdb("INSERT INTO `PREFIX_tags` (`name`, `title`) VALUES (?, ?)",
-                $name, $obj->title->get_id());
+            qdb(
+                "INSERT INTO `PREFIX_tags` (`name`, `title`) VALUES (?, ?)",
+                $name,
+                $obj->title->get_id()
+            );
             $obj->id = $db_con->lastInsertId();
 
             return $obj;
@@ -1944,8 +2089,9 @@ class Tag extends BySQLRowEnabled
     {
         $stmt = qdb("SELECT `id`, `name`, `title` FROM `PREFIX_tags` WHERE `id` = ?", $id);
         $sqlrow = $stmt->fetch();
-        if($sqlrow === False)
+        if ($sqlrow === false) {
             throw new DoesNotExistError();
+        }
 
         return self::by_sqlrow($sqlrow);
     }
@@ -1964,8 +2110,9 @@ class Tag extends BySQLRowEnabled
     {
         $stmt = qdb("SELECT `id`, `name`, `title` FROM `PREFIX_tags` WHERE `name` = ?", $name);
         $sqlrow = $stmt->fetch();
-        if($sqlrow === False)
+        if ($sqlrow === false) {
             throw new DoesNotExistError();
+        }
 
         return self::by_sqlrow($sqlrow);
     }
@@ -1979,10 +2126,11 @@ class Tag extends BySQLRowEnabled
      */
     public static function all()
     {
-        $rv = array();
+        $rv = [];
         $stmt = qdb("SELECT `id`, `name`, `title` FROM `PREFIX_tags` WHERE 1");
-        while($sqlrow = $stmt->fetch())
+        while ($sqlrow = $stmt->fetch()) {
             $rv[] = self::by_sqlrow($sqlrow);
+        }
         return $rv;
     }
 
@@ -1995,14 +2143,17 @@ class Tag extends BySQLRowEnabled
      */
     public function get_articles()
     {
-        $rv = array();
+        $rv = [];
         $stmt = qdb(
-"SELECT `a`.`id` AS `id`, `a`.`urlname` AS `urlname`, `a`.`title` AS `title`, `a`.`text` AS `text`, `a`.`excerpt` AS `excerpt`, `a`.`meta` AS `meta`, `a`.`custom` AS `custom`, `a`.`article_image` AS `article_image`, `a`.`status` AS `status`, `a`.`section` AS `section`, `a`.`timestamp` AS `timestamp`, `a`.`allow_comments` AS `allow_comments`
+            "SELECT `a`.`id` AS `id`, `a`.`urlname` AS `urlname`, `a`.`title` AS `title`, `a`.`text` AS `text`, `a`.`excerpt` AS `excerpt`, `a`.`meta` AS `meta`, `a`.`custom` AS `custom`, `a`.`article_image` AS `article_image`, `a`.`status` AS `status`, `a`.`section` AS `section`, `a`.`timestamp` AS `timestamp`, `a`.`allow_comments` AS `allow_comments`
 FROM `PREFIX_articles` `a`
 INNER JOIN `PREFIX_article_tag_relations` `b` ON `a`.`id` = `b`.`article`
-WHERE `b`.`tag` = ?" , $this->id);
-        while($sqlrow = $stmt->fetch())
+WHERE `b`.`tag` = ?",
+            $this->id
+        );
+        while ($sqlrow = $stmt->fetch()) {
             $rv[] = Article::by_sqlrow($sqlrow);
+        }
         return $rv;
     }
 
@@ -2027,24 +2178,27 @@ WHERE `b`.`tag` = ?" , $this->id);
      */
     public function save()
     {
-        if(!self::test_name($this->name))
+        if (!self::test_name($this->name)) {
             throw new InvalidDataError("invalid_tag_name");
+        }
 
         $tx = new Transaction();
-        try
-        {
+        try {
             $stmt = qdb("SELECT COUNT(*) AS `n` FROM `PREFIX_tags` WHERE `name` = ? AND `id` != ?", $this->name, $this->id);
             $sqlrow = $stmt->fetch();
-            if($sqlrow["n"] > 0)
+            if ($sqlrow["n"] > 0) {
                 throw new AlreadyExistsError();
+            }
 
             $this->title->save();
-            qdb("UPDATE `PREFIX_tags` SET `name` = ?, `title` = ? WHERE `id` = ?",
-                $this->name, $this->title->get_id(), $this->id);
+            qdb(
+                "UPDATE `PREFIX_tags` SET `name` = ?, `title` = ? WHERE `id` = ?",
+                $this->name,
+                $this->title->get_id(),
+                $this->id
+            );
             $tx->commit();
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             $tx->rollback();
             throw $e;
         }
@@ -2056,15 +2210,12 @@ WHERE `b`.`tag` = ?" , $this->id);
     public function delete()
     {
         $tx = new Transaction();
-        try
-        {
+        try {
             $this->title->delete();
             qdb("DELETE FROM `PREFIX_article_tag_relations` WHERE `tag` = ?", $this->id);
             qdb("DELETE FROM `PREFIX_tags` WHERE `id` = ?", $this->id);
             $tx->commit();
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             $tx->rollback();
             throw $e;
         }
@@ -2075,13 +2226,17 @@ WHERE `b`.`tag` = ?" , $this->id);
  * Class: UnknownFileFormat
  * Exception that will be thrown, if a input file has an unsupported file format.
  */
-class UnknownFileFormat extends Exception { }
+class UnknownFileFormat extends Exception
+{
+}
 
 /*
  * Class: IOError
  * This Exception is thrown, if a IO-Error occurs (file not available, no read/write acccess...).
  */
-class IOError extends Exception { }
+class IOError extends Exception
+{
+}
 
 /*
  * Class: Image
@@ -2115,8 +2270,14 @@ class Image extends BySQLRowEnabled
      * get_id - Get the ID
      * get_filename - Get the filename
      */
-    public function get_id()       { return $this->id;   }
-    public function get_filename() { return $this->file; }
+    public function get_id()
+    {
+        return $this->id;
+    }
+    public function get_filename()
+    {
+        return $this->file;
+    }
 
     /*
      * Constructor: create
@@ -2136,17 +2297,14 @@ class Image extends BySQLRowEnabled
         $obj->file = "0";
 
         $tx = new Transaction();
-        try
-        {
+        try {
             global $db_con;
 
             qdb("INSERT INTO `PREFIX_images` (`name`, `file`) VALUES (?, '0')", $name);
             $obj->id = $db_con->lastInsertId();
             $obj->exchange_image($file);
             $tx->commit();
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             $tx->rollback();
             throw $e;
         }
@@ -2167,8 +2325,9 @@ class Image extends BySQLRowEnabled
     {
         $stmt = qdb("SELECT `id`, `name`, `file` FROM `PREFIX_images` WHERE `id` = ?", $id);
         $sqlrow = $stmt->fetch();
-        if($sqlrow === False)
+        if ($sqlrow === false) {
             throw new DoesNotExistError();
+        }
 
         return self::by_sqlrow($sqlrow);
     }
@@ -2182,10 +2341,11 @@ class Image extends BySQLRowEnabled
      */
     public function all()
     {
-        $rv = array();
+        $rv = [];
         $stmt = qdb("SELECT `id`, `name`, `file` FROM `PREFIX_images` WHERE 1");
-        while($sqlrow = $stmt->fetch())
+        while ($sqlrow = $stmt->fetch()) {
             $rv[] = self::by_sqlrow($sqlrow);
+        }
         return $rv;
     }
 
@@ -2202,50 +2362,50 @@ class Image extends BySQLRowEnabled
     public function exchange_image($file)
     {
         global $imagetype_file_extensions;
-        if(!is_file($file))
+        if (!is_file($file)) {
             throw new IOError("\"$file\" is not available");
+        }
         $imageinfo = getimagesize($file);
-        if($imageinfo === False)
+        if ($imageinfo === false) {
             throw new UnknownFileFormat();
-        if(!isset($imagetype_file_extensions[$imageinfo[2]]))
+        }
+        if (!isset($imagetype_file_extensions[$imageinfo[2]])) {
             throw new UnknownFileFormat();
-        if(is_file(SITE_BASE_PATH . "/images/" . $this->file))
+        }
+        if (is_file(SITE_BASE_PATH . "/images/" . $this->file)) {
             unlink(SITE_BASE_PATH . "/images/" . $this->file);
+        }
         $new_fn = $this->id . "." . $imagetype_file_extensions[$imageinfo[2]];
-        if(!move_uploaded_file($file, SITE_BASE_PATH . "/images/" . $new_fn))
+        if (!move_uploaded_file($file, SITE_BASE_PATH . "/images/" . $new_fn)) {
             throw new IOError("Can not move file.");
+        }
         $this->file = $new_fn;
         $this->save();
 
         /* make preview image */
-        switch($imageinfo[2])
-        {
-            case IMAGETYPE_GIF:  $img = imagecreatefromgif (SITE_BASE_PATH . "/images/" . $new_fn); break;
+        switch ($imageinfo[2]) {
+            case IMAGETYPE_GIF:  $img = imagecreatefromgif(SITE_BASE_PATH . "/images/" . $new_fn); break;
             case IMAGETYPE_JPEG: $img = imagecreatefromjpeg(SITE_BASE_PATH . "/images/" . $new_fn); break;
-            case IMAGETYPE_PNG:  $img = imagecreatefrompng (SITE_BASE_PATH . "/images/" . $new_fn); break;
+            case IMAGETYPE_PNG:  $img = imagecreatefrompng(SITE_BASE_PATH . "/images/" . $new_fn); break;
             default: $img = imagecreatetruecolor(40, 40); imagefill($img, 1, 1, imagecolorallocate($img, 127, 127, 127)); break;
         }
         $w_orig = imagesx($img);
         $h_orig = imagesy($img);
-        if(($w_orig > self::$pre_maxw) or ($h_orig > self::$pre_maxh))
-        {
+        if (($w_orig > self::$pre_maxw) or ($h_orig > self::$pre_maxh)) {
             $ratio = $w_orig / $h_orig;
-            if($ratio > 1)
-            {
+            if ($ratio > 1) {
                 $w_new = round(self::$pre_maxw);
                 $h_new = round(self::$pre_maxw / $ratio);
-            }
-            else
-            {
+            } else {
                 $h_new = round(self::$pre_maxh);
                 $w_new = round(self::$pre_maxh * $ratio);
             }
             $preview = imagecreatetruecolor($w_new, $h_new);
             imagecopyresized($preview, $img, 0, 0, 0, 0, $w_new, $h_new, $w_orig, $h_orig);
             imagepng($preview, SITE_BASE_PATH . "/images/previews/{$this->id}.png");
-        }
-        else
+        } else {
             imagepng($img, SITE_BASE_PATH . "/images/previews/{$this->id}.png");
+        }
     }
 
     /*
@@ -2253,8 +2413,12 @@ class Image extends BySQLRowEnabled
      */
     public function save()
     {
-        qdb("UPDATE `PREFIX_images` SET `name` = ?, `file` = ? WHERE `id` = ?",
-            $this->name, $this->file, $this->id);
+        qdb(
+            "UPDATE `PREFIX_images` SET `name` = ?, `file` = ? WHERE `id` = ?",
+            $this->name,
+            $this->file,
+            $this->id
+        );
     }
 
     /*
@@ -2263,10 +2427,12 @@ class Image extends BySQLRowEnabled
     public function delete()
     {
         qdb("DELETE FROM `PREFIX_images` WHERE `id` = ?", $this->id);
-        if(is_file(SITE_BASE_PATH . "/images/" . $this->file))
+        if (is_file(SITE_BASE_PATH . "/images/" . $this->file)) {
             unlink(SITE_BASE_PATH . "/images/" . $this->file);
-        if(is_file(SITE_BASE_PATH . "/images/previews/{$this->id}.png"))
+        }
+        if (is_file(SITE_BASE_PATH . "/images/previews/{$this->id}.png")) {
             unlink(SITE_BASE_PATH . "/images/previews/{$this->id}.png");
+        }
     }
 }
 
@@ -2274,7 +2440,9 @@ class Image extends BySQLRowEnabled
  * Class: RepositoryUnreachableOrInvalid
  * A Exception that will be thrown, if the repository is unreachable or seems to be an invalid repository.
  */
-class RepositoryUnreachableOrInvalid extends Exception { }
+class RepositoryUnreachableOrInvalid extends Exception
+{
+}
 
 /*
  * Class: Repository
@@ -2298,7 +2466,7 @@ class Repository extends BySQLRowEnabled
 
     protected function __construct()
     {
-        $this->stream_ctx = stream_context_create(array("http" => array("timeout" => 5)));
+        $this->stream_ctx = stream_context_create(["http" => ["timeout" => 5]]);
     }
 
     /*
@@ -2308,10 +2476,22 @@ class Repository extends BySQLRowEnabled
      * get_name        - Get repository name.
      * get_description - Get repository description.
      */
-    public function get_id()          { return $this->id;          }
-    public function get_baseurl()     { return $this->baseurl;     }
-    public function get_name()        { return $this->name;        }
-    public function get_description() { return $this->description; }
+    public function get_id()
+    {
+        return $this->id;
+    }
+    public function get_baseurl()
+    {
+        return $this->baseurl;
+    }
+    public function get_name()
+    {
+        return $this->name;
+    }
+    public function get_description()
+    {
+        return $this->description;
+    }
 
     /*
      * Constructor: create
@@ -2327,24 +2507,22 @@ class Repository extends BySQLRowEnabled
     {
         $obj = new self();
 
-        if(preg_match('/^(http[s]?:\\/\\/.*?)[\\/]?$/', $baseurl, $matches) == 0)
+        if (preg_match('/^(http[s]?:\\/\\/.*?)[\\/]?$/', $baseurl, $matches) == 0) {
             throw new RepositoryUnreachableOrInvalid();
+        }
 
         $obj->baseurl = $matches[1];
-        $obj->refresh(True);
+        $obj->refresh(true);
 
         $tx = new Transaction();
-        try
-        {
+        try {
             global $db_con;
 
-            qdb("INSERT INTO `ratatoeskr_repositories` () VALUES ()");
+            qdb("INSERT INTO `ratatoeskr_repositories` ( baseurl, name, description, pkgcache, lastrefresh ) VALUES ()");
             $obj->id = $db_con->lastInsertId();
             $obj->save();
             $tx->commit();
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             $tx->rollback();
             throw $e;
         }
@@ -2376,8 +2554,9 @@ class Repository extends BySQLRowEnabled
     {
         $stmt = qdb("SELECT `id`, `name`, `description`, `baseurl`, `pkgcache`, `lastrefresh` FROM `PREFIX_repositories` WHERE `id` = ?", $id);
         $sqlrow = $stmt->fetch();
-        if(!$sqlrow)
+        if (!$sqlrow) {
             throw new DoesNotExistError();
+        }
 
         return self::by_sqlrow($sqlrow);
     }
@@ -2391,22 +2570,25 @@ class Repository extends BySQLRowEnabled
      */
     public static function all()
     {
-        $rv = array();
+        $rv = [];
         $stmt = qdb("SELECT `id`, `name`, `description`, `baseurl`, `pkgcache`, `lastrefresh` FROM `PREFIX_repositories` WHERE 1");
-        while($sqlrow = $stmt->fetch())
+        while ($sqlrow = $stmt->fetch()) {
             $rv[] = self::by_sqlrow($sqlrow);
+        }
         return $rv;
     }
 
     private function save()
     {
-        qdb("UPDATE `PREFIX_repositories` SET `baseurl` = ?, `name` = ?, `description` = ?, `pkgcache` = ?, `lastrefresh` = ? WHERE `id` = ?",
+        qdb(
+            "UPDATE `PREFIX_repositories` SET `baseurl` = ?, `name` = ?, `description` = ?, `pkgcache` = ?, `lastrefresh` = ? WHERE `id` = ?",
             $this->baseurl,
             $this->name,
             $this->description,
             base64_encode(serialize($this->packages)),
             $this->lastrefresh,
-            $this->id);
+            $this->id
+        );
     }
 
     /*
@@ -2428,21 +2610,24 @@ class Repository extends BySQLRowEnabled
      * Throws:
      *  <RepositoryUnreachableOrInvalid>
      */
-    public function refresh($force = False)
+    public function refresh($force = false)
     {
-        if(($this->lastrefresh > (time() - (60*60*4))) and (!$force))
+        if (($this->lastrefresh > (time() - (60*60*4))) and (!$force)) {
             return;
+        }
 
-        $repometa = @file_get_contents($this->baseurl . "/repometa", False, $this->stream_ctx);
-        if($repometa === FALSE)
+        $repometa = @file_get_contents($this->baseurl . "/repometa", false, $this->stream_ctx);
+        if ($repometa === false) {
             throw new RepositoryUnreachableOrInvalid();
+        }
         $repometa = @unserialize($repometa);
-        if((!is_array($repometa)) or (!isset($repometa["name"])) or (!isset($repometa["description"])))
+        if ((!is_array($repometa)) or (!isset($repometa["name"])) or (!isset($repometa["description"]))) {
             throw new RepositoryUnreachableOrInvalid();
+        }
 
         $this->name        = $repometa["name"];
         $this->description = $repometa["description"];
-        $this->packages    = @unserialize(@file_get_contents($this->baseurl . "/packagelist", False, $ctx));
+        $this->packages    = @unserialize(@file_get_contents($this->baseurl . "/packagelist", false, $ctx));
 
         $this->lastrefresh = time();
 
@@ -2464,22 +2649,22 @@ class Repository extends BySQLRowEnabled
      */
     public function get_package_meta($pkgname)
     {
-        $found = False;
-        foreach($this->packages as $p)
-        {
-            if($p[0] == $pkgname)
-            {
-                $found = True;
+        $found = false;
+        foreach ($this->packages as $p) {
+            if ($p[0] == $pkgname) {
+                $found = true;
                 break;
             }
         }
-        if(!$found)
+        if (!$found) {
             throw new DoesNotExistError("Package not in package cache.");
+        }
 
-        $pkgmeta = @unserialize(@file_get_contents($this->baseurl . "/packages/" . urlencode($pkgname) . "/meta", False, $this->stream_ctx));
+        $pkgmeta = @unserialize(@file_get_contents($this->baseurl . "/packages/" . urlencode($pkgname) . "/meta", false, $this->stream_ctx));
 
-        if(!($pkgmeta instanceof PluginPackageMeta))
+        if (!($pkgmeta instanceof PluginPackageMeta)) {
             throw new DoesNotExistError();
+        }
 
         return $pkgmeta;
     }
@@ -2501,21 +2686,21 @@ class Repository extends BySQLRowEnabled
      */
     public function download_package($pkgname, $version = "current")
     {
-        $found = False;
-        foreach($this->packages as $p)
-        {
-            if($p[0] == $pkgname)
-            {
-                $found = True;
+        $found = false;
+        foreach ($this->packages as $p) {
+            if ($p[0] == $pkgname) {
+                $found = true;
                 break;
             }
         }
-        if(!$found)
+        if (!$found) {
             throw new DoesNotExistError("Package not in package cache.");
+        }
 
-        $raw = @file_get_contents($this->baseurl . "/packages/" . urlencode($pkgname) . "/versions/" . urlencode($version), False, $this->stream_ctx);
-        if($raw === False)
+        $raw = @file_get_contents($this->baseurl . "/packages/" . urlencode($pkgname) . "/versions/" . urlencode($version), false, $this->stream_ctx);
+        if ($raw === false) {
             throw new DoesNotExistError();
+        }
 
         return PluginPackage::load($raw);
     }
@@ -2559,7 +2744,7 @@ class Article extends BySQLRowEnabled
 
     protected function __construct()
     {
-        $this->section_obj = NULL;
+        $this->section_obj = null;
     }
 
     protected function populate_by_sqlrow($sqlrow)
@@ -2571,7 +2756,7 @@ class Article extends BySQLRowEnabled
         $this->excerpt        = Multilingual::by_id($sqlrow["excerpt"]);
         $this->meta           = $sqlrow["meta"];
         $this->custom         = unserialize(base64_decode($sqlrow["custom"]));
-        $this->article_image  = $sqlrow["article_image"] == 0 ? NULL : Image::by_id($sqlrow["article_image"]);
+        $this->article_image  = $sqlrow["article_image"] == 0 ? null : Image::by_id($sqlrow["article_image"]);
         $this->status         = $sqlrow["status"];
         $this->section_id     = $sqlrow["section"];
         $this->timestamp      = $sqlrow["timestamp"];
@@ -2581,7 +2766,10 @@ class Article extends BySQLRowEnabled
     /*
      * Function: get_id
      */
-    public function get_id() { return $this->id; }
+    public function get_id()
+    {
+        return $this->id;
+    }
 
     /*
      * Function: test_urlname
@@ -2628,29 +2816,28 @@ class Article extends BySQLRowEnabled
         global $ratatoeskr_settings;
         global $db_con;
 
-        if(!self::test_urlname($urlname))
+        if (!self::test_urlname($urlname)) {
             throw new InvalidDataError("invalid_urlname");
-
-        try
-        {
-            self::by_urlname($urlname);
         }
-        catch(DoesNotExistError $e)
-        {
+
+        try {
+            self::by_urlname($urlname);
+        } catch (DoesNotExistError $e) {
             $obj = new self();
             $obj->urlname        = $urlname;
             $obj->title          = Multilingual::create();
             $obj->text           = Multilingual::create();
             $obj->excerpt        = Multilingual::create();
             $obj->meta           = "";
-            $obj->custom         = array();
-            $obj->article_image  = NULL;
+            $obj->custom         = [];
+            $obj->article_image  = null;
             $obj->status         = ARTICLE_STATUS_HIDDEN;
             $obj->section_id     = $ratatoeskr_settings["default_section"];
             $obj->timestamp      = time();
             $obj->allow_comments = $ratatoeskr_settings["allow_comments_default"];
 
-            qdb("INSERT INTO `PREFIX_articles` (`urlname`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments`) VALUES ('', ?, ?, ?, '', ?, 0, ?, ?, ?, ?)",
+            qdb(
+                "INSERT INTO `PREFIX_articles` (`urlname`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments`) VALUES ('', ?, ?, ?, '', ?, 0, ?, ?, ?, ?)",
                 $obj->title->get_id(),
                 $obj->text->get_id(),
                 $obj->excerpt->get_id(),
@@ -2658,7 +2845,8 @@ class Article extends BySQLRowEnabled
                 $obj->status,
                 $obj->section_id,
                 $obj->timestamp,
-                $obj->allow_comments ? 1 : 0);
+                $obj->allow_comments ? 1 : 0
+            );
             $obj->id = $db_con->lastInsertId();
             return $obj;
         }
@@ -2680,8 +2868,9 @@ class Article extends BySQLRowEnabled
     {
         $stmt = qdb("SELECT `id`, `urlname`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments` FROM `PREFIX_articles` WHERE `id` = ?", $id);
         $sqlrow = $stmt->fetch();
-        if($sqlrow === False)
+        if ($sqlrow === false) {
             throw new DoesNotExistError();
+        }
 
         return self::by_sqlrow($sqlrow);
     }
@@ -2700,8 +2889,9 @@ class Article extends BySQLRowEnabled
     {
         $stmt = qdb("SELECT `id`, `urlname`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments` FROM `PREFIX_articles` WHERE `urlname` = ?", $urlname);
         $sqlrow = $stmt->fetch();
-        if($sqlrow === False)
+        if ($sqlrow === false) {
             throw new DoesNotExistError();
+        }
 
         return self::by_sqlrow($sqlrow);
     }
@@ -2725,12 +2915,10 @@ class Article extends BySQLRowEnabled
      */
     public static function by_multi($criterias, $sortby, $sortdir, $count, $offset, $perpage, $page, &$maxpage)
     {
-        $subqueries = array();
-        $subparams = array();
-        foreach($criterias as $k => $v)
-        {
-            switch($k)
-            {
+        $subqueries = [];
+        $subparams = [];
+        foreach ($criterias as $k => $v) {
+            switch ($k) {
                 case "id":
                     $subqueries[] = "`a`.`id` = ?";
                     $subparams[] = $v;
@@ -2762,11 +2950,11 @@ class Article extends BySQLRowEnabled
             }
         }
 
-        if(($sortdir != "ASC") and ($sortdir != "DESC"))
+        if (($sortdir != "ASC") and ($sortdir != "DESC")) {
             $sortdir = "ASC";
+        }
         $sorting = "";
-        switch($sortby)
-        {
+        switch ($sortby) {
             case "id":        $sorting = "ORDER BY `a`.`id` $sortdir";        break;
             case "urlname":   $sorting = "ORDER BY `a`.`urlname` $sortdir";   break;
             case "timestamp": $sorting = "ORDER BY `a`.`timestamp` $sortdir"; break;
@@ -2780,30 +2968,30 @@ WHERE " . implode(" AND ", $subqueries) . " $sorting");
 
         $stmt->execute($subparams);
 
-        $rows = array();
-        $fetched_ids = array();
-        while($sqlrow = $stmt->fetch())
-        {
-            if(!in_array($sqlrow["id"], $fetched_ids))
-            {
+        $rows = [];
+        $fetched_ids = [];
+        while ($sqlrow = $stmt->fetch()) {
+            if (!in_array($sqlrow["id"], $fetched_ids)) {
                 $rows[]        = $sqlrow;
                 $fetched_ids[] = $sqlrow["id"];
             }
         }
 
-        if($count !== NULL)
+        if ($count !== null) {
             $rows = array_slice($rows, 0, $count);
-        if($offset !== NULL)
+        }
+        if ($offset !== null) {
             $rows = array_slice($rows, $offset);
-        if(($perpage !== NULL) and ($page !== NULL))
-        {
+        }
+        if (($perpage !== null) and ($page !== null)) {
             $maxpage = ceil(count($rows) / $perpage);
             $rows = array_slice($rows, $perpage * ($page - 1), $perpage);
         }
 
-        $rv = array();
-        foreach($rows as $r)
+        $rv = [];
+        foreach ($rows as $r) {
             $rv[] = self::by_sqlrow($r);
+        }
         return $rv;
     }
 
@@ -2816,10 +3004,11 @@ WHERE " . implode(" AND ", $subqueries) . " $sorting");
      */
     public static function all()
     {
-        $rv = array();
+        $rv = [];
         $stmt = qdb("SELECT `id`, `urlname`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments` FROM `PREFIX_articles` WHERE 1");
-        while($sqlrow = $stmt->fetch())
+        while ($sqlrow = $stmt->fetch()) {
             $rv[] = self::by_sqlrow($sqlrow);
+        }
         return $rv;
     }
 
@@ -2834,24 +3023,25 @@ WHERE " . implode(" AND ", $subqueries) . " $sorting");
      * Returns:
      *  Array of <Comment> objects.
      */
-    public function get_comments($limit_lang = "", $only_visible = False)
+    public function get_comments($limit_lang = "", $only_visible = false)
     {
-        $rv = array();
+        $rv = [];
 
-        $conditions = array("`article` = ?");
-        $arguments = array($this->id);
-        if($limit_lang != "")
-        {
+        $conditions = ["`article` = ?"];
+        $arguments = [$this->id];
+        if ($limit_lang != "") {
             $conditions[] = "`language` = ?";
             $arguments[] = $limit_lang;
         }
-        if($only_visible)
+        if ($only_visible) {
             $conditions[] = "`visible` = 1";
+        }
 
         $stmt = prep_stmt("SELECT `id`, `article`, `language`, `author_name`, `author_mail`, `text`, `timestamp`, `visible`, `read_by_admin` FROM `PREFIX_comments` WHERE " . implode(" AND ", $conditions));
         $stmt->execute($arguments);
-        while($sqlrow = $stmt->fetch())
+        while ($sqlrow = $stmt->fetch()) {
             $rv[] = Comment::by_sqlrow($sqlrow);
+        }
         return $rv;
     }
 
@@ -2864,10 +3054,11 @@ WHERE " . implode(" AND ", $subqueries) . " $sorting");
      */
     public function get_tags()
     {
-        $rv = array();
+        $rv = [];
         $stmt = qdb("SELECT `a`.`id` AS `id`, `a`.`name` AS `name`, `a`.`title` AS `title` FROM `PREFIX_tags` `a` INNER JOIN `PREFIX_article_tag_relations` `b` ON `a`.`id` = `b`.`tag` WHERE `b`.`article` = ?", $this->id);
-        while($sqlrow = $stmt->fetch())
+        while ($sqlrow = $stmt->fetch()) {
             $rv[] = Tag::by_sqlrow($sqlrow);
+        }
         return $rv;
     }
 
@@ -2881,32 +3072,28 @@ WHERE " . implode(" AND ", $subqueries) . " $sorting");
     public function set_tags($tags)
     {
         $tx = new Transaction();
-        try
-        {
-            foreach($tags as $tag)
+        try {
+            foreach ($tags as $tag) {
                 $tag->save();
+            }
 
             qdb("DELETE FROM `PREFIX_article_tag_relations` WHERE `article`= ?", $this->id);
 
             $articleid = $this->id;
-            if(!empty($tags))
-            {
+            if (!empty($tags)) {
                 $stmt = prep_stmt(
                     "INSERT INTO `PREFIX_article_tag_relations` (`article`, `tag`) VALUES " .
                     implode(",", array_fill(0, count($tags), "(?,?)"))
                 );
-                $args = array();
-                foreach($tags as $tag)
-                {
+                $args = [];
+                foreach ($tags as $tag) {
                     $args[] = $articleid;
                     $args[] = $tag->get_id();
                 }
                 $stmt->execute($args);
             }
             $tx->commit();
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             $tx->rollback();
             throw $e;
         }
@@ -2921,8 +3108,9 @@ WHERE " . implode(" AND ", $subqueries) . " $sorting");
      */
     public function get_section()
     {
-        if($this->section_obj === NULL)
+        if ($this->section_obj === null) {
             $this->section_obj = Section::by_id($this->section_id);
+        }
         return $this->section_obj;
     }
 
@@ -2962,32 +3150,35 @@ WHERE " . implode(" AND ", $subqueries) . " $sorting");
      */
     public function save()
     {
-        if(!self::test_urlname($this->urlname))
+        if (!self::test_urlname($this->urlname)) {
             throw new InvalidDataError("invalid_urlname");
+        }
 
-        if(!self::test_status($this->status))
+        if (!self::test_status($this->status)) {
             throw new InvalidDataError("invalid_article_status");
+        }
 
         $tx = new Transaction();
-        try
-        {
+        try {
             $stmt = qdb("SELECT COUNT(*) AS `n` FROM `PREFIX_articles` WHERE `urlname` = ? AND `id` != ?", $this->urlname, $this->id);
             $sqlrow = $stmt->fetch();
-            if($sqlrow["n"] > 0)
+            if ($sqlrow["n"] > 0) {
                 throw new AlreadyExistsError();
+            }
 
             $this->title->save();
             $this->text->save();
             $this->excerpt->save();
 
-            qdb("UPDATE `PREFIX_articles` SET `urlname` = ?, `title` = ?, `text` = ?, `excerpt` = ?, `meta` = ?, `custom` = ?, `article_image` = ?, `status` = ?, `section` = ?, `timestamp` = ?, `allow_comments` = ? WHERE `id` = ?",
+            qdb(
+                "UPDATE `PREFIX_articles` SET `urlname` = ?, `title` = ?, `text` = ?, `excerpt` = ?, `meta` = ?, `custom` = ?, `article_image` = ?, `status` = ?, `section` = ?, `timestamp` = ?, `allow_comments` = ? WHERE `id` = ?",
                 $this->urlname,
                 $this->title->get_id(),
                 $this->text->get_id(),
                 $this->excerpt->get_id(),
                 $this->meta,
                 base64_encode(serialize($this->custom)),
-                $this->article_image === NULL ? 0 : $this->article_image->get_id(),
+                $this->article_image === null ? 0 : $this->article_image->get_id(),
                 $this->status,
                 $this->section_id,
                 $this->timestamp,
@@ -2995,9 +3186,7 @@ WHERE " . implode(" AND ", $subqueries) . " $sorting");
                 $this->id
             );
             $tx->commit();
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             $tx->rollback();
             throw $e;
         }
@@ -3009,22 +3198,20 @@ WHERE " . implode(" AND ", $subqueries) . " $sorting");
     public function delete()
     {
         $tx = new Transaction();
-        try
-        {
+        try {
             $this->title->delete();
             $this->text->delete();
             $this->excerpt->delete();
 
-            foreach($this->get_comments() as $comment)
+            foreach ($this->get_comments() as $comment) {
                 $comment->delete();
+            }
 
             qdb("DELETE FROM `PREFIX_article_tag_relations` WHERE `article` = ?", $this->id);
             qdb("DELETE FROM `PREFIX_article_extradata` WHERE `article` = ?", $this->id);
             qdb("DELETE FROM `PREFIX_articles` WHERE `id` = ?", $this->id);
             $tx->commit();
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             $tx->rollback();
             throw $e;
         }
@@ -3050,10 +3237,10 @@ class ArticleExtradata extends KVStorage
      */
     public function __construct($article_id, $plugin_id)
     {
-        $this->init("PREFIX_article_extradata", array(
+        $this->init("PREFIX_article_extradata", [
             "article" => $article_id,
             "plugin" => $plugin_id,
-        ));
+        ]);
     }
 }
 
@@ -3067,11 +3254,15 @@ class ArticleExtradata extends KVStorage
 function dbversion()
 {
     /* Is the meta table present? If no, the version is 0. */
-    $stmt = qdb("SELECT COUNT(*) FROM `information_schema`.`tables` WHERE `table_schema` = ? AND `table_name` = ?",
-        $config["mysql"]["db"], sub_prefix("PREFIX_meta"));
+    $stmt = qdb(
+        "SELECT COUNT(*) FROM `information_schema`.`tables` WHERE `table_schema` = ? AND `table_name` = ?",
+        $config["mysql"]["db"],
+        sub_prefix("PREFIX_meta")
+    );
     list($n) = $stmt->fetch();
-    if($n == 0)
+    if ($n == 0) {
         return 0;
+    }
 
     $stmt = qdb("SELECT `value` FROM `PREFIX_meta` WHERE `key` = 'dbversion'");
     $sqlrow = $stmt->fetch();
@@ -3085,8 +3276,7 @@ function dbversion()
 function clean_database()
 {
     global $ratatoeskr_settings;
-    if((!isset($ratatoeskr_settings["last_db_cleanup"])) or ($ratatoeskr_settings["last_db_cleanup"] < (time() - 86400)))
-    {
+    if ((!isset($ratatoeskr_settings["last_db_cleanup"])) or ($ratatoeskr_settings["last_db_cleanup"] < (time() - 86400))) {
         Plugin::clean_db();
         $ratatoeskr_settings["last_db_cleanup"] = time();
     }

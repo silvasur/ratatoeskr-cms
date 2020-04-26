@@ -19,7 +19,9 @@
  */
 class PasswordHash
 {
-    private function __construct() {} /* Prevent construction */
+    private function __construct()
+    {
+    } /* Prevent construction */
 
     private static $saltlen_min = 20;
     private static $saltlen_max = 30;
@@ -29,8 +31,9 @@ class PasswordHash
     private static function hash($data, $salt, $iterations)
     {
         $hash = $data . $salt;
-        for($i = $iterations ;$i--;)
+        for ($i = $iterations ;$i--;) {
             $hash = sha1($data . $hash . $salt, (bool) $i);
+        }
         return $iterations . '$' . bin2hex($salt) . '$' . $hash;
     }
 
@@ -48,8 +51,9 @@ class PasswordHash
     {
         $salt = "";
         $saltlen = mt_rand(self::$saltlen_min, self::$saltlen_max);
-        for($i = 0; $i < $saltlen; $i++)
-            $salt .= chr(mt_rand(0,255));
+        for ($i = 0; $i < $saltlen; $i++) {
+            $salt .= chr(mt_rand(0, 255));
+        }
         return self::hash($password, $salt, mt_rand(self::$iterations_min, self::$iterations_max));
     }
 

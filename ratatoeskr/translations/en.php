@@ -1,6 +1,6 @@
 <?php
 
-$translation = array(
+$translation = [
     "username" => "Username",
     "password" => "Password",
     "login_form_header" => "Login",
@@ -346,4 +346,4 @@ Header 2<br />
     <a href="http://daringfireball.net/projects/markdown/dingus">Test Markdown</a>
 </p>
 CHEATSHEET
-);
+];

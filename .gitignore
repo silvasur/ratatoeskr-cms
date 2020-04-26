@@ -10,3 +10,4 @@ ratatoeskr/libs/markdown.php
 ratatoeskr/libs/kses.php
 ratatoeskr/libs/jquery.min.js
 ratatoeskr/config.php
+.php_cs.cache

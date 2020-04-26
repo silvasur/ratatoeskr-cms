@@ -1,0 +1,15 @@
+<?php
+$finder = PhpCsFixer\Finder::create()
+    ->notPath('/plugin_extradata/')
+    ->notPath('/templates/')
+    ->notPath('/libs/')
+    ->in(__DIR__);
+
+return PhpCsFixer\Config::create()
+    ->setRules([
+        '@PSR1' => true,
+        '@PSR2' => true,
+        'array_syntax' => ['syntax' => 'short'],
+    ])
+    ->setFinder($finder)
+;

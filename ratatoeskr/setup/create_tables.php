@@ -1,7 +1,8 @@
 <?php
 
-if(!defined("SETUP"))
+if (!defined("SETUP")) {
     die();
+}
 
 require_once(dirname(__FILE__) . "/../sys/db.php");
 
@@ -105,7 +106,6 @@ CREATE TABLE IF NOT EXISTS `PREFIX_sections` (
   `name` text COLLATE utf8_unicode_ci NOT NULL,
   `title` int(11) NOT NULL,
   `template` text COLLATE utf8_unicode_ci NOT NULL,
-  `styles` text COLLATE utf8_unicode_ci NOT NULL,
   PRIMARY KEY (`id`)
 ) DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
@@ -169,10 +169,10 @@ function create_mysql_tables()
     global $sql_tables;
 
     $queries = explode(";", $sql_tables);
-    foreach($queries as $q)
-    {
-        if(!empty($q))
+    foreach ($queries as $q) {
+        if (!empty($q)) {
             qdb($q);
+        }
     }
 
     qdb("INSERT INTO `PREFIX_meta` (`key`, `value`) VALUES ('dbversion', ?)", base64_encode(serialize(1)));

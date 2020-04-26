@@ -10,12 +10,13 @@
  * See "ratatoeskr/licenses/ratatoeskr" for more information.
  */
 
-if(!defined("SETUP"))
+if (!defined("SETUP")) {
     require_once(dirname(__FILE__) . "/../config.php");
+}
 
 require_once(dirname(__FILE__) . "/utils.php");
 
-$db_con = Null;
+$db_con = null;
 
 /*
  * Function: db_connect
@@ -31,9 +32,10 @@ function db_connect()
         "mysql:host=" . $config["mysql"]["server"] . ";dbname=" . $config["mysql"]["db"] . ";charset=utf8",
         $config["mysql"]["user"],
         $config["mysql"]["passwd"],
-        array(
+        [
             PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8',
-        ));
+        ]
+    );
     $db_con->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 }
 
@@ -78,8 +80,9 @@ function prep_stmt($q)
 function qdb()
 {
     $args = func_get_args();
-    if(count($args) < 1)
+    if (count($args) < 1) {
         throw new InvalidArgumentException("qdb needs at least 1 argument");
+    }
 
     $stmt = prep_stmt($args[0]);
     $stmt->execute(array_slice($args, 1));
@@ -104,8 +107,9 @@ class Transaction
     {
         global $db_con;
         $this->startedhere = !($db_con->inTransaction());
-        if($this->startedhere)
+        if ($this->startedhere) {
             $db_con->beginTransaction();
+        }
     }
 
     /*
@@ -117,8 +121,9 @@ class Transaction
     {
         global $db_con;
 
-        if($this->startedhere)
+        if ($this->startedhere) {
             $db_con->commit();
+        }
     }
 
     /*
@@ -130,7 +135,8 @@ class Transaction
     {
         global $db_con;
 
-        if($this->startedhere)
+        if ($this->startedhere) {
             $db_con->rollBack();
+        }
     }
 }
