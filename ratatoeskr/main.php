@@ -2,7 +2,7 @@
 /*
  * File: ratatoeskr/main.php
  * Initialize and launch Ratatöskr
- * 
+ *
  * License:
  * This file is part of Ratatöskr.
  * Ratatöskr is licensed unter the MIT / X11 License.
@@ -11,7 +11,7 @@
 
 require_once(dirname(__FILE__) . "/config.php");
 if(!CONFIG_FILLED_OUT)
-	die("Config file not filled out!");
+    die("Config file not filled out!");
 
 require_once(dirname(__FILE__) . "/sys/db.php");
 require_once(dirname(__FILE__) . "/sys/models.php");
@@ -26,88 +26,88 @@ $plugin_objs = array();
 
 function ratatoeskr()
 {
-	global $ste;
-	try
-	{
-		_ratatoeskr();
-	}
-	catch(Exception $e)
-	{
-		header("HTTP/1.1 500 Internal Server Error");
-		$ste->vars["title"] = "500 Internal Server Error";
-		if(__DEBUG__)
-			$ste->vars["details"] = $e->__toString();
-		echo $ste->exectemplate("/systemtemplates/error.html");
-	}
+    global $ste;
+    try
+    {
+        _ratatoeskr();
+    }
+    catch(Exception $e)
+    {
+        header("HTTP/1.1 500 Internal Server Error");
+        $ste->vars["title"] = "500 Internal Server Error";
+        if(__DEBUG__)
+            $ste->vars["details"] = $e->__toString();
+        echo $ste->exectemplate("/systemtemplates/error.html");
+    }
 }
 
 function _ratatoeskr()
 {
-	global $backend_subactions, $ste, $url_handlers, $ratatoeskr_settings, $plugin_objs, $api_compat;
-	
-	$ts_start = microtime(True);
-	
-	session_start();
-	db_connect();
-	clean_database();
-	
-	if(isset($ratatoeskr_settings["debugmode"]) and $ratatoeskr_settings["debugmode"])
-		define("__DEBUG__", True);
-	
-	if(PLUGINS_ENABLED)
-	{
-		$activeplugins = array_filter(Plugin::all(), function($plugin) { return $plugin->active; });
-		foreach($activeplugins as $plugin)
-		{
-			if(!in_array($plugin->api, $api_compat))
-			{
-				$plugin->active = False;
-				$plugin->save();
-				continue;
-			}
-			
-			eval($plugin->code);
-			$plugin_obj = new $plugin->classname($plugin->get_id());
-			if($plugin->update)
-			{
-				$plugin_obj->update();
-				$plugin->update = False;
-				$plugin->save();
-			}
-			$plugin_obj->init();
-			$plugin_objs[$plugin->get_id()] = $plugin_obj;
-		}
-	}
-	
-	/* Register URL handlers */
-	build_backend_subactions();
-	register_url_handler("_default", "frontend_url_handler");
-	register_url_handler("_index", "frontend_url_handler");
-	register_url_handler("index", "frontend_url_handler");
-	register_url_handler("backend", $backend_subactions);
-	register_url_handler("_notfound", url_action_simple(function($data)
-	{
-		global $ste;
-		header("HTTP/1.1 404 Not Found");
-		$ste->vars["title"]   = "404 Not Found";
-		$ste->vars["details"] = str_replace("[[URL]]", $_SERVER["REQUEST_URI"], (isset($translation) ? $translation["e404_details"] : "The page [[URL]] could not be found. Sorry."));
-		echo $ste->exectemplate("/systemtemplates/error.html");
-	}));
-	
-	$urlpath = explode("/", @$_GET["action"]);
-	$rel_path_to_root = implode("/", array_merge(array("."), array_repeat("..", count($urlpath) - 1)));
-	$GLOBALS["rel_path_to_root"] = $rel_path_to_root;
-	$data = array("rel_path_to_root" => $rel_path_to_root);
-	$ste->vars["rel_path_to_root"] = $rel_path_to_root;
-	
-	url_process($urlpath, $url_handlers, $data);
-	
-	if(PLUGINS_ENABLED)
-	{
-		foreach($plugin_objs as $plugin_obj)
-			$plugin_obj->atexit();
-	}
-	$ratatoeskr_settings->save();
+    global $backend_subactions, $ste, $url_handlers, $ratatoeskr_settings, $plugin_objs, $api_compat;
+
+    $ts_start = microtime(True);
+
+    session_start();
+    db_connect();
+    clean_database();
+
+    if(isset($ratatoeskr_settings["debugmode"]) and $ratatoeskr_settings["debugmode"])
+        define("__DEBUG__", True);
+
+    if(PLUGINS_ENABLED)
+    {
+        $activeplugins = array_filter(Plugin::all(), function($plugin) { return $plugin->active; });
+        foreach($activeplugins as $plugin)
+        {
+            if(!in_array($plugin->api, $api_compat))
+            {
+                $plugin->active = False;
+                $plugin->save();
+                continue;
+            }
+
+            eval($plugin->code);
+            $plugin_obj = new $plugin->classname($plugin->get_id());
+            if($plugin->update)
+            {
+                $plugin_obj->update();
+                $plugin->update = False;
+                $plugin->save();
+            }
+            $plugin_obj->init();
+            $plugin_objs[$plugin->get_id()] = $plugin_obj;
+        }
+    }
+
+    /* Register URL handlers */
+    build_backend_subactions();
+    register_url_handler("_default", "frontend_url_handler");
+    register_url_handler("_index", "frontend_url_handler");
+    register_url_handler("index", "frontend_url_handler");
+    register_url_handler("backend", $backend_subactions);
+    register_url_handler("_notfound", url_action_simple(function($data)
+    {
+        global $ste;
+        header("HTTP/1.1 404 Not Found");
+        $ste->vars["title"]   = "404 Not Found";
+        $ste->vars["details"] = str_replace("[[URL]]", $_SERVER["REQUEST_URI"], (isset($translation) ? $translation["e404_details"] : "The page [[URL]] could not be found. Sorry."));
+        echo $ste->exectemplate("/systemtemplates/error.html");
+    }));
+
+    $urlpath = explode("/", @$_GET["action"]);
+    $rel_path_to_root = implode("/", array_merge(array("."), array_repeat("..", count($urlpath) - 1)));
+    $GLOBALS["rel_path_to_root"] = $rel_path_to_root;
+    $data = array("rel_path_to_root" => $rel_path_to_root);
+    $ste->vars["rel_path_to_root"] = $rel_path_to_root;
+
+    url_process($urlpath, $url_handlers, $data);
+
+    if(PLUGINS_ENABLED)
+    {
+        foreach($plugin_objs as $plugin_obj)
+            $plugin_obj->atexit();
+    }
+    $ratatoeskr_settings->save();
 }
 
 ?>

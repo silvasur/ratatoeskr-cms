@@ -1,7 +1,7 @@
 <?php
 
 if(!defined("SETUP"))
-	die();
+    die();
 
 require_once(dirname(__FILE__) . "/../sys/db.php");
 
@@ -166,16 +166,16 @@ SQL;
 
 function create_mysql_tables()
 {
-	global $sql_tables;
-	
-	$queries = explode(";", $sql_tables);
-	foreach($queries as $q)
-	{
-		if(!empty($q))
-			qdb($q);
-	}
-	
-	qdb("INSERT INTO `PREFIX_meta` (`key`, `value`) VALUES ('dbversion', ?)", base64_encode(serialize(1)));
+    global $sql_tables;
+
+    $queries = explode(";", $sql_tables);
+    foreach($queries as $q)
+    {
+        if(!empty($q))
+            qdb($q);
+    }
+
+    qdb("INSERT INTO `PREFIX_meta` (`key`, `value`) VALUES ('dbversion', ?)", base64_encode(serialize(1)));
 }
 
 ?>
