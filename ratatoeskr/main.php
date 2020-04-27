@@ -9,8 +9,10 @@
  * See "ratatoeskr/licenses/ratatoeskr" for more information.
  */
 
-require_once(dirname(__FILE__) . "/config.php");
-if (!CONFIG_FILLED_OUT) {
+if (is_file(dirname(__FILE__) . "/config.php")) {
+    require_once(dirname(__FILE__) . "/config.php");
+}
+if (!defined("CONFIG_FILLED_OUT") || !CONFIG_FILLED_OUT) {
     die("Config file not filled out!");
 }
 
