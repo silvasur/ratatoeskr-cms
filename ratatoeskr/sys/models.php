@@ -2518,7 +2518,7 @@ class Repository extends BySQLRowEnabled
         try {
             global $db_con;
 
-            qdb("INSERT INTO `ratatoeskr_repositories` ( baseurl, name, description, pkgcache, lastrefresh ) VALUES ()");
+            qdb("INSERT INTO `ratatoeskr_repositories` () VALUES ()");
             $obj->id = $db_con->lastInsertId();
             $obj->save();
             $tx->commit();
