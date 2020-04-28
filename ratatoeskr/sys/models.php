@@ -2518,7 +2518,14 @@ class Repository extends BySQLRowEnabled
         try {
             global $db_con;
 
-            qdb("INSERT INTO `ratatoeskr_repositories` () VALUES ()");
+            qdb(
+                "INSERT INTO PREFIX_repositories (baseurl, name, description, pkgcache, lastrefresh) VALUES (?, ?, ?, ?, ?)",
+                $obj->baseurl,
+                $obj->name,
+                $obj->description,
+                base64_encode(serialize($obj->packages)),
+                $obj->lastrefresh
+            );
             $obj->id = $db_con->lastInsertId();
             $obj->save();
             $tx->commit();
@@ -2946,7 +2953,6 @@ class Article extends BySQLRowEnabled
                     $subqueries[] = "`c`.`tag` = ?";
                     $subparams[] = $v->get_id();
                     break;
-                default: continue;
             }
         }
 
