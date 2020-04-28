@@ -234,8 +234,17 @@ STYLE;
             }
 
             /* Almost done. Give the user the config file. */
-            $config = "<?php\n\ndefine(\"__DEBUG__\", False);\ndefine(\"CONFIG_FILLED_OUT\", True);\ndefine(\"PLUGINS_ENABLED\", True);\n\n\$config[\"mysql\"][\"server\"] = '" . addcslashes($config["mysql"]["server"], "'") . "';\n\$config[\"mysql\"][\"db\"]     = '" . addcslashes($config["mysql"]["db"], "'") . "';\n\$config[\"mysql\"][\"user\"]   = '" . addcslashes($config["mysql"]["user"], "'") . "';\n\$config[\"mysql\"][\"passwd\"] = '" . addcslashes($config["mysql"]["passwd"], "'") . "';\n\$config[\"mysql\"][\"prefix\"] = '" . addcslashes($config["mysql"]["prefix"], "'") . "';\n\n?>";
-            $ste->vars["config"] = $config;
+            $ste->vars["config"] = "<?php\n"
+                . "\n"
+                . "define(\"__DEBUG__\", false);\n"
+                . "define(\"CONFIG_FILLED_OUT\", true);\n"
+                . "define(\"PLUGINS_ENABLED\", true);\n"
+                . "\n"
+                . "\$config[\"mysql\"][\"server\"] = '" . addcslashes($config["mysql"]["server"], "'") . "';\n"
+                . "\$config[\"mysql\"][\"db\"]     = '" . addcslashes($config["mysql"]["db"], "'") . "';\n"
+                . "\$config[\"mysql\"][\"user\"]   = '" . addcslashes($config["mysql"]["user"], "'") . "';\n"
+                . "\$config[\"mysql\"][\"passwd\"] = '" . addcslashes($config["mysql"]["passwd"], "'") . "';\n"
+                . "\$config[\"mysql\"][\"prefix\"] = '" . addcslashes($config["mysql"]["prefix"], "'") . "';";
             die($ste->exectemplate("/systemtemplates/setup_done.html"));
         } catch (MySQLException $e) {
             $ste->vars["error"] = $e->getMessage();
