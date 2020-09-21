@@ -1,6 +1,6 @@
 <?php
 
-$translation = [
+return [
     "username" => "Benutzername",
     "password" => "Passwort",
     "login_form_header" => "Login",

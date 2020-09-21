@@ -58,7 +58,7 @@ function load_language($lang=null)
      */
     $lang = implode("", array_filter(str_split($lang, 1), "ctype_alpha"));
 
-    require(dirname(__FILE__) . "/../translations/$lang.php");
+    $translation = require(dirname(__FILE__) . "/../translations/$lang.php");
 
     $GLOBALS["translation"] = $translation;
 }
