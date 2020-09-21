@@ -94,6 +94,10 @@ function build_backend_subactions()
         $url_next = ["login"];
     },
     "login" => url_action_simple(function ($data) {
+        /**
+         * @var \ste\STECore $ste
+         * @var Group|null $admin_grp
+         */
         global $ste, $admin_grp;
         if (!empty($_POST["user"])) {
             try {
@@ -130,6 +134,14 @@ function build_backend_subactions()
     }),
     "content" => url_action_subactions([
         "write" => function (&$data, $url_now, &$url_next) {
+            /**
+             * @var \ste\STECore $ste
+             * @var array $translation
+             * @var array $textprocessors
+             * @var Settings $ratatoeskr_settings
+             * @var array $languages
+             * @var array $articleeditor_plugins
+             */
             global $ste, $translation, $textprocessors, $ratatoeskr_settings, $languages, $articleeditor_plugins;
 
             list($article, $editlang) = array_slice($url_next, 0);
@@ -393,7 +405,7 @@ function build_backend_subactions()
             echo $ste->exectemplate("/systemtemplates/content_write.html");
         },
         "tags" => function (&$data, $url_now, &$url_next) {
-            global $translation, $languages, $ste, $rel_path_to_root;
+            global $translation, $languages, $ste;
 
             $url_next = [];
 
@@ -511,7 +523,7 @@ function build_backend_subactions()
             echo $ste->exectemplate("/systemtemplates/tags_overview.html");
         },
         "articles" => function (&$data, $url_now, &$url_next) {
-            global $ste, $translation, $languages, $rel_path_to_root;
+            global $ste, $translation;
 
             $url_next = [];
 
@@ -660,7 +672,7 @@ function build_backend_subactions()
             echo $ste->exectemplate("/systemtemplates/articles.html");
         },
         "images" => function (&$data, $url_now, &$url_next) {
-            global $ste, $translation, $languages, $rel_path_to_root;
+            global $ste, $translation;
 
             list($imgid, $imageaction) = $url_next;
 
@@ -742,7 +754,7 @@ function build_backend_subactions()
             echo $ste->exectemplate("/systemtemplates/image_list.html");
         },
         "comments" => function (&$data, $url_now, &$url_next) {
-            global $ste, $translation, $languages, $rel_path_to_root;
+            global $ste, $translation;
 
             list($comment_id) = $url_next;
 
@@ -920,7 +932,7 @@ function build_backend_subactions()
     ]),
     "design" => url_action_subactions([
         "templates" => function (&$data, $url_now, &$url_next) {
-            global $ste, $translation, $languages, $rel_path_to_root;
+            global $ste, $translation;
 
             list($template) = $url_next;
 
@@ -986,7 +998,7 @@ function build_backend_subactions()
             echo $ste->exectemplate("/systemtemplates/templates.html");
         },
         "styles" => function (&$data, $url_now, &$url_next) {
-            global $ste, $translation, $languages, $rel_path_to_root;
+            global $ste, $translation;
 
             list($style) = $url_next;
 
@@ -1049,9 +1061,7 @@ function build_backend_subactions()
             echo $ste->exectemplate("/systemtemplates/styles.html");
         },
         "sections" => function (&$data, $url_now, &$url_next) {
-            global $ste, $translation, $languages, $rel_path_to_root, $ratatoeskr_settings;
-
-            list($style) = $url_next;
+            global $ste, $translation, $languages, $ratatoeskr_settings;
 
             $url_next = [];
 
@@ -1204,7 +1214,7 @@ function build_backend_subactions()
     ]),
     "admin" => url_action_subactions([
         "settings" => function (&$data, $url_now, &$url_next) {
-            global $ste, $translation, $languages, $rel_path_to_root, $ratatoeskr_settings, $textprocessors;
+            global $ste, $translation, $languages, $ratatoeskr_settings, $textprocessors;
 
             $url_next = [];
 
@@ -1290,7 +1300,7 @@ function build_backend_subactions()
         },
         "users" => url_action_subactions([
             "_index" => function (&$data, $url_now, &$url_next) {
-                global $ste, $translation, $languages, $rel_path_to_root, $ratatoeskr_settings, $textprocessors;
+                global $ste, $translation;
 
                 $url_next = [];
 
@@ -1307,7 +1317,7 @@ function build_backend_subactions()
                             Group::by_name($_POST["group_name"]);
                             $ste->vars["error"] = $translation["group_already_exists"];
                         } catch (DoesNotExistError $e) {
-                            $group = Group::create($_POST["group_name"]);
+                            Group::create($_POST["group_name"]);
                             $ste->vars["success"] = $translation["successfully_created_group"];
                         }
                     }
@@ -1322,7 +1332,7 @@ function build_backend_subactions()
                             User::by_name($_POST["username"]);
                             $ste->vars["error"] = $translation["user_already_exists"];
                         } catch (DoesNotExistError $e) {
-                            $group = User::create($_POST["username"], PasswordHash::create($_POST["initial_password"]));
+                            User::create($_POST["username"], PasswordHash::create($_POST["initial_password"]));
                             $ste->vars["success"] = $translation["successfully_created_user"];
                         }
                     }
@@ -1394,7 +1404,7 @@ function build_backend_subactions()
                 echo $ste->exectemplate("/systemtemplates/users.html");
             },
             "u" => function (&$data, $url_now, &$url_next) {
-                global $ste, $translation, $languages, $rel_path_to_root, $admin_grp;
+                global $ste, $translation;
 
                 try {
                     $user = User::by_id($url_next[0]);
@@ -1476,7 +1486,7 @@ function build_backend_subactions()
             }
         ]),
         "repos" => function (&$data, $url_now, &$url_next) {
-            global $ste, $translation, $languages, $rel_path_to_root;
+            global $ste, $translation;
 
             $url_next = [];
 
@@ -1549,7 +1559,7 @@ function build_backend_subactions()
     ]),
     "plugin" => url_action_subactions([
         "list" => function (&$data, $url_now, &$url_next) {
-            global $ste, $translation, $languages, $rel_path_to_root, $plugin_objs, $api_compat;
+            global $ste, $translation, $plugin_objs, $api_compat;
 
             $url_next = [];
 
@@ -1675,7 +1685,7 @@ function build_backend_subactions()
             echo $ste->exectemplate("/systemtemplates/pluginlist.html");
         },
         "help" => function (&$data, $url_now, &$url_next) {
-            global $ste, $translation, $languages, $rel_path_to_root;
+            global $ste;
 
             try {
                 $plugin = Plugin::by_id($url_next[0]);
@@ -1696,7 +1706,7 @@ function build_backend_subactions()
             echo $ste->exectemplate("/systemtemplates/pluginhelp.html");
         },
         "install" => function (&$data, $url_now, &$url_next) {
-            global $ste, $translation, $languages, $rel_path_to_root, $api_compat;
+            global $ste, $translation, $api_compat;
 
             $url_next = [];
 
@@ -1766,9 +1776,7 @@ function build_backend_subactions()
             echo $ste->exectemplate("/systemtemplates/plugininstall.html");
         },
         "repoinstall" => function (&$data, $url_now, &$url_next) {
-            global $ste, $translation, $rel_path_to_root;
-
-            $stream_ctx = stream_context_create(["http" => ["timeout" => 5]]);
+            global $ste, $translation;
 
             try {
                 $repo = Repository::by_id($_GET["repo"]);
@@ -1788,7 +1796,7 @@ function build_backend_subactions()
             }
         },
         "confirminstall" => function (&$data, $url_now, &$url_next) {
-            global $ste, $translation, $languages, $rel_path_to_root;
+            global $ste, $translation;
 
             list($plugin_id) = $url_next;
             $url_next = [];

@@ -9,6 +9,9 @@ require_once(dirname(__FILE__) . "/../sys/pwhash.php");
 require_once(dirname(__FILE__) . "/../languages.php");
 require_once(dirname(__FILE__) . "/create_tables.php");
 
+/** @var \ste\STECore $ste */
+assert(isset($ste));
+
 $rel_path_to_root = ".";
 $ste->vars["rel_path_to_root"] = $rel_path_to_root;
 
@@ -21,6 +24,9 @@ foreach ($languages as $langcode => $langinfo) {
 
 if (isset($_GET["lang"]) and (@$languages[$_GET["lang"]]["translation_exist"])) {
     load_language($_GET["lang"]);
+
+    assert(isset($translation));
+
     $lang = $_GET["lang"];
     $ste->vars["lang"] = $_GET["lang"];
 } else {

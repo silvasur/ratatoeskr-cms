@@ -278,10 +278,9 @@ class User extends BySQLRowEnabled
      */
     public static function create($username, $pwhash)
     {
-        global $ratatoeskr_settings;
         global $db_con;
         try {
-            $obj = self::by_name($username);
+            self::by_name($username);
         } catch (DoesNotExistError $e) {
             global $ratatoeskr_settings;
             qdb(
@@ -301,7 +300,7 @@ class User extends BySQLRowEnabled
 
             return $obj;
         }
-        throw new AlreadyExistsError("\"$name\" is already in database.");
+        throw new AlreadyExistsError("\"$username\" is already in database.");
     }
 
     protected function populate_by_sqlrow($sqlrow)
@@ -504,7 +503,7 @@ class Group extends BySQLRowEnabled
     {
         global $db_con;
         try {
-            $obj = self::by_name($name);
+            self::by_name($name);
         } catch (DoesNotExistError $e) {
             qdb("INSERT INTO `PREFIX_groups` (`name`) VALUES (?)", $name);
             $obj = new self();
@@ -1787,7 +1786,7 @@ class Section extends BySQLRowEnabled
         }
 
         try {
-            $obj = self::by_name($name);
+            self::by_name($name);
         } catch (DoesNotExistError $e) {
             $obj           = new self();
             $obj->name     = $name;
@@ -2056,7 +2055,7 @@ class Tag extends BySQLRowEnabled
         }
 
         try {
-            $obj = self::by_name($name);
+            self::by_name($name);
         } catch (DoesNotExistError $e) {
             $obj = new self();
 
@@ -2634,7 +2633,7 @@ class Repository extends BySQLRowEnabled
 
         $this->name        = $repometa["name"];
         $this->description = $repometa["description"];
-        $this->packages    = @unserialize(@file_get_contents($this->baseurl . "/packagelist", false, $ctx));
+        $this->packages    = @unserialize(@file_get_contents($this->baseurl . "/packagelist", false, $this->stream_ctx));
 
         $this->lastrefresh = time();
 
@@ -3259,6 +3258,8 @@ class ArticleExtradata extends KVStorage
  */
 function dbversion()
 {
+    global $config;
+
     /* Is the meta table present? If no, the version is 0. */
     $stmt = qdb(
         "SELECT COUNT(*) FROM `information_schema`.`tables` WHERE `table_schema` = ? AND `table_name` = ?",

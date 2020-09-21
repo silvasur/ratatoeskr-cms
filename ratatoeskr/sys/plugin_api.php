@@ -35,7 +35,7 @@ $url_handlers = []; /* master URL handler */
  *  $name - The name of the new URL
  *  $callback - The Function to be called (see <url_process>).
  */
-function register_url_handler($name, $callback)
+function register_url_handler($name, callable $callback)
 {
     global $url_handlers;
     $url_handlers[$name] = $callback;

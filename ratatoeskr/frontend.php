@@ -15,6 +15,9 @@ require_once(dirname(__FILE__) . "/sys/models.php");
 require_once(dirname(__FILE__) . "/sys/textprocessors.php");
 require_once(dirname(__FILE__) . "/libs/kses.php");
 
+/** @var \ste\STECore $ste */
+assert(isset($ste));
+
 /*
  * Function: section_transform_ste
  * Transforms an <Section> object to an array, so it can be accessed via a STE template.
@@ -140,8 +143,6 @@ function article_transform_ste($article, $lang)
  */
 function comment_transform_ste($comment)
 {
-    global $rel_path_to_root, $ratatoeskr_settings;
-
     return [
         "id"        => $comment->get_id(),
         "text"      => $comment->create_html(),
@@ -747,7 +748,7 @@ $on_comment_store = [];
  */
 function frontend_url_handler(&$data, $url_now, &$url_next)
 {
-    global $ste, $ratatoeskr_settings, $languages, $metasections, $comment_validators, $on_comment_store;
+    global $ste, $ratatoeskr_settings, $languages, $comment_validators, $on_comment_store;
     $path = array_merge([$url_now], $url_next);
     $url_next = [];
 

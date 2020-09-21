@@ -70,7 +70,7 @@ class PasswordHash
      */
     public static function validate($password, $pwhash)
     {
-        list($iterations, $hexsalt, $hash) = explode('$', $pwhash);
+        list($iterations, $hexsalt) = explode('$', $pwhash);
         return self::hash($password, pack("H*", $hexsalt), $iterations) == $pwhash;
     }
 }
