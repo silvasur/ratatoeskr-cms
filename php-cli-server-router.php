@@ -2,7 +2,7 @@
 
 // Use this as the router script with php -S
 
-if (!php_sapi_name() == 'cli-server') {
+if (php_sapi_name() !== 'cli-server') {
     die("Only for use in 'cli-server' SAPI");
 }
 
