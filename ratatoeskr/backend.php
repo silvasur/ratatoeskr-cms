@@ -220,8 +220,7 @@ function build_backend_subactions()
                 }
             }
 
-            function fill_article(&$article, $inputs, $editlang)
-            {
+            $fill_article = function (Article &$article, array $inputs, string $editlang) {
                 $article->urlname   = $inputs["urlname"];
                 $article->status    = $inputs["article_status"];
                 $article->timestamp = $inputs["date"];
@@ -231,14 +230,14 @@ function build_backend_subactions()
                 $article->set_tags(maketags($inputs["tags"], $editlang));
                 $article->set_section($inputs["article_section"]);
                 $article->allow_comments = $inputs["allow_comments"];
-            }
+            };
 
             if (empty($article)) {
                 /* New Article */
                 $ste->vars["pagetitle"] = $translation["new_article"];
                 if (empty($fail_reasons) and isset($_POST["save_article"])) {
                     $article = Article::create($inputs["urlname"]);
-                    fill_article($article, $inputs, $editlang);
+                    $fill_article($article, $inputs, $editlang);
 
                     /* Calling articleeditor plugins */
                     $call_after_save = [];
@@ -274,7 +273,7 @@ function build_backend_subactions()
                 }
 
                 if (empty($fail_reasons) and isset($_POST["save_article"])) {
-                    fill_article($article, $inputs, $editlang);
+                    $fill_article($article, $inputs, $editlang);
 
                     /* Calling articleeditor plugins */
                     $call_after_save = [];
