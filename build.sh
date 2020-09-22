@@ -18,12 +18,6 @@ install_dependencies() {
 
     cd ratatoeskr/libs
 
-    wget http://michelf.com/docs/projets/php-markdown-1.0.1o.zip
-    unzip php-markdown-*.zip
-    mv PHP\ Markdown\ */markdown.php .
-    rm -rf PHP\ Markdown\ *
-    rm php-markdown-*.zip
-
     wget -O kses.zip http://sourceforge.net/projects/kses/files/kses/0.2.2/kses-0.2.2.zip/download?use_mirror=optimate
     unzip kses.zip
     mv kses-*/kses.php .

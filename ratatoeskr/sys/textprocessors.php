@@ -9,7 +9,8 @@
  * See "ratatoeskr/licenses/ratatoeskr" for more information.
  */
 
-require_once(dirname(__FILE__) . "/../libs/markdown.php");
+use Michelf\Markdown;
+
 require_once(dirname(__FILE__) . "/utils.php");
 
 /*
@@ -70,7 +71,7 @@ function textprocessor_apply_translation($translationobj)
 
 if (!isset($textprocessors)) {
     $textprocessors = [
-        "Markdown" => ["Markdown", true],
+        "Markdown" => [Closure::fromCallable([Markdown::class, "defaultTransform"]), true],
         "Plain Text" => [function ($text) {
             return str_replace(["\r\n", "\n"], ["<br />", "<br />"], htmlesc($text));
         }, true],

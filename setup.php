@@ -59,7 +59,6 @@ $files = [
     "/ratatoeskr/translations/de.php",
     "/ratatoeskr/translations/en.php",
     "/ratatoeskr/backend.php",
-    "/ratatoeskr/libs/markdown.php",
     "/ratatoeskr/libs/kses.php",
     "/ratatoeskr/vendor/autoload.php",
     "/ratatoeskr/.htaccess",

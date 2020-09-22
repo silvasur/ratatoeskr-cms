@@ -20,19 +20,13 @@ Step 2: Get additional libraries
 
 You need these libraries to run Ratatöskr (it is probably already bundled with these):
 
-1. PHP Markdown
-   
-   Place "markdown.php" from the archive directly into this directory.
-   
-   PHP Markdown can be found here: <http://michelf.com/projects/php-markdown/>
-
-2. kses
+1. kses
    
    Place "kses.php" from the archive directly into this directory.
    
    kses can be found at <http://sourceforge.net/projects/kses/>
 
-3. jQuery
+2. jQuery
    
    Place jquery.min.js into this folder.
    

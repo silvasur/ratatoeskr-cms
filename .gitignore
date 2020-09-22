@@ -6,7 +6,6 @@ ratatoeskr/templates/src/plugintemplates/*
 ratatoeskr/templates/src/usertemplates/*
 ratatoeskr/templates/transc/*
 ratatoeskr/libs/ste
-ratatoeskr/libs/markdown.php
 ratatoeskr/libs/kses.php
 ratatoeskr/libs/jquery.min.js
 ratatoeskr/config.php
