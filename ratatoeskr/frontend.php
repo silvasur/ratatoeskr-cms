@@ -653,6 +653,7 @@ function make_on_anything_tag($field)
             }
             return $sub($ste);
         }
+        return "";
     };
 }
 
