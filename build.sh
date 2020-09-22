@@ -57,8 +57,6 @@ create_release_package() {
     setup_directories
     install_dependencies
 
-    rm session_doctor.php
-
     cd ..
 
     zip -r Ratatoeskr.zip Ratatoeskr
