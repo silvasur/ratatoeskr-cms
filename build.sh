@@ -11,19 +11,12 @@ setup_directories() {
     mkdir_if_missing ratatoeskr/plugin_extradata/public
     mkdir_if_missing ratatoeskr/templates/src/plugintemplates
     mkdir_if_missing ratatoeskr/templates/transc
-    mkdir_if_missing ratatoeskr/libs/ste
 }
 
 install_dependencies() {
-    cd ratatoeskr/libs
+    composer install
 
-    cd ste
-    wget https://github.com/silvasur/ste/archive/master.zip
-    unzip master.zip
-    cp ste-master/ste.php .
-    cp -r ste-master/src .
-    rm -rf ste-master master.zip
-    cd ..
+    cd ratatoeskr/libs
 
     wget http://michelf.com/docs/projets/php-markdown-1.0.1o.zip
     unzip php-markdown-*.zip
@@ -38,6 +31,8 @@ install_dependencies() {
     rm kses.zip
 
     wget http://code.jquery.com/jquery.min.js
+
+    cd ../..
 }
 
 setup_dev_environment() {

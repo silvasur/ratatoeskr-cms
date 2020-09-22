@@ -1,7 +1,7 @@
 Ratatöskr
 =========
 
-Ratatöskr is a flexible Content Management System / Blogging Software for PHP 5.3.
+Ratatöskr is a flexible Content Management System / Blogging Software for PHP >= 7.3.
 
 Why you should use Ratatöskr
 ----------------------------

@@ -1,0 +1,24 @@
+{
+  "name": "r7r/ratatoeskr-cms",
+  "description": "Ratatöskr is a flexible Content Management System / Blogging Software for PHP",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Laria Carolin Chabowski",
+      "email": "laria@laria.me"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "r7r\\cms\\": "ratatoeskr/"
+    }
+  },
+  "type": "project",
+  "require": {
+    "php": ">=7.3",
+    "r7r/ste": "~2.0"
+  },
+  "config": {
+    "vendor-dir": "ratatoeskr/vendor"
+  }
+}

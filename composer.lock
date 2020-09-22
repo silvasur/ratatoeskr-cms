@@ -1,0 +1,67 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
+        "This file is @generated automatically"
+    ],
+    "content-hash": "8bcbdb4bc21d0897a78eb6567bffea81",
+    "packages": [
+        {
+            "name": "r7r/ste",
+            "version": "2.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/silvasur/ste.git",
+                "reference": "ceb262e08027531717f1a16faafc343e8d9656e3"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/silvasur/ste/zipball/ceb262e08027531717f1a16faafc343e8d9656e3",
+                "reference": "ceb262e08027531717f1a16faafc343e8d9656e3",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.3.0"
+            },
+            "require-dev": {
+                "phpdocumentor/phpdocumentor": "^2.9",
+                "phpunit/phpunit": "^9"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "r7r\\ste\\": "src/ste"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Laria Carolin Chabowski",
+                    "email": "laria@laria.me",
+                    "homepage": "http://hi-im.laria.me",
+                    "role": "Developer"
+                }
+            ],
+            "description": "A compiling template engine with an XML-ish syntax",
+            "homepage": "http://github.com/silvasur/ste",
+            "keywords": [
+                "templating"
+            ],
+            "time": "2020-09-21T18:46:15+00:00"
+        }
+    ],
+    "packages-dev": [],
+    "aliases": [],
+    "minimum-stability": "stable",
+    "stability-flags": [],
+    "prefer-stable": false,
+    "prefer-lowest": false,
+    "platform": {
+        "php": ">=7.3"
+    },
+    "platform-dev": [],
+    "plugin-api-version": "1.1.0"
+}

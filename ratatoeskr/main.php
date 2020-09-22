@@ -16,6 +16,7 @@ if (!defined("CONFIG_FILLED_OUT") || !CONFIG_FILLED_OUT) {
     die("Config file not filled out!");
 }
 
+require_once(dirname(__FILE__) . "/vendor/autoload.php");
 require_once(dirname(__FILE__) . "/sys/db.php");
 require_once(dirname(__FILE__) . "/sys/models.php");
 require_once(dirname(__FILE__) . "/sys/init_ste.php");
