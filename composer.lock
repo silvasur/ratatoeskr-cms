@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "8bcbdb4bc21d0897a78eb6567bffea81",
+    "content-hash": "ae4ab914ba9041a5c34281d8b34f769d",
     "packages": [
         {
             "name": "r7r/ste",
-            "version": "2.0.0",
+            "version": "2.0.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/silvasur/ste.git",
-                "reference": "ceb262e08027531717f1a16faafc343e8d9656e3"
+                "reference": "698d87d578dfe5d2a794f75003ded834081ca738"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/silvasur/ste/zipball/ceb262e08027531717f1a16faafc343e8d9656e3",
-                "reference": "ceb262e08027531717f1a16faafc343e8d9656e3",
+                "url": "https://api.github.com/repos/silvasur/ste/zipball/698d87d578dfe5d2a794f75003ded834081ca738",
+                "reference": "698d87d578dfe5d2a794f75003ded834081ca738",
                 "shasum": ""
             },
             "require": {
@@ -50,7 +50,7 @@
             "keywords": [
                 "templating"
             ],
-            "time": "2020-09-21T18:46:15+00:00"
+            "time": "2020-09-22T20:09:51+00:00"
         }
     ],
     "packages-dev": [],

@@ -16,7 +16,7 @@
   "type": "project",
   "require": {
     "php": ">=7.3",
-    "r7r/ste": "~2.0"
+    "r7r/ste": "^2.0.1"
   },
   "config": {
     "vendor-dir": "ratatoeskr/vendor"
