@@ -10,6 +10,7 @@
  */
 
 use r7r\cms\sys\Esc;
+use r7r\cms\sys\Env;
 
 require_once(dirname(__FILE__) . "/sys/models.php");
 require_once(dirname(__FILE__) . "/sys/pwhash.php");
@@ -139,12 +140,13 @@ function build_backend_subactions()
             /**
              * @var \ste\STECore $ste
              * @var array $translation
-             * @var array $textprocessors
              * @var Settings $ratatoeskr_settings
              * @var array $languages
              * @var array $articleeditor_plugins
              */
-            global $ste, $translation, $textprocessors, $ratatoeskr_settings, $languages, $articleeditor_plugins;
+            global $ste, $translation, $ratatoeskr_settings, $languages, $articleeditor_plugins;
+
+            $textprocessors = Env::getGlobal()->textprocessors();
 
             list($article, $editlang) = array_slice($url_next, 0);
             if (!isset($editlang)) {
@@ -164,9 +166,9 @@ function build_backend_subactions()
             $ste->vars["submenu"] = isset($article) ? "articles" : "newarticle";
 
             $ste->vars["textprocessors"] = [];
-            foreach ($textprocessors as $txtproc => $properties) {
-                if ($properties[1]) {
-                    $ste->vars["textprocessors"][] = $txtproc;
+            foreach ($textprocessors->all() as $name => $textprocessor) {
+                if ($textprocessor->showInBackend()) {
+                    $ste->vars["textprocessors"][] = $name;
                 }
             }
 
@@ -190,12 +192,12 @@ function build_backend_subactions()
                 } else {
                     $inputs["article_status"] = (int) $_POST["article_status"];
                 }
-                if (!isset($textprocessors[@$_POST["content_txtproc"]])) {
+                if ($textprocessors->getTextprocessor(@$_POST["content_txtproc"]) === null) {
                     $fail_reasons[] = $translation["unknown_txtproc"];
                 } else {
                     $inputs["content_txtproc"] = $_POST["content_txtproc"];
                 }
-                if (!isset($textprocessors[@$_POST["excerpt_txtproc"]])) {
+                if ($textprocessors->getTextprocessor(@$_POST["excerpt_txtproc"]) === null) {
                     $fail_reasons[] = $translation["unknown_txtproc"];
                 } else {
                     $inputs["excerpt_txtproc"] = $_POST["excerpt_txtproc"];
@@ -1216,7 +1218,9 @@ function build_backend_subactions()
     ]),
     "admin" => url_action_subactions([
         "settings" => function (&$data, $url_now, &$url_next) {
-            global $ste, $translation, $languages, $ratatoeskr_settings, $textprocessors;
+            global $ste, $translation, $languages, $ratatoeskr_settings;
+
+            $textprocessors = Env::getGlobal()->textprocessors();
 
             $url_next = [];
 
@@ -1225,9 +1229,9 @@ function build_backend_subactions()
             $ste->vars["pagetitle"] = $translation["menu_settings"];
 
             $ste->vars["textprocessors"] = [];
-            foreach ($textprocessors as $txtproc => $properties) {
-                if ($properties[1]) {
-                    $ste->vars["textprocessors"][] = $txtproc;
+            foreach ($textprocessors->all() as $name => $textprocessor) {
+                if ($textprocessor->showInBackend()) {
+                    $ste->vars["textprocessors"][] = $name;
                 }
             }
 

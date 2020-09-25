@@ -9,6 +9,7 @@
  * See "ratatoeskr/licenses/ratatoeskr" for more information.
  */
 
+use r7r\cms\sys\Env;
 use r7r\cms\sys\Esc;
 
 require_once(dirname(__FILE__) . "/sys/utils.php");
@@ -103,6 +104,8 @@ function article_transform_ste($article, $lang)
 {
     global $rel_path_to_root;
 
+    $textprocessors = Env::getGlobal()->textprocessors();
+
     $languages = [];
     $a_section = $article->get_section();
     foreach ($article->title as $language => $_) {
@@ -114,8 +117,8 @@ function article_transform_ste($article, $lang)
         "urlname"          => $article->urlname,
         "fullurl"          => Esc::esc("$rel_path_to_root/$lang/{$a_section->name}/{$article->urlname}"),
         "title"            => Esc::esc($article->title[$lang]->text),
-        "text"             => textprocessor_apply(str_replace("%root%", $rel_path_to_root, $article->text[$lang]->text), $article->text[$lang]->texttype),
-        "excerpt"          => textprocessor_apply(str_replace("%root%", $rel_path_to_root, $article->excerpt[$lang]->text), $article->excerpt[$lang]->texttype),
+        "text"             => $textprocessors->mustApply(str_replace("%root%", $rel_path_to_root, $article->text[$lang]->text), $article->text[$lang]->texttype),
+        "excerpt"          => $textprocessors->mustApply(str_replace("%root%", $rel_path_to_root, $article->excerpt[$lang]->text), $article->excerpt[$lang]->texttype),
         "custom"           => $article->custom,
         "status"           => $article->status,
         "section"          => section_transform_ste($a_section, $lang),

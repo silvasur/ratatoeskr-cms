@@ -9,74 +9,51 @@
  * See "ratatoeskr/licenses/ratatoeskr" for more information.
  */
 
-use Michelf\Markdown;
+use r7r\cms\sys\Env;
+use r7r\cms\sys\textprocessors\LegacyTextprocessor;
+use r7r\cms\sys\textprocessors\TextprocessorRepository;
 
 require_once(dirname(__FILE__) . "/utils.php");
 
-/*
- * Function: textprocessor_register
+/**
  * Register a textprocessor.
  *
- * Parameters:
- *  $name               - The name of the textprocessor
- *  $fx                 - The textprocessor function (function($input), returns HTML)
- *  $visible_in_backend - Should this textprocessor be visible in the backend? Defaults to True.
+ * @deprecated Use {@see TextprocessorRepository::register()} of the global {@see TextprocessorRepository} as returned by {@see Env::textprocessors()}.
+ *
+ * @param string $name The name of the textprocessor
+ * @param callable $fx The textprocessor function (function($input), returns HTML)
+ * @param bool $visible_in_backend Should this textprocessor be visible in the backend? Defaults to True.
  */
 function textprocessor_register($name, $fx, $visible_in_backend=true)
 {
-    global $textprocessors;
-    $textprocessors[$name] = [$fx, $visible_in_backend];
+    Env::getGlobal()->textprocessors()->register($name, new LegacyTextprocessor($fx, $visible_in_backend));
 }
 
-/*
- * Function: textprocessor_apply
+/**
  * Apply a textprocessor on a text.
  *
- * Parameters:
- *  $text          - The input text.
- *  $textprocessor - The name of the textprocessor.
+ * @param string $text The input text.
+ * @param string $name The name of the textprocessor.
  *
- * Returns:
- *  HTML
+ * @return string HTML
+ * @throws Exception If the textprocessor is unknown
+ * @deprecated Use {@see TextprocessorRepository::mustApply()} of the global {@see TextprocessorRepository} as returned by {@see Env::textprocessors()}.
  */
-function textprocessor_apply($text, $textprocessor)
+function textprocessor_apply($text, $name)
 {
-    global $textprocessors;
-    if (!isset($textprocessors[$textprocessor])) {
-        throw new Exception("Unknown Textprocessor: $textprocessor");
-    }
-
-    $fx = @$textprocessors[$textprocessor][0];
-    if (!is_callable($fx)) {
-        throw new Exception("Invalid Textprocessor: $textprocessor");
-    }
-
-    return call_user_func($fx, $text);
+    return Env::getGlobal()->textprocessors()->mustApply((string)$text, (string)$name);
 }
 
-/*
- * Function: textprocessor_apply_translation
- * Applys a textprocessor automatically on a <Translation> object. The used textprocessor is determined by the $texttype property.
+/**
+ * Applies a textprocessor automatically on a {@see Translation} object.
  *
- * Parameters:
- *  $translationobj - The <Translation> object.
+ * The used textprocessor is determined by the {@see Translation::$texttype} property.
  *
- * Returns:
- *  HTML
+ * @param Translation $translationobj
+ * @return string HTML
+ * @deprecated Use {@see Translation::applyTextprocessor()} instead
  */
-function textprocessor_apply_translation($translationobj)
+function textprocessor_apply_translation(Translation $translationobj)
 {
-    return textprocessor_apply($translationobj->text, $translationobj->texttype);
-}
-
-if (!isset($textprocessors)) {
-    $textprocessors = [
-        "Markdown" => [Closure::fromCallable([Markdown::class, "defaultTransform"]), true],
-        "Plain Text" => [function ($text) {
-            return str_replace(["\r\n", "\n"], ["<br />", "<br />"], htmlesc($text));
-        }, true],
-        "HTML" => [function ($text) {
-            return $text;
-        }, true]
-    ];
+    return $translationobj->applyTextprocessor(Env::getGlobal()->textprocessors());
 }

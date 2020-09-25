@@ -9,6 +9,9 @@
  * See "ratatoeskr/licenses/ratatoeskr" for more information.
  */
 
+use r7r\cms\sys\textprocessors\TextprocessorRepository;
+use r7r\cms\sys\Env;
+
 require_once(dirname(__FILE__) . "/db.php");
 require_once(dirname(__FILE__) . "/utils.php");
 require_once(dirname(__FILE__) . "/../libs/kses.php");
@@ -691,6 +694,16 @@ class Translation
         $this->text     = $text;
         $this->texttype = $texttype;
     }
+
+    /**
+     * Applies a textprocessor to the text according to texttype.
+     * @param TextprocessorRepository $textprocessors
+     * @return string
+     */
+    public function applyTextprocessor(TextprocessorRepository $textprocessors): string
+    {
+        return $textprocessors->apply((string)$this->text, (string)$this->texttype);
+    }
 }
 
 /*
@@ -1192,22 +1205,20 @@ class Comment extends BySQLRowEnabled
         return $rv;
     }
 
-    /*
-     * Function: htmlize_comment_text
-     * Creates the HTML representation of a comment text. It applys the page's comment textprocessor on it
+    /**
+     * Creates the HTML representation of a comment text. It applies the page's comment textprocessor on it
      * and filters some potentially harmful tags using kses.
      *
-     * Parameters:
-     *  $text - Text to HTMLize.
-     *
-     * Returns:
-     *  HTML code.
+     * @param string $text Text to HTMLize.
+     * @return string HTML code.
      */
-    public static function htmlize_comment_text($text)
+    public static function htmlize_comment_text($text, ?TextprocessorRepository $textprocessors = null)
     {
         global $ratatoeskr_settings;
 
-        return kses(textprocessor_apply($text, $ratatoeskr_settings["comment_textprocessor"]), [
+        $textprocessors = $textprocessors ?? Env::getGlobal()->textprocessors();
+
+        return kses($textprocessors->mustApply($text, $ratatoeskr_settings["comment_textprocessor"]), [
             "a" => ["href" => 1, "hreflang" => 1, "title" => 1, "rel" => 1, "rev" => 1],
             "b" => [],
             "i" => [],

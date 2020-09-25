@@ -10,6 +10,8 @@
  */
 
 use r7r\ste\STECore;
+use r7r\cms\sys\Env;
+use r7r\cms\sys\textprocessors\LegacyTextprocessor;
 
 require_once(dirname(__FILE__) . "/models.php");
 require_once(dirname(__FILE__) . "/textprocessors.php");
@@ -50,6 +52,9 @@ abstract class RatatoeskrPlugin
 {
     private $id;
 
+    /** @var Env */
+    private $env;
+
     /** @var PluginKVStorage The Key-Value-Storage for the Plugin */
     protected $kvstorage;
 
@@ -70,6 +75,7 @@ abstract class RatatoeskrPlugin
         global $ste, $rel_path_to_root;
         $this->id        = $id;
 
+        $this->env = Env::getGlobal();
         $this->kvstorage        = new PluginKVStorage($id);
         $this->ste              = $ste;
         $this->rel_path_to_root = $rel_path_to_root;
@@ -151,7 +157,7 @@ abstract class RatatoeskrPlugin
      */
     final protected function register_textprocessor($name, $fx, $visible_in_backend=true)
     {
-        textprocessor_register($name, $fx, $visible_in_backend);
+        $this->env->textprocessors()->register($name, new LegacyTextprocessor($fx, (bool)$visible_in_backend));
     }
 
     /**
