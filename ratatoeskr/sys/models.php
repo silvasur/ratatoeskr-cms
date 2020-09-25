@@ -253,7 +253,7 @@ class User extends BySQLRowEnabled
      * Variables: Public class properties
      *
      * $username - The username.
-     * $pwhash   - <PasswordHash> of the password.
+     * $pwhash   - Hash of the password.
      * $mail     - E-Mail-address.
      * $fullname - The full name of the user.
      * $language - Users language
@@ -270,7 +270,7 @@ class User extends BySQLRowEnabled
      *
      * Parameters:
      *  $username - The username
-     *  $pwhash   - <PasswordHash> of the password
+     *  $pwhash   - Hash of the password
      *
      * Returns:
      *  An User object

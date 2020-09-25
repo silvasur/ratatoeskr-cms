@@ -15,9 +15,9 @@ use r7r\ste\Transcompiler;
 use r7r\ste\Parser;
 use r7r\cms\sys\Env;
 use r7r\cms\sys\Esc;
+use r7r\cms\sys\PasswordHash;
 
 require_once(dirname(__FILE__) . "/sys/models.php");
-require_once(dirname(__FILE__) . "/sys/pwhash.php");
 require_once(dirname(__FILE__) . "/sys/textprocessors.php");
 require_once(dirname(__FILE__) . "/sys/plugin_api.php");
 require_once(dirname(__FILE__) . "/languages.php");
@@ -109,9 +109,16 @@ function build_backend_subactions()
         if (!empty($_POST["user"])) {
             try {
                 $user = User::by_name($_POST["user"]);
-                if (!PasswordHash::validate($_POST["password"], $user->pwhash)) {
+                $password = (string)$_POST["password"];
+                if (!PasswordHash::verify($password, $user->pwhash)) {
                     throw new Exception();
                 }
+
+                if (PasswordHash::needsRehash($user->pwhash)) {
+                    $user->pwhash = PasswordHash::hash($password);
+                    $user->save();
+                }
+
                 if (!$user->member_of($admin_grp)) {
                     throw new Exception();
                 }
@@ -1342,7 +1349,7 @@ function build_backend_subactions()
                             User::by_name($_POST["username"]);
                             $ste->vars["error"] = $translation["user_already_exists"];
                         } catch (DoesNotExistError $e) {
-                            User::create($_POST["username"], PasswordHash::create($_POST["initial_password"]));
+                            User::create($_POST["username"], PasswordHash::hash($_POST["initial_password"]));
                             $ste->vars["success"] = $translation["successfully_created_user"];
                         }
                     }
@@ -1466,7 +1473,7 @@ function build_backend_subactions()
 
                 /* New Password? */
                 if (isset($_POST["new_password"])) {
-                    $pwhash = PasswordHash::create($_POST["password"]);
+                    $pwhash =  PasswordHash::hash($_POST["password"]);
                     $user->pwhash = $pwhash;
                     if ($user->get_id() == $data["user"]->get_id()) {
                         $_SESSION["ratatoeskr_pwhash"] = $pwhash;

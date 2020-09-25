@@ -1,6 +1,7 @@
 <?php
 
 use r7r\ste;
+use r7r\cms\sys\PasswordHash;
 
 define("SETUP", true);
 
@@ -8,7 +9,6 @@ require_once(dirname(__FILE__) . "/../vendor/autoload.php");
 require_once(dirname(__FILE__) . "/../sys/init_ste.php");
 require_once(dirname(__FILE__) . "/../sys/translation.php");
 require_once(dirname(__FILE__) . "/../sys/db.php");
-require_once(dirname(__FILE__) . "/../sys/pwhash.php");
 require_once(dirname(__FILE__) . "/../languages.php");
 require_once(dirname(__FILE__) . "/create_tables.php");
 
@@ -221,7 +221,7 @@ STYLE;
             $ratatoeskr_settings->save();
 
             $admingrp = Group::create("admins");
-            $admin = user::create($_POST["admin_username"], PasswordHash::create($_POST["admin_init_password"]));
+            $admin = User::create($_POST["admin_username"], PasswordHash::hash($_POST["admin_init_password"]));
             $admin->save();
             $admingrp->include_user($admin);
 
