@@ -9,6 +9,8 @@
  * See "ratatoeskr/licenses/ratatoeskr" for more information.
  */
 
+use r7r\cms\sys\Esc;
+
 require_once(dirname(__FILE__) . "/sys/models.php");
 require_once(dirname(__FILE__) . "/sys/pwhash.php");
 require_once(dirname(__FILE__) . "/sys/textprocessors.php");
@@ -269,7 +271,7 @@ function build_backend_subactions()
                                 call_user_func($cb, $article);
                             }
                             $ste->vars["article_editurl"] = urlencode($article->urlname) . "/" . urlencode($editlang);
-                            $ste->vars["success"] = htmlesc($translation["article_save_success"]);
+                            $ste->vars["success"] = Esc::esc($translation["article_save_success"]);
                         } catch (AlreadyExistsError $e) {
                             $fail_reasons[] = $translation["article_name_already_in_use"];
                         }
@@ -305,7 +307,7 @@ function build_backend_subactions()
                                 call_user_func($cb, $article);
                             }
                             $ste->vars["article_editurl"] = urlencode($article->urlname) . "/" . urlencode($editlang);
-                            $ste->vars["success"] = htmlesc($translation["article_save_success"]);
+                            $ste->vars["success"] = Esc::esc($translation["article_save_success"]);
                         } catch (AlreadyExistsError $e) {
                             $fail_reasons[] = $translation["article_name_already_in_use"];
                         }
@@ -700,9 +702,9 @@ function build_backend_subactions()
                             if ($imageaction == "markdown") {
                                 $ste->vars["embed_code"] = "![" . str_replace("]", "\\]", $_POST["img_alt"]) . "](%root%/images/" . str_replace(")", "\\)", urlencode($image->get_filename())) . ")";
                             } elseif ($imageaction == "html") {
-                                $ste->vars["embed_code"] = "<img src=\"%root%/images/" . htmlesc(urlencode($image->get_filename())) . "\" alt=\"" . htmlesc($_POST["img_alt"]) . "\" />";
+                                $ste->vars["embed_code"] = "<img src=\"%root%/images/" . Esc::esc(urlencode($image->get_filename())) . "\" alt=\"" . Esc::esc($_POST["img_alt"]) . "\" />";
                             } elseif ($imageaction == "ste") {
-                                $ste->vars["embed_code"] = "<img src=\"\$rel_path_to_root/images/" . htmlesc(urlencode($image->get_filename())) . "\" alt=\"" . htmlesc($_POST["img_alt"]) . "\" />";
+                                $ste->vars["embed_code"] = "<img src=\"\$rel_path_to_root/images/" . Esc::esc(urlencode($image->get_filename())) . "\" alt=\"" . Esc::esc($_POST["img_alt"]) . "\" />";
                             }
                         }
 
@@ -1617,7 +1619,7 @@ function build_backend_subactions()
                 $ste->vars["success"] = $translation[$newstatus ? "plugins_activated" : "plugins_deactivated"];
 
                 if (!empty($api_incompat)) {
-                    $ste->vars["error"] = htmlesc(str_replace("[[PLUGINS]]", implode(", ", $api_incompat), $translation["could_not_activate_plugin_api_incompat"]));
+                    $ste->vars["error"] = Esc::esc(str_replace("[[PLUGINS]]", implode(", ", $api_incompat), $translation["could_not_activate_plugin_api_incompat"]));
                 }
             }
 
@@ -1679,7 +1681,7 @@ function build_backend_subactions()
             }
 
             if (!empty($api_incompat)) {
-                $ste->vars["notice"] = htmlesc(str_replace("[[PLUGINS]]", implode(", ", $api_incompat), $translation["plugins_incompat"]));
+                $ste->vars["notice"] = Esc::esc(str_replace("[[PLUGINS]]", implode(", ", $api_incompat), $translation["plugins_incompat"]));
             }
 
             echo $ste->exectemplate("/systemtemplates/pluginlist.html");

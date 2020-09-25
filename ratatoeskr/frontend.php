@@ -9,6 +9,8 @@
  * See "ratatoeskr/licenses/ratatoeskr" for more information.
  */
 
+use r7r\cms\sys\Esc;
+
 require_once(dirname(__FILE__) . "/sys/utils.php");
 require_once(dirname(__FILE__) . "/languages.php");
 require_once(dirname(__FILE__) . "/sys/models.php");
@@ -110,8 +112,8 @@ function article_transform_ste($article, $lang)
     return [
         "id"               => $article->get_id(),
         "urlname"          => $article->urlname,
-        "fullurl"          => htmlesc("$rel_path_to_root/$lang/{$a_section->name}/{$article->urlname}"),
-        "title"            => htmlesc($article->title[$lang]->text),
+        "fullurl"          => Esc::esc("$rel_path_to_root/$lang/{$a_section->name}/{$article->urlname}"),
+        "title"            => Esc::esc($article->title[$lang]->text),
         "text"             => textprocessor_apply(str_replace("%root%", $rel_path_to_root, $article->text[$lang]->text), $article->text[$lang]->texttype),
         "excerpt"          => textprocessor_apply(str_replace("%root%", $rel_path_to_root, $article->excerpt[$lang]->text), $article->excerpt[$lang]->texttype),
         "custom"           => $article->custom,
@@ -146,7 +148,7 @@ function comment_transform_ste($comment)
     return [
         "id"        => $comment->get_id(),
         "text"      => $comment->create_html(),
-        "author"    => htmlesc($comment->author_name),
+        "author"    => Esc::esc($comment->author_name),
         "timestamp" => $comment->get_timestamp(),
         "__obj"     => $comment
     ];
@@ -449,9 +451,9 @@ $ste->register_tag("comment_form", function ($ste, $params, $sub) {
     $previewbtn = $ste->evalbool(@$params["previewbtn"]) ? " <input type=\"submit\" name=\"preview_comment\" value=\"{$translation["comment_form_preview"]}\" />" : "";
 
     if ($ste->evalbool(@$params["default"])) {
-        $form_body = "<p>{$translation["comment_form_name"]}: <input type=\"text\" name=\"author_name\" value=\"" . htmlesc(@$_POST["author_name"]) . "\" /></p>
-<p>{$translation["comment_form_mail"]}: <input type=\"text\" name=\"author_mail\" value=\"" . htmlesc(@$_POST["author_mail"]) . "\" /></p>
-<p>{$translation["comment_form_text"]}:<br /><textarea name=\"comment_text\" cols=\"50\" rows=\"10\">" . htmlesc(@$_POST["comment_text"]) . "</textarea></p>
+        $form_body = "<p>{$translation["comment_form_name"]}: <input type=\"text\" name=\"author_name\" value=\"" . Esc::esc(@$_POST["author_name"]) . "\" /></p>
+<p>{$translation["comment_form_mail"]}: <input type=\"text\" name=\"author_mail\" value=\"" . Esc::esc(@$_POST["author_mail"]) . "\" /></p>
+<p>{$translation["comment_form_text"]}:<br /><textarea name=\"comment_text\" cols=\"50\" rows=\"10\">" . Esc::esc(@$_POST["comment_text"]) . "</textarea></p>
 <p><input type=\"submit\" name=\"post_comment\" value=\"{$translation["comment_form_submit"]}\" />$previewbtn</p>";
     } else {
         $ste->vars["current"]["oldcomment"] = [
@@ -501,7 +503,7 @@ $ste->register_tag("page_prev", function ($ste, $params, $sub) {
     parse_str(parse_url($_SERVER["REQUEST_URI"], PHP_URL_QUERY), $query);
     $query["page"] = $params["current"] - 1;
     $url = $_SERVER["REDIRECT_URL"] . "?" . http_build_query($query);
-    return "<a href=\"" . htmlesc($url) . "\">" . (($ste->evalbool(@$params["default"])) ? $translation["page_prev"] : $sub($ste)) . "</a>";
+    return "<a href=\"" . Esc::esc($url) . "\">" . (($ste->evalbool(@$params["default"])) ? $translation["page_prev"] : $sub($ste)) . "</a>";
 });
 
 $ste->register_tag("page_next", function ($ste, $params, $sub) {
@@ -520,7 +522,7 @@ $ste->register_tag("page_next", function ($ste, $params, $sub) {
     parse_str(parse_url($_SERVER["REQUEST_URI"], PHP_URL_QUERY), $query);
     $query["page"] = $params["current"] + 1;
     $url = $_SERVER["REDIRECT_URL"] . "?" . http_build_query($query);
-    return "<a href=\"" . htmlesc($url) . "\">" . (($ste->evalbool(@$params["default"])) ? $translation["page_next"] : $sub($ste)) . "</a>";
+    return "<a href=\"" . Esc::esc($url) . "\">" . (($ste->evalbool(@$params["default"])) ? $translation["page_next"] : $sub($ste)) . "</a>";
 });
 
 /*
@@ -571,8 +573,8 @@ $ste->register_tag("languages", function ($ste, $params, $sub) {
     foreach ($langs as $lang) {
         $ste->set_var_by_name($params["var"], [
             "short"    => $lang,
-            "fullname" => htmlesc($languages[$lang]["language"]),
-            "url"      => htmlesc("$rel_path_to_root/$lang/" . implode("/", array_slice($ste->vars["current"]["url_fragments"], 1)))
+            "fullname" => Esc::esc($languages[$lang]["language"]),
+            "url"      => Esc::esc("$rel_path_to_root/$lang/" . implode("/", array_slice($ste->vars["current"]["url_fragments"], 1)))
         ]);
         $output .= $sub($ste);
     }
@@ -613,11 +615,11 @@ $ste->register_tag("styles_load", function ($ste, $params, $sub) {
                 }
             }
         }
-        $output = "<style type=\"text/css\">\n" . htmlesc($output) . "</style>";
+        $output = "<style type=\"text/css\">\n" . Esc::esc($output) . "</style>";
     } else {
         $output = "";
         foreach ($ste->vars["current"]["styles"] as $stylename) {
-            $output .= "<link rel=\"stylesheet\" type=\"text/css\" href=\"$rel_path_to_root/css.php?name=" . htmlesc($stylename) . "\" />\n";
+            $output .= "<link rel=\"stylesheet\" type=\"text/css\" href=\"$rel_path_to_root/css.php?name=" . Esc::esc($stylename) . "\" />\n";
         }
     }
     return $output;
@@ -636,10 +638,10 @@ $ste->register_tag("styles_load", function ($ste, $params, $sub) {
 $ste->register_tag("title", function ($ste, $params, $sub) {
     $pagetitle = $sub($ste);
     if (isset($ste->vars["current"]["article"])) {
-        return "<title>" . htmlesc($ste->vars["current"]["article"]["title"]) . " – $pagetitle" . "</title>";
+        return "<title>" . Esc::esc($ste->vars["current"]["article"]["title"]) . " – $pagetitle" . "</title>";
     }
     if (isset($ste->vars["current"]["section"])) {
-        return "<title>" . htmlesc($ste->vars["current"]["section"]["title"]) . " – $pagetitle" . "</title>";
+        return "<title>" . Esc::esc($ste->vars["current"]["section"]["title"]) . " – $pagetitle" . "</title>";
     }
     return "<title>$pagetitle</title>";
 });
@@ -811,7 +813,7 @@ function frontend_url_handler(&$data, $url_now, &$url_next)
                             call_user_func($validator);
                         }
                     } catch (CommentRejected $e) {
-                        $ste->vars["current"]["comment_fail"] = htmlesc($e->getMessage());
+                        $ste->vars["current"]["comment_fail"] = Esc::esc($e->getMessage());
                         $rejected = true;
                     }
                     if (!$rejected) {

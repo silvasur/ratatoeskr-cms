@@ -9,6 +9,8 @@
  * See "ratatoeskr/licenses/ratatoeskr" for more information.
  */
 
+use r7r\cms\sys\Esc;
+
 require_once(dirname(__FILE__) . "/utils.php");
 require_once(dirname(__FILE__) . "/init_ste.php");
 
@@ -28,7 +30,7 @@ if (!defined("TRANSLATION_PLUGIN_LOADED")) {
                 return "";
             }
             $rv = $translation[$params["for"]];
-            return (!empty($params["raw"])) ? $rv : htmlesc($rv);
+            return (!empty($params["raw"])) ? $rv : Esc::esc($rv);
         }
     );
     define("TRANSLATION_PLUGIN_LOADED", true);

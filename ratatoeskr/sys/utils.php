@@ -22,6 +22,9 @@
  *
  *  An array with $val $n-times repeated.
  */
+
+use r7r\cms\sys\Esc;
+
 function array_repeat($val, $n)
 {
     $rv = [];
@@ -40,19 +43,16 @@ function intcmp($a, $b)
     return ($a == $b) ? 0 : (($a < $b) ? -1 : 1);
 }
 
-/*
- * Function: htmlesc
+/**
  * Escape HTML (shorter than htmlspecialchars)
  *
- * Parameters:
- *  $text - Input text.
- *
- * Returns:
- *  HTML
+ * @param mixed $text Input text
+ * @return string HTML
+ * @deprecated Use {@see Esc::esc()} instead.
  */
-function htmlesc($text)
+function htmlesc($text): string
 {
-    return htmlspecialchars($text, ENT_QUOTES, "UTF-8");
+    return Esc::esc($text);
 }
 
 /*
