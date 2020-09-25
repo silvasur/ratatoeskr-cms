@@ -9,8 +9,12 @@
  * See "ratatoeskr/licenses/ratatoeskr" for more information.
  */
 
-use r7r\cms\sys\Esc;
+use r7r\ste\STECore;
+use r7r\ste\ParseCompileError;
+use r7r\ste\Transcompiler;
+use r7r\ste\Parser;
 use r7r\cms\sys\Env;
+use r7r\cms\sys\Esc;
 
 require_once(dirname(__FILE__) . "/sys/models.php");
 require_once(dirname(__FILE__) . "/sys/pwhash.php");
@@ -98,7 +102,7 @@ function build_backend_subactions()
     },
     "login" => url_action_simple(function ($data) {
         /**
-         * @var \ste\STECore $ste
+         * @var STECore $ste
          * @var Group|null $admin_grp
          */
         global $ste, $admin_grp;
@@ -138,7 +142,7 @@ function build_backend_subactions()
     "content" => url_action_subactions([
         "write" => function (&$data, $url_now, &$url_next) {
             /**
-             * @var \ste\STECore $ste
+             * @var STECore $ste
              * @var array $translation
              * @var Settings $ratatoeskr_settings
              * @var array $languages
@@ -977,10 +981,10 @@ function build_backend_subactions()
                     $ste->vars["template_code"] = $_POST["template_code"];
 
                     try {
-                        \ste\transcompile(\ste\parse(\ste\precompile($_POST["template_code"]), $_POST["template_name"]));
+                        Transcompiler::transcompile(Parser::parse($_POST["template_code"], $_POST["template_name"]));
                         file_put_contents(SITE_BASE_PATH . "/ratatoeskr/templates/src/usertemplates/" . $_POST["template_name"], $_POST["template_code"]);
                         $ste->vars["success"] = $translation["template_successfully_saved"];
-                    } catch (\ste\ParseCompileError $e) {
+                    } catch (ParseCompileError $e) {
                         $e->rewrite($_POST["template_code"]);
                         $ste->vars["error"] = $translation["could_not_compile_template"] . $e->getMessage();
                     }

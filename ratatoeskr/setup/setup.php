@@ -1,5 +1,7 @@
 <?php
 
+use r7r\ste;
+
 define("SETUP", true);
 
 require_once(dirname(__FILE__) . "/../vendor/autoload.php");
@@ -10,7 +12,7 @@ require_once(dirname(__FILE__) . "/../sys/pwhash.php");
 require_once(dirname(__FILE__) . "/../languages.php");
 require_once(dirname(__FILE__) . "/create_tables.php");
 
-/** @var \ste\STECore $ste */
+/** @var ste\STECore $ste */
 assert(isset($ste));
 
 $rel_path_to_root = ".";
