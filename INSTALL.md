@@ -26,12 +26,6 @@ You need these libraries to run Ratatöskr (it is probably already bundled with 
    
    kses can be found at <http://sourceforge.net/projects/kses/>
 
-2. jQuery
-   
-   Place jquery.min.js into this folder.
-   
-   jQuery can be found at <http://jquery.com>
-
 Step 3: Copy files to your Webspace
 -----------------------------------
 

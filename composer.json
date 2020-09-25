@@ -17,7 +17,8 @@
   "require": {
     "php": ">=7.3",
     "r7r/ste": "^2.0.1",
-    "michelf/php-markdown": "^1.9"
+    "michelf/php-markdown": "^1.9",
+    "components/jquery": "^3.5"
   },
   "config": {
     "vendor-dir": "ratatoeskr/vendor"

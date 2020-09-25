@@ -7,7 +7,6 @@ ratatoeskr/templates/src/usertemplates/*
 ratatoeskr/templates/transc/*
 ratatoeskr/libs/ste
 ratatoeskr/libs/kses.php
-ratatoeskr/libs/jquery.min.js
 ratatoeskr/config.php
 .php_cs.cache
 ratatoeskr/vendor/

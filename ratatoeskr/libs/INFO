@@ -5,9 +5,3 @@ This directory will hold some libraries Ratatöskr needs.
    Place "kses.php" from the archive directly into this directory.
 
    kses can be found at <http://sourceforge.net/projects/kses/>
-
-2. jQuery
-
-   Place jquery.min.js into this folder.
-
-   jQuery can be found at <http://jquery.com>

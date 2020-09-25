@@ -24,8 +24,6 @@ install_dependencies() {
     rm -rf kses-*
     rm kses.zip
 
-    wget http://code.jquery.com/jquery.min.js
-
     cd ../..
 }
 
