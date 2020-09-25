@@ -14,7 +14,6 @@ use r7r\cms\sys\Env;
 
 require_once(dirname(__FILE__) . "/db.php");
 require_once(dirname(__FILE__) . "/utils.php");
-require_once(dirname(__FILE__) . "/../libs/kses.php");
 require_once(dirname(__FILE__) . "/textprocessors.php");
 require_once(dirname(__FILE__) . "/pluginpackage.php");
 
@@ -1207,7 +1206,7 @@ class Comment extends BySQLRowEnabled
 
     /**
      * Creates the HTML representation of a comment text. It applies the page's comment textprocessor on it
-     * and filters some potentially harmful tags using kses.
+     * and filters some potentially harmful tags using HTMLPurifier.
      *
      * @param string $text Text to HTMLize.
      * @return string HTML code.
@@ -1218,7 +1217,10 @@ class Comment extends BySQLRowEnabled
 
         $textprocessors = $textprocessors ?? Env::getGlobal()->textprocessors();
 
-        return kses($textprocessors->mustApply($text, $ratatoeskr_settings["comment_textprocessor"]), [
+        $purifierConfig = HTMLPurifier_Config::createDefault();
+        $purifier = new HTMLPurifier($purifierConfig);
+
+        return $purifier->purify($textprocessors->mustApply($text, $ratatoeskr_settings["comment_textprocessor"]), [
             "a" => ["href" => 1, "hreflang" => 1, "title" => 1, "rel" => 1, "rev" => 1],
             "b" => [],
             "i" => [],

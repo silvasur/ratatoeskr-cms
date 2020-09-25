@@ -17,7 +17,6 @@ require_once(dirname(__FILE__) . "/sys/utils.php");
 require_once(dirname(__FILE__) . "/languages.php");
 require_once(dirname(__FILE__) . "/sys/models.php");
 require_once(dirname(__FILE__) . "/sys/textprocessors.php");
-require_once(dirname(__FILE__) . "/libs/kses.php");
 
 /** @var ste\STECore $ste */
 assert(isset($ste));

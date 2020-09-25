@@ -1,7 +1,0 @@
-This directory will hold some libraries Ratatöskr needs.
-
-1. kses
-
-   Place "kses.php" from the archive directly into this directory.
-
-   kses can be found at <http://sourceforge.net/projects/kses/>

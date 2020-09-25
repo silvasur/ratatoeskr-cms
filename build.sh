@@ -15,16 +15,6 @@ setup_directories() {
 
 install_dependencies() {
     composer install
-
-    cd ratatoeskr/libs
-
-    wget -O kses.zip http://sourceforge.net/projects/kses/files/kses/0.2.2/kses-0.2.2.zip/download?use_mirror=optimate
-    unzip kses.zip
-    mv kses-*/kses.php .
-    rm -rf kses-*
-    rm kses.zip
-
-    cd ../..
 }
 
 setup_dev_environment() {

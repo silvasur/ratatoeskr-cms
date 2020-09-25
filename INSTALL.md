@@ -11,27 +11,18 @@ Step 0: Requirements
 Step 1: Get required packages using composer
 --------------------------------------------
 
+*(If you donloaded a pre-built package, you can skip this step)*
+
 Some required packages are managed by [composer](https://www.getcomposer.org). If you don't have it installed, go and install it.
 
 After that, run `composer install` in the root directory of this package.
 
-Step 2: Get additional libraries
---------------------------------
-
-You need these libraries to run Ratatöskr (it is probably already bundled with these):
-
-1. kses
-   
-   Place "kses.php" from the archive directly into this directory.
-   
-   kses can be found at <http://sourceforge.net/projects/kses/>
-
-Step 3: Copy files to your Webspace
+Step 2: Copy files to your Webspace
 -----------------------------------
 
 Copy Ratatöskr to your webspace (usually using FTP or SFTP).
 
-Step 4: Use the setup wizard
+Step 3: Use the setup wizard
 ----------------------------
 
 1. Open your favourite Web browser and surf to `setup.php` of your Ratatöskr installation.
@@ -47,7 +38,7 @@ Step 4: Use the setup wizard
 
 5. Copy the text from the textbox and replace the contents of `/ratatoeskr/config.php` with it.
 
-Step 5: Delete the setup wizard
+Step 4: Delete the setup wizard
 -------------------------------
 
 Delete the file `setup.php`.

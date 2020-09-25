@@ -5,8 +5,6 @@ images/*
 ratatoeskr/templates/src/plugintemplates/*
 ratatoeskr/templates/src/usertemplates/*
 ratatoeskr/templates/transc/*
-ratatoeskr/libs/ste
-ratatoeskr/libs/kses.php
 ratatoeskr/config.php
 .php_cs.cache
 ratatoeskr/vendor/
