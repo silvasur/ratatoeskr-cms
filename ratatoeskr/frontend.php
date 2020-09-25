@@ -454,9 +454,9 @@ $ste->register_tag("comment_form", function ($ste, $params, $sub) {
     $previewbtn = $ste->evalbool(@$params["previewbtn"]) ? " <input type=\"submit\" name=\"preview_comment\" value=\"{$translation["comment_form_preview"]}\" />" : "";
 
     if ($ste->evalbool(@$params["default"])) {
-        $form_body = "<p>{$translation["comment_form_name"]}: <input type=\"text\" name=\"author_name\" value=\"" . Esc::esc(@$_POST["author_name"]) . "\" /></p>
-<p>{$translation["comment_form_mail"]}: <input type=\"text\" name=\"author_mail\" value=\"" . Esc::esc(@$_POST["author_mail"]) . "\" /></p>
-<p>{$translation["comment_form_text"]}:<br /><textarea name=\"comment_text\" cols=\"50\" rows=\"10\">" . Esc::esc(@$_POST["comment_text"]) . "</textarea></p>
+        $form_body = "<p>{$translation["comment_form_name"]}: <input type=\"text\" name=\"author_name\" value=\"" . Esc::esc((string)$_POST["author_name"] ?? '') . "\" /></p>
+<p>{$translation["comment_form_mail"]}: <input type=\"text\" name=\"author_mail\" value=\"" . Esc::esc((string)$_POST["author_mail"] ?? '') . "\" /></p>
+<p>{$translation["comment_form_text"]}:<br /><textarea name=\"comment_text\" cols=\"50\" rows=\"10\">" . Esc::esc((string)@$_POST["comment_text"] ?? '') . "</textarea></p>
 <p><input type=\"submit\" name=\"post_comment\" value=\"{$translation["comment_form_submit"]}\" />$previewbtn</p>";
     } else {
         $ste->vars["current"]["oldcomment"] = [
