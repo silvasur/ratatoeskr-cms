@@ -926,75 +926,83 @@ class PluginKVStorage extends KVStorage
     }
 }
 
-/*
- * Class: Comment
+/**
  * Representing a user comment
  */
 class Comment extends BySQLRowEnabled
 {
+    /** @var int */
     private $id;
+
+    /** @var int */
     private $article_id;
+
+    /** @var string */
     private $language;
+
+    /** @var int */
     private $timestamp;
 
-    /*
-     * Variables: Public class variables.
-     *
-     * $author_name   - Name of comment author.
-     * $author_mail   - E-Mail of comment author.
-     * $text          - Comment text.
-     * $visible       - Should the comment be visible?
-     * $read_by_admin - Was the comment read by an admin.
-     */
+    /** @var string Name of comment author */
     public $author_name;
+
+    /** @var string E-Mail of comment author */
     public $author_mail;
+
+    /** @var string Comment text */
     public $text;
+
+    /** @var bool Should the comment be visible? */
     public $visible;
+
+    /** @var bool Was the comment read by an admin */
     public $read_by_admin;
 
-    /*
-     * Functions: Getters
-     *
-     * get_id        - Gets the comment ID.
-     * get_article   - Gets the article.
-     * get_language  - Gets the language.
-     * get_timestamp - Gets the timestamp.
-     */
-    public function get_id()
+    public function get_id(): int
     {
         return $this->id;
     }
-    public function get_article()
+
+    /**
+     * Get the article for this comment
+     * @return Article
+     * @throws DoesNotExistError
+     */
+    public function get_article(): Article
     {
         return Article::by_id($this->article_id);
     }
-    public function get_language()
+
+    public function get_language(): string
     {
         return $this->language;
     }
-    public function get_timestamp()
+
+    public function get_timestamp(): int
     {
         return $this->timestamp;
     }
 
-    /*
-     * Constructor: create
+    /**
      * Creates a new comment.
      * Automatically sets the $timestamp and $visible (default from setting "comment_visible_default").
      *
-     * Parameters:
-     *  $article  - An <Article> Object.
-     *  $language - Which language? (see <languages.php>)
+     * @param Article $article
+     * @param string $language
+     * @param Database|null $db
+     * @return self
      */
-    public static function create($article, $language)
+    public static function create(Article $article, $language, ?Database $db = null): self
     {
         global $ratatoeskr_settings;
-        global $db_con;
+
+        $language = (string)$language;
+        $db = $db ?? Env::getGlobal()->database();
 
         $obj = new self();
         $obj->timestamp = time();
 
-        qdb(
+        $db->query(
             "INSERT INTO `PREFIX_comments` (`article`, `language`, `author_name`, `author_mail`, `text`, `timestamp`, `visible`, `read_by_admin`) VALUES (?, ?, '', '', '', ?, ?, 0)",
             $article->get_id(),
             $language,
@@ -1002,13 +1010,13 @@ class Comment extends BySQLRowEnabled
             $ratatoeskr_settings["comment_visible_default"] ? 1 : 0
         );
 
-        $obj->id            = $db_con->lastInsertId();
+        $obj->id            = $db->lastInsertId();
         $obj->article_id    = $article->get_id();
         $obj->language      = $language;
         $obj->author_name   = "";
         $obj->author_mail   = "";
         $obj->text          = "";
-        $obj->visible       = $ratatoeskr_settings["comment_visible_default"];
+        $obj->visible       = (bool)$ratatoeskr_settings["comment_visible_default"];
         $obj->read_by_admin = false;
 
         return $obj;
@@ -1016,30 +1024,31 @@ class Comment extends BySQLRowEnabled
 
     protected function populate_by_sqlrow($sqlrow)
     {
-        $this->id            = $sqlrow["id"];
-        $this->article_id    = $sqlrow["article"];
-        $this->language      = $sqlrow["language"];
-        $this->author_name   = $sqlrow["author_name"];
-        $this->author_mail   = $sqlrow["author_mail"];
-        $this->text          = $sqlrow["text"];
-        $this->timestamp     = $sqlrow["timestamp"];
+        $this->id            = (int)$sqlrow["id"];
+        $this->article_id    = (int)$sqlrow["article"];
+        $this->language      = (string)$sqlrow["language"];
+        $this->author_name   = (string)$sqlrow["author_name"];
+        $this->author_mail   = (string)$sqlrow["author_mail"];
+        $this->text          = (string)$sqlrow["text"];
+        $this->timestamp     = (int)$sqlrow["timestamp"];
         $this->visible       = $sqlrow["visible"] == 1;
         $this->read_by_admin = $sqlrow["read_by_admin"] == 1;
     }
 
-    /*
-     * Constructor: by_id
+    /**
      * Gets a Comment by ID.
      *
-     * Parameters:
-     *  $id - The comments ID.
-     *
-     * Throws:
-     *  <DoesNotExistError>
+     * @param int|mixed $id
+     * @param Database|null $db
+     * @return self
+     * @throws DoesNotExistError
      */
-    public static function by_id($id)
+    public static function by_id($id, ?Database $db = null): self
     {
-        $stmt = qdb("SELECT `id`, `article`, `language`, `author_name`, `author_mail`, `text`, `timestamp`, `visible`, `read_by_admin` FROM `PREFIX_comments` WHERE `id` = ?", $id);
+        $id = (int)$id;
+        $db = $db ?? Env::getGlobal()->database();
+
+        $stmt = $db->query("SELECT `id`, `article`, `language`, `author_name`, `author_mail`, `text`, `timestamp`, `visible`, `read_by_admin` FROM `PREFIX_comments` WHERE `id` = ?", $id);
         $sqlrow = $stmt->fetch();
         if ($sqlrow === false) {
             throw new DoesNotExistError();
@@ -1048,17 +1057,18 @@ class Comment extends BySQLRowEnabled
         return self::by_sqlrow($sqlrow);
     }
 
-    /*
-     * Constructor: all
+    /**
      * Get all comments
      *
-     * Returns:
-     *  Array of Comment objects
+     * @param Database|null $db
+     * @return self[]
      */
-    public static function all()
+    public static function all(?Database $db = null): array
     {
+        $db = $db ?? Env::getGlobal()->database();
+
         $rv = [];
-        $stmt = qdb("SELECT `id`, `article`, `language`, `author_name`, `author_mail`, `text`, `timestamp`, `visible`, `read_by_admin` FROM `PREFIX_comments` WHERE 1");
+        $stmt = $db->query("SELECT `id`, `article`, `language`, `author_name`, `author_mail`, `text`, `timestamp`, `visible`, `read_by_admin` FROM `PREFIX_comments` WHERE 1");
         while ($sqlrow = $stmt->fetch()) {
             $rv[] = self::by_sqlrow($sqlrow);
         }
@@ -1070,6 +1080,7 @@ class Comment extends BySQLRowEnabled
      * and filters some potentially harmful tags using HTMLPurifier.
      *
      * @param string $text Text to HTMLize.
+     * @param TextprocessorRepository|null $textprocessors
      * @return string HTML code.
      */
     public static function htmlize_comment_text($text, ?TextprocessorRepository $textprocessors = null)
@@ -1130,25 +1141,25 @@ class Comment extends BySQLRowEnabled
         ]);
     }
 
-    /*
-     * Function: create_html
-     * Applys <htmlize_comment_text> onto this comment's text.
+    /**
+     * Applies {@see self::htmlize_comment_text()} onto this comment's text.
      *
-     * Returns:
-     *  The HTML representation.
+     * @return string The HTML representation.
      */
-    public function create_html()
+    public function create_html(): string
     {
         return self::htmlize_comment_text($this->text);
     }
 
-    /*
-     * Function: save
+    /**
      * Save changes to database.
+     * @param Database|null $db
      */
-    public function save()
+    public function save(?Database $db = null): void
     {
-        qdb(
+        $db = $db ?? Env::getGlobal()->database();
+
+        $db->query(
             "UPDATE `PREFIX_comments` SET `author_name` = ?, `author_mail` = ?, `text` = ?, `visible` = ?, `read_by_admin` = ? WHERE `id` = ?",
             $this->author_name,
             $this->author_mail,
@@ -1159,12 +1170,15 @@ class Comment extends BySQLRowEnabled
         );
     }
 
-    /*
-     * Function: delete
+    /**
+     * Delete the comment
+     * @param Database|null $db
      */
-    public function delete()
+    public function delete(?Database $db = null): void
     {
-        qdb("DELETE FROM `PREFIX_comments` WHERE `id` = ?", $this->id);
+        $db = $db ?? Env::getGlobal()->database();
+
+        $db->query("DELETE FROM `PREFIX_comments` WHERE `id` = ?", $this->id);
     }
 }
 
@@ -2592,6 +2606,7 @@ class Repository extends BySQLRowEnabled
  */
 class Article extends BySQLRowEnabled
 {
+    /** @var int */
     private $id;
 
     private $section_id;
@@ -2629,7 +2644,7 @@ class Article extends BySQLRowEnabled
 
     protected function populate_by_sqlrow($sqlrow)
     {
-        $this->id             = $sqlrow["id"];
+        $this->id             = (int)$sqlrow["id"];
         $this->urlname        = $sqlrow["urlname"];
         $this->title          = Multilingual::by_id($sqlrow["title"]);
         $this->text           = Multilingual::by_id($sqlrow["text"]);
@@ -2646,7 +2661,7 @@ class Article extends BySQLRowEnabled
     /*
      * Function: get_id
      */
-    public function get_id()
+    public function get_id(): int
     {
         return $this->id;
     }
