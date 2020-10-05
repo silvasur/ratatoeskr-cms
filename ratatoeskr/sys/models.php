@@ -11,6 +11,7 @@
 
 use r7r\cms\sys\textprocessors\TextprocessorRepository;
 use r7r\cms\sys\Env;
+use r7r\cms\sys\models\KVStorage;
 
 require_once(dirname(__FILE__) . "/db.php");
 require_once(dirname(__FILE__) . "/utils.php");
@@ -97,140 +98,6 @@ abstract class BySQLRowEnabled
         $obj = new static();
         $obj->populate_by_sqlrow($sqlrow);
         return $obj;
-    }
-}
-
-/*
- * Class: KVStorage
- * An abstract class for a KVStorage.
- *
- * See also:
- *  <PluginKVStorage>, <ArticleExtradata>
- */
-abstract class KVStorage implements Countable, ArrayAccess, Iterator
-{
-    private $keybuffer;
-    private $counter;
-    private $silent_mode;
-
-    private $common_vals;
-
-    private $stmt_get;
-    private $stmt_unset;
-    private $stmt_update;
-    private $stmt_create;
-
-    final protected function init($sqltable, $common)
-    {
-        $sqltable = sub_prefix($sqltable);
-
-        $this->silent_mode = false;
-        $this->keybuffer = [];
-
-        $selector = "WHERE ";
-        $fields = "";
-        foreach ($common as $field => $val) {
-            $selector .= "`$field` = ? AND ";
-            $fields .= ", `$field`";
-            $this->common_vals[] = $val;
-        }
-
-        $this->stmt_get    = prep_stmt("SELECT `value` FROM `$sqltable` $selector `key` = ?");
-        $this->stmt_unset  = prep_stmt("DELETE FROM `$sqltable` $selector `key` = ?");
-        $this->stmt_update = prep_stmt("UPDATE `$sqltable` SET `value` = ? $selector `key` = ?");
-        $this->stmt_create = prep_stmt("INSERT INTO `$sqltable` (`key`, `value` $fields) VALUES (?,?" . str_repeat(",?", count($common)) . ")");
-
-        $get_keys = prep_stmt("SELECT `key` FROM `$sqltable` $selector 1");
-        $get_keys->execute($this->common_vals);
-        while ($sqlrow = $get_keys->fetch()) {
-            $this->keybuffer[] = $sqlrow["key"];
-        }
-
-        $this->counter = 0;
-    }
-
-    /*
-     * Functions: Silent mode
-     * If the silent mode is enabled, the KVStorage behaves even more like a PHP array, i.e. it just returns NULL,
-     * if a unknown key was requested and does not throw an DoesNotExistError Exception.
-     *
-     * enable_silent_mode  - Enable the silent mode.
-     * disable_silent_mode - Disable the silent mode (default).
-     */
-    final public function enable_silent_mode()
-    {
-        $this->silent_mode = true;
-    }
-    final public function disable_silent_mode()
-    {
-        $this->silent_mode = false;
-    }
-
-    /* Countable interface implementation */
-    final public function count()
-    {
-        return count($this->keybuffer);
-    }
-
-    /* ArrayAccess interface implementation */
-    final public function offsetExists($offset)
-    {
-        return in_array($offset, $this->keybuffer);
-    }
-    final public function offsetGet($offset)
-    {
-        if ($this->offsetExists($offset)) {
-            $this->stmt_get->execute(array_merge($this->common_vals, [$offset]));
-            $sqlrow = $this->stmt_get->fetch();
-            $this->stmt_get->closeCursor();
-            return unserialize(base64_decode($sqlrow["value"]));
-        } elseif ($this->silent_mode) {
-            return null;
-        } else {
-            throw new DoesNotExistError();
-        }
-    }
-    final public function offsetUnset($offset)
-    {
-        if ($this->offsetExists($offset)) {
-            unset($this->keybuffer[array_search($offset, $this->keybuffer)]);
-            $this->keybuffer = array_merge($this->keybuffer);
-            $this->stmt_unset->execute(array_merge($this->common_vals, [$offset]));
-            $this->stmt_unset->closeCursor();
-        }
-    }
-    final public function offsetSet($offset, $value)
-    {
-        if ($this->offsetExists($offset)) {
-            $this->stmt_update->execute(array_merge([base64_encode(serialize($value))], $this->common_vals, [$offset]));
-            $this->stmt_update->closeCursor();
-        } else {
-            $this->stmt_create->execute(array_merge([$offset, base64_encode(serialize($value))], $this->common_vals));
-            $this->stmt_create->closeCursor();
-            $this->keybuffer[] = $offset;
-        }
-    }
-
-    /* Iterator interface implementation */
-    final public function rewind()
-    {
-        return $this->counter = 0;
-    }
-    final public function current()
-    {
-        return $this->offsetGet($this->keybuffer[$this->counter]);
-    }
-    final public function key()
-    {
-        return $this->keybuffer[$this->counter];
-    }
-    final public function next()
-    {
-        ++$this->counter;
-    }
-    final public function valid()
-    {
-        return isset($this->keybuffer[$this->counter]);
     }
 }
 
@@ -1036,25 +903,24 @@ class Settings implements ArrayAccess, IteratorAggregate, Countable
 
 $ratatoeskr_settings = Settings::get_instance();
 
-/*
- * Class: PluginKVStorage
+/**
  * A Key-Value-Storage for Plugins
  * Can be accessed like an array.
  * Keys are strings and Values can be everything serialize() can process.
- *
- * Extends the abstract <KVStorage> class.
  */
 class PluginKVStorage extends KVStorage
 {
-    /*
-     * Constructor: __construct
-     *
-     * Parameters:
-     *  $plugin_id - The ID of the Plugin.
+    /**
+     * @param int|mixed $plugin_id The ID of the Plugin.
+     * @param Database|null $db Optionally a database opject. Defaults to the global one
      */
-    public function __construct($plugin_id)
+    public function __construct($plugin_id, ?Database $db = null)
     {
-        $this->init("PREFIX_plugin_kvstorage", ["plugin" => $plugin_id]);
+        $this->init(
+            "PREFIX_plugin_kvstorage",
+            ["plugin" => (int)$plugin_id],
+            $db ?? Env::getGlobal()->database()
+        );
     }
 }
 
@@ -3229,29 +3095,28 @@ WHERE " . implode(" AND ", $subqueries) . " $sorting");
     }
 }
 
-/*
- * Class: ArticleExtradata
+/**
  * A Key-Value-Storage assigned to Articles for plugins to store additional data.
  * Can be accessed like an array.
  * Keys are strings and Values can be everything serialize() can process.
- *
- * Extends the abstract <KVStorage> class.
  */
 class ArticleExtradata extends KVStorage
 {
-    /*
-     * Constructor: __construct
-     *
-     * Parameters:
-     *  $article_id - The ID of the Article.
-     *  $plugin_id  - The ID of the Plugin.
+    /**
+     * @param int|mixed $article_id The ID of the Article.
+     * @param int|mixed $plugin_id The ID of the Plugin.
+     * @param Database|null $db
      */
-    public function __construct($article_id, $plugin_id)
+    public function __construct($article_id, $plugin_id, ?Database $db = null)
     {
-        $this->init("PREFIX_article_extradata", [
-            "article" => $article_id,
-            "plugin" => $plugin_id,
-        ]);
+        $this->init(
+            "PREFIX_article_extradata",
+            [
+                "article" => (int)$article_id,
+                "plugin" => (int)$plugin_id,
+            ],
+            $db ?? Env::getGlobal()->database()
+        );
     }
 }
 
