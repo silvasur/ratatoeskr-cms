@@ -539,37 +539,28 @@ class Group extends BySQLRowEnabled
     }
 }
 
-/*
- * Class: Translation
- * A translation. Can only be stored using an <Multilingual> object.
+/**
+ * A translation. Can only be stored using a {@see Multilingual} object.
  */
 class Translation
 {
-    /*
-     * Variables: Public class variables.
-     *
-     * $text - The translated text.
-     * $texttype - The type of the text. Has only a meaning in a context.
-     */
+    /** @var string The translated text. */
     public $text;
+
+    /** @var string The type of the text. Has only a meaning in a context. */
     public $texttype;
 
-    /*
-     * Constructor: __construct
+    /**
      * Creates a new Translation object.
      * IT WILL NOT BE STORED TO DATABASE!
      *
-     * Parameters:
-     *  $text - The translated text.
-     *  $texttype - The type of the text. Has only a meaning in a context.
-     *
-     * See also:
-     *  <Multilingual>
+     * @param string|mixed $text The translated text.
+     * @param string|mixed $texttype The type of the text. Has only a meaning in a context.
      */
     public function __construct($text, $texttype)
     {
-        $this->text     = $text;
-        $this->texttype = $texttype;
+        $this->text     = (string)$text;
+        $this->texttype = (string)$texttype;
     }
 
     /**
@@ -583,78 +574,66 @@ class Translation
     }
 }
 
-/*
- * Class: Multilingual
- * Container for <Translation> objects.
+/**
+ * Container for {@see Translation} objects.
  * Translations can be accessed array-like. So, if you want the german translation: $translation = $my_multilingual["de"];
- *
- * See also:
- *  <languages.php>
  */
 class Multilingual implements Countable, ArrayAccess, IteratorAggregate
 {
-    private $translations;
+    /** @var int */
     private $id;
-    private $to_be_deleted;
-    private $to_be_created;
+
+    private $translations = [];
+    private $to_be_deleted = [];
+    private $to_be_created = [];
 
     private function __construct()
     {
-        $this->translations  = [];
-        $this->to_be_deleted = [];
-        $this->to_be_created = [];
     }
 
-    /*
-     * Function: get_id
-     * Retuurns the ID of the object.
-     */
-    public function get_id()
+    public function get_id(): int
     {
         return $this->id;
     }
 
-    /*
-     * Constructor: create
+    /**
      * Creates a new Multilingual object
      *
-     * Returns:
-     *  An Multilingual object.
+     * @param Database|null $db
+     * @return self
      */
-    public static function create()
+    public static function create(?Database $db = null): self
     {
-        global $db_con;
+        $db = $db ?? Env::getGlobal()->database();
 
         $obj = new self();
-        qdb("INSERT INTO `PREFIX_multilingual` () VALUES ()");
-        $obj->id = $db_con->lastInsertId();
+        $db->query("INSERT INTO `PREFIX_multilingual` () VALUES ()");
+        $obj->id = $db->lastInsertId();
         return $obj;
     }
 
-    /*
-     * Constructor: by_id
+    /**
      * Gets an Multilingual object by ID.
      *
-     * Parameters:
-     *  $id - The ID.
-     *
-     * Returns:
-     *  An Multilingual object.
-     *
-     * Throws:
-     *  <DoesNotExistError>
+     * @param int|mixed $id
+     * @param Database|null $db
+     * @return self
+     * @throws DoesNotExistError
      */
-    public static function by_id($id)
+    public static function by_id($id, ?Database $db = null): self
     {
+        $id = (int)$id;
+        $db = $db ?? Env::getGlobal()->database();
+
         $obj = new self();
-        $stmt = qdb("SELECT `id` FROM `PREFIX_multilingual` WHERE `id` = ?", $id);
+        $stmt = $db->query("SELECT `id` FROM `PREFIX_multilingual` WHERE `id` = ?", $id);
         $sqlrow = $stmt->fetch();
         if ($sqlrow == false) {
             throw new DoesNotExistError();
         }
         $obj->id = $id;
 
-        $stmt = qdb("SELECT `language`, `text`, `texttype` FROM `PREFIX_translations` WHERE `multilingual` = ?", $id);
+        $stmt = $db->query("SELECT `language`, `text`, `texttype` FROM `PREFIX_translations` WHERE `multilingual` = ?", $id);
         while ($sqlrow = $stmt->fetch()) {
             $obj->translations[$sqlrow["language"]] = new Translation($sqlrow["text"], $sqlrow["texttype"]);
         }
@@ -662,20 +641,23 @@ class Multilingual implements Countable, ArrayAccess, IteratorAggregate
         return $obj;
     }
 
-    /*
-     * Function: save
+    /**
      * Saves the translations to database.
+     * @param Database|null $db
      */
-    public function save()
+    public function save(?Database $db = null): void
     {
-        $tx = new Transaction();
+        $db = $db ?? Env::getGlobal()->database();
+
+        $tx = new DbTransaction($db);
         try {
+            // TODO: These mass deletions/saves can be implemented much more efficiently
             foreach ($this->to_be_deleted as $deletelang) {
-                qdb("DELETE FROM `PREFIX_translations` WHERE `multilingual` = ? AND `language` = ?", $this->id, $deletelang);
+                $db->query("DELETE FROM `PREFIX_translations` WHERE `multilingual` = ? AND `language` = ?", $this->id, $deletelang);
             }
 
             foreach ($this->to_be_created as $lang) {
-                qdb(
+                $db->query(
                     "INSERT INTO `PREFIX_translations` (`multilingual`, `language`, `text`, `texttype`) VALUES (?, ?, ?, ?)",
                     $this->id,
                     $lang,
@@ -686,7 +668,7 @@ class Multilingual implements Countable, ArrayAccess, IteratorAggregate
 
             foreach ($this->translations as $lang => $translation) {
                 if (!in_array($lang, $this->to_be_created)) {
-                    qdb(
+                    $db->query(
                         "UPDATE `PREFIX_translations` SET `text` = ?, `texttype` = ? WHERE `multilingual` = ? AND `language` = ?",
                         $translation->text,
                         $translation->texttype,
@@ -705,16 +687,18 @@ class Multilingual implements Countable, ArrayAccess, IteratorAggregate
         }
     }
 
-    /*
-     * Function: delete
+    /**
      * Deletes the data from database.
+     * @param Database|null $db
      */
-    public function delete()
+    public function delete(?Database $db = null): void
     {
-        $tx = new Transaction();
+        $db = $db ?? Env::getGlobal()->database();
+
+        $tx = new DbTransaction($db);
         try {
-            qdb("DELETE FROM `PREFIX_translations` WHERE `multilingual` = ?", $this->id);
-            qdb("DELETE FROM `PREFIX_multilingual` WHERE `id` = ?", $this->id);
+            $db->query("DELETE FROM `PREFIX_translations` WHERE `multilingual` = ?", $this->id);
+            $db->query("DELETE FROM `PREFIX_multilingual` WHERE `id` = ?", $this->id);
             $tx->commit();
         } catch (Exception $e) {
             $tx->rollback();
@@ -725,7 +709,7 @@ class Multilingual implements Countable, ArrayAccess, IteratorAggregate
     /* Countable interface implementation */
     public function count()
     {
-        return count($this->languages);
+        return count($this->translations);
     }
 
     /* ArrayAccess interface implementation */
