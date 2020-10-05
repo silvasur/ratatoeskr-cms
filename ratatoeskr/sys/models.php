@@ -346,44 +346,36 @@ class User extends BySQLRowEnabled
     }
 }
 
-/*
- * Class: Group
+/**
  * Data model for groups
  */
 class Group extends BySQLRowEnabled
 {
+    /** @var int */
     private $id;
 
-    /*
-     * Variables: Public class properties
-     *
-     * $name - Name of the group.
-     */
+    /** @var string Name of the group */
     public $name;
 
-    /*
-     * Constructor: create
+    /**
      * Creates a new group.
      *
-     * Parameters:
-     *  $name - The name of the group.
-     *
-     * Returns:
-     *  An Group object
-     *
-     * Throws:
-     *  <AlreadyExistsError>
+     * @param string|mixed $name The name of the group.
+     * @return self
+     * @throws AlreadyExistsError
      */
-    public static function create($name)
+    public static function create($name, ?Database $db = null): self
     {
-        global $db_con;
+        $name = (string)$name;
+        $db = $db ?? Env::getGlobal()->database();
+
         try {
-            self::by_name($name);
+            self::by_name($name, $db);
         } catch (DoesNotExistError $e) {
-            qdb("INSERT INTO `PREFIX_groups` (`name`) VALUES (?)", $name);
+            $db->query("INSERT INTO `PREFIX_groups` (`name`) VALUES (?)", $name);
             $obj = new self();
 
-            $obj->id   = $db_con->lastInsertId();
+            $obj->id   = $db->lastInsertId();
             $obj->name = $name;
 
             return $obj;
@@ -393,26 +385,24 @@ class Group extends BySQLRowEnabled
 
     protected function populate_by_sqlrow($sqlrow)
     {
-        $this->id   = $sqlrow["id"];
-        $this->name = $sqlrow["name"];
+        $this->id   = (int)$sqlrow["id"];
+        $this->name = (string)$sqlrow["name"];
     }
 
-    /*
-     * Constructor: by_id
+    /**
      * Get a Group object by ID
      *
-     * Parameters:
-     *  $id - The ID.
-     *
-     * Returns:
-     *  A Group object.
-     *
-     * Throws:
-     *  <DoesNotExistError>
+     * @param int|mixed $id
+     * @param Database|null $db
+     * @return self
+     * @throws DoesNotExistError
      */
-    public static function by_id($id)
+    public static function by_id($id, ?Database $db = null): self
     {
-        $stmt =  qdb("SELECT `id`, `name` FROM `PREFIX_groups` WHERE `id` = ?", $id);
+        $id = (int)$id;
+        $db = $db ?? Env::getGlobal()->database();
+
+        $stmt = $db->query("SELECT `id`, `name` FROM `PREFIX_groups` WHERE `id` = ?", $id);
         $sqlrow = $stmt->fetch();
         if (!$sqlrow) {
             throw new DoesNotExistError();
@@ -421,22 +411,20 @@ class Group extends BySQLRowEnabled
         return self::by_sqlrow($sqlrow);
     }
 
-    /*
-     * Constructor: by_name
+    /**
      * Get a Group object by name
      *
-     * Parameters:
-     *  $name - The group name.
-     *
-     * Returns:
-     *  A Group object.
-     *
-     * Throws:
-     *  <DoesNotExistError>
+     * @param string|mixed $name The group name
+     * @param Database|null $db
+     * @return self
+     * @throws DoesNotExistError
      */
-    public static function by_name($name)
+    public static function by_name($name, ?Database $db = null)
     {
-        $stmt = qdb("SELECT `id`, `name` FROM `PREFIX_groups` WHERE `name` = ?", $name);
+        $name = (string)$name;
+        $db = $db ?? Env::getGlobal()->database();
+
+        $stmt = $db->query("SELECT `id`, `name` FROM `PREFIX_groups` WHERE `name` = ?", $name);
         $sqlrow = $stmt->fetch();
         if (!$sqlrow) {
             throw new DoesNotExistError();
@@ -445,15 +433,18 @@ class Group extends BySQLRowEnabled
         return self::by_sqlrow($sqlrow);
     }
 
-    /*
-     * Function: all
+    /**
      * Returns array of all groups
+     * @param Database|null $db
+     * @return self[]
      */
-    public static function all()
+    public static function all(?Database $db = null): array
     {
+        $db = $db ?? Env::getGlobal()->database();
+
         $rv = [];
 
-        $stmt = qdb("SELECT `id`, `name` FROM `PREFIX_groups` WHERE 1");
+        $stmt = $db->query("SELECT `id`, `name` FROM `PREFIX_groups` WHERE 1");
         while ($sqlrow = $stmt->fetch()) {
             $rv[] = self::by_sqlrow($sqlrow);
         }
@@ -461,26 +452,26 @@ class Group extends BySQLRowEnabled
         return $rv;
     }
 
-    /*
-     * Function: get_id
-     * Returns:
-     *  The group ID.
+    /**
+     * @return int
      */
-    public function get_id()
+    public function get_id(): int
     {
         return $this->id;
     }
 
-    /*
-     * Function: delete
+    /**
      * Deletes the group from the database.
+     * @param Database|null $db
      */
-    public function delete()
+    public function delete(?Database $db = null): void
     {
-        $tx = new Transaction();
+        $db = $db ?? Env::getGlobal()->database();
+
+        $tx = new DbTransaction($db);
         try {
-            qdb("DELETE FROM `PREFIX_group_members` WHERE `group` = ?", $this->id);
-            qdb("DELETE FROM `PREFIX_groups` WHERE `id` = ?", $this->id);
+            $db->query("DELETE FROM `PREFIX_group_members` WHERE `group` = ?", $this->id);
+            $db->query("DELETE FROM `PREFIX_groups` WHERE `id` = ?", $this->id);
             $tx->commit();
         } catch (Exception $e) {
             $tx->rollback();
@@ -488,48 +479,62 @@ class Group extends BySQLRowEnabled
         }
     }
 
-    /*
-     * Function: get_members
+    /**
      * Get all members of the group.
      *
-     * Returns:
-     *  Array of <User> objects.
+     * @param Database|null $db
+     * @return User[]
      */
-    public function get_members()
+    public function get_members(?Database $db = null): array
     {
+        $db = $db ?? Env::getGlobal()->database();
+
         $rv = [];
-        $stmt = qdb("SELECT `a`.`id` AS `id`, `a`.`username` AS `username`, `a`.`pwhash` AS `pwhash`, `a`.`mail` AS `mail`, `a`.`fullname` AS `fullname`, `a`.`language` AS `language`
-FROM `PREFIX_users` `a` INNER JOIN `PREFIX_group_members` `b` ON `a`.`id` = `b`.`user`
-WHERE `b`.`group` = ?", $this->id);
+        $stmt = $db->query(
+            "SELECT
+                `a`.`id` AS `id`,
+                `a`.`username` AS `username`,
+                `a`.`pwhash` AS `pwhash`,
+                `a`.`mail` AS `mail`,
+                `a`.`fullname` AS `fullname`,
+                `a`.`language` AS `language`
+            FROM `PREFIX_users` `a`
+            INNER JOIN `PREFIX_group_members` `b`
+                ON `a`.`id` = `b`.`user`
+            WHERE `b`.`group` = ?",
+            $this->id
+        );
         while ($sqlrow = $stmt->fetch()) {
             $rv[] = User::by_sqlrow($sqlrow);
         }
         return $rv;
     }
 
-    /*
-     * Function: exclude_user
-     * Excludes user from group.
+    /**
+     * Exclude a user from the group.
      *
-     * Parameters:
-     *  $user - <User> object.
+     * @param User $user
+     * @param Database|null $db
      */
-    public function exclude_user($user)
+    public function exclude_user(User $user, ?Database $db = null): void
     {
-        qdb("DELETE FROM `PREFIX_group_members` WHERE `user` = ? AND `group` = ?", $user->get_id(), $this->id);
+        $db = $db ?? Env::getGlobal()->database();
+
+        $db->query("DELETE FROM `PREFIX_group_members` WHERE `user` = ? AND `group` = ?", $user->get_id(), $this->id);
     }
 
-    /*
-     * Function: include_user
-     * Includes user to group.
+    /**
+     * Add user to the group.
      *
-     * Parameters:
-     *  $user - <User> object.
+     * @param User $user
+     * @param Database|null $db
      */
-    public function include_user($user)
+    public function include_user(User $user, ?Database $db = null)
     {
-        if (!$user->member_of($this)) {
-            qdb("INSERT INTO `PREFIX_group_members` (`user`, `group`) VALUES (?, ?)", $user->get_id(), $this->id);
+        $db = $db ?? Env::getGlobal()->database();
+
+        if (!$user->member_of($this, $db)) {
+            $db->query("INSERT INTO `PREFIX_group_members` (`user`, `group`) VALUES (?, ?)", $user->get_id(), $this->id);
         }
     }
 }
