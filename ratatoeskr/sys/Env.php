@@ -34,4 +34,13 @@ class Env
     {
         return $this->lazy("textprocessors", [TextprocessorRepository::class, 'buildDefault']);
     }
+
+    public function database(): Database
+    {
+        return $this->lazy("database", static function () {
+            global $config;
+
+            return Database::fromConfig($config);
+        });
+    }
 }
