@@ -76,13 +76,6 @@ class AlreadyExistsError extends Exception
 }
 
 /*
- * Class: NotAllowedError
- */
-class NotAllowedError extends Exception
-{
-}
-
-/*
  * Class: InvalidDataError
  * Exception that will be thrown, if a object with invalid data (e.g. urlname in this form not allowed) should have been saved / created.
  * Unless something else is said at a function, the exception message is a translation key.
