@@ -102,4 +102,12 @@ class Database
 
         return $stmt;
     }
+
+    /**
+     * @return int
+     */
+    public function lastInsertId(): int
+    {
+        return (int)$this->pdo->lastInsertId();
+    }
 }

@@ -12,6 +12,8 @@
 use r7r\cms\sys\textprocessors\TextprocessorRepository;
 use r7r\cms\sys\Env;
 use r7r\cms\sys\models\KVStorage;
+use r7r\cms\sys\Database;
+use r7r\cms\sys\DbTransaction;
 
 require_once(dirname(__FILE__) . "/db.php");
 require_once(dirname(__FILE__) . "/utils.php");
@@ -101,51 +103,49 @@ abstract class BySQLRowEnabled
     }
 }
 
-/*
- * Class: User
+/**
  * Data model for Users
  */
 class User extends BySQLRowEnabled
 {
     private $id;
 
-    /*
-     * Variables: Public class properties
-     *
-     * $username - The username.
-     * $pwhash   - Hash of the password.
-     * $mail     - E-Mail-address.
-     * $fullname - The full name of the user.
-     * $language - Users language
-     */
+    /** @var string The username. */
     public $username;
+
+    /** @var string Hash of the password. */
     public $pwhash;
+
+    /** @var string E-Mail-address. */
     public $mail;
+
+    /** @var string The full name of the user. */
     public $fullname;
+
+    /** @var string Users language */
     public $language;
 
-    /*
-     * Constructor: create
+
+    /**
      * Creates a new user.
      *
-     * Parameters:
-     *  $username - The username
-     *  $pwhash   - Hash of the password
-     *
-     * Returns:
-     *  An User object
-     *
-     * Throws:
-     *  <AlreadyExistsError>
+     * @param string|mixed $username The username
+     * @param string|mixed $pwhash Hash of the password
+     * @param Database|null $db
+     * @return self
+     * @throws AlreadyExistsError
      */
-    public static function create($username, $pwhash)
+    public static function create($username, $pwhash, ?Database $db = null): self
     {
-        global $db_con;
+        $username = (string)$username;
+        $pwhash = (string)$pwhash;
+        $db = $db ?? Env::getGlobal()->database();
+
         try {
-            self::by_name($username);
+            self::by_name($username, $db);
         } catch (DoesNotExistError $e) {
             global $ratatoeskr_settings;
-            qdb(
+            $db->query(
                 "INSERT INTO `PREFIX_users` (`username`, `pwhash`, `mail`, `fullname`, `language`) VALUES (?, ?, '', '', ?)",
                 $username,
                 $pwhash,
@@ -153,7 +153,7 @@ class User extends BySQLRowEnabled
             );
             $obj = new self();
 
-            $obj->id       = $db_con->lastInsertId();
+            $obj->id       = $db->lastInsertId();
             $obj->username = $username;
             $obj->pwhash   = $pwhash;
             $obj->mail     = "";
@@ -167,30 +167,28 @@ class User extends BySQLRowEnabled
 
     protected function populate_by_sqlrow($sqlrow)
     {
-        $this->id       = $sqlrow["id"];
-        $this->username = $sqlrow["username"];
-        $this->pwhash   = $sqlrow["pwhash"];
-        $this->mail     = $sqlrow["mail"];
-        $this->fullname = $sqlrow["fullname"];
-        $this->language = $sqlrow["language"];
+        $this->id       = (int)$sqlrow["id"];
+        $this->username = (string)$sqlrow["username"];
+        $this->pwhash   = (string)$sqlrow["pwhash"];
+        $this->mail     = (string)$sqlrow["mail"];
+        $this->fullname = (string)$sqlrow["fullname"];
+        $this->language = (string)$sqlrow["language"];
     }
 
-    /*
-     * Constructor: by_id
+    /**
      * Get a User object by ID
      *
-     * Parameters:
-     *  $id - The ID.
-     *
-     * Returns:
-     *  An User object.
-     *
-     * Throws:
-     *  <DoesNotExistError>
+     * @param int|mixed $id
+     * @param Database|null $db
+     * @return self
+     * @throws DoesNotExistError
      */
-    public static function by_id($id)
+    public static function by_id($id, ?Database $db = null): self
     {
-        $stmt = qdb("SELECT `id`, `username`, `pwhash`, `mail`, `fullname`, `language` FROM `PREFIX_users` WHERE `id` = ?", $id);
+        $id = (int)$id;
+        $db = $db ?? Env::getGlobal()->database();
+
+        $stmt = $db->query("SELECT `id`, `username`, `pwhash`, `mail`, `fullname`, `language` FROM `PREFIX_users` WHERE `id` = ?", $id);
         $sqlrow = $stmt->fetch();
         if (!$sqlrow) {
             throw new DoesNotExistError();
@@ -199,22 +197,20 @@ class User extends BySQLRowEnabled
         return self::by_sqlrow($sqlrow);
     }
 
-    /*
-     * Constructor: by_name
+    /**
      * Get a User object by username
      *
-     * Parameters:
-     *  $username - The username.
-     *
-     * Returns:
-     *  An User object.
-     *
-     * Throws:
-     *  <DoesNotExistError>
+     * @param string|mixed $username
+     * @param Database|null $db
+     * @return self
+     * @throws DoesNotExistError
      */
-    public static function by_name($username)
+    public static function by_name($username, ?Database $db = null): self
     {
-        $stmt = qdb("SELECT `id`, `username`, `pwhash`, `mail`, `fullname`, `language` FROM `PREFIX_users` WHERE `username` = ?", $username);
+        $username = (string)$username;
+        $db = $db ?? Env::getGlobal()->database();
+
+        $stmt = $db->query("SELECT `id`, `username`, `pwhash`, `mail`, `fullname`, `language` FROM `PREFIX_users` WHERE `username` = ?", $username);
         $sqlrow = $stmt->fetch();
         if (!$sqlrow) {
             throw new DoesNotExistError();
@@ -223,15 +219,17 @@ class User extends BySQLRowEnabled
         return self::by_sqlrow($sqlrow);
     }
 
-    /*
-     * Function: all
+    /**
      * Returns array of all available users.
+     * @return self[]
      */
-    public static function all()
+    public static function all(?Database $db = null): array
     {
+        $db = $db ?? Env::getGlobal()->database();
+
         $rv = [];
 
-        $stmt = qdb("SELECT `id`, `username`, `pwhash`, `mail`, `fullname`, `language` FROM `PREFIX_users` WHERE 1");
+        $stmt = $db->query("SELECT `id`, `username`, `pwhash`, `mail`, `fullname`, `language` FROM `PREFIX_users` WHERE 1");
         while ($sqlrow = $stmt->fetch()) {
             $rv[] = self::by_sqlrow($sqlrow);
         }
@@ -239,34 +237,33 @@ class User extends BySQLRowEnabled
         return $rv;
     }
 
-    /*
-     * Function: get_id
-     * Returns:
-     *  The user ID.
+    /**
+     * @return int The user ID.
      */
-    public function get_id()
+    public function get_id(): int
     {
         return $this->id;
     }
 
-    /*
-     * Function: save
+    /**
      * Saves the object to database
      *
-     * Throws:
-     *  AlreadyExistsError
+     * @param Database|null $db
+     * @throws AlreadyExistsError
      */
-    public function save()
+    public function save(?Database $db = null)
     {
-        $tx = new Transaction();
+        $db = $db ?? Env::getGlobal()->database();
+
+        $tx = new DbTransaction($db);
         try {
-            $stmt = qdb("SELECT COUNT(*) AS `n` FROM `PREFIX_users` WHERE `username` = ? AND `id` != ?", $this->username, $this->id);
+            $stmt = $db->query("SELECT COUNT(*) AS `n` FROM `PREFIX_users` WHERE `username` = ? AND `id` != ?", $this->username, $this->id);
             $sqlrow = $stmt->fetch();
             if ($sqlrow["n"] > 0) {
                 throw new AlreadyExistsError();
             }
 
-            qdb(
+            $db->query(
                 "UPDATE `PREFIX_users` SET `username` = ?, `pwhash` = ?, `mail` = ?, `fullname` = ?, `language` = ? WHERE `id` = ?",
                 $this->username,
                 $this->pwhash,
@@ -282,17 +279,19 @@ class User extends BySQLRowEnabled
         }
     }
 
-    /*
-     * Function: delete
+    /**
      * Deletes the user from the database.
      * WARNING: Do NOT use this object any longer after you called this function!
+     * @param Database|null $db
      */
-    public function delete()
+    public function delete(?Database $db = null)
     {
-        $tx = new Transaction();
+        $db = $db ?? Env::getGlobal()->database();
+
+        $tx = new DbTransaction($db);
         try {
-            qdb("DELETE FROM `PREFIX_group_members` WHERE `user` = ?", $this->id);
-            qdb("DELETE FROM `PREFIX_users` WHERE `id` = ?", $this->id);
+            $db->query("DELETE FROM `PREFIX_group_members` WHERE `user` = ?", $this->id);
+            $db->query("DELETE FROM `PREFIX_users` WHERE `id` = ?", $this->id);
             $tx->commit();
         } catch (Exception $e) {
             $tx->rollback();
@@ -300,36 +299,50 @@ class User extends BySQLRowEnabled
         }
     }
 
-    /*
-     * Function: get_groups
-     * Returns:
-     *  List of all groups where this user is a member (array of <Group> objects).
+    /**
+     * Get a list of all groups where this user is a member.
+     * @param Database|null $db
+     * @return array
      */
-    public function get_groups()
+    public function get_groups(?Database $db = null): array
     {
+        $db = $db ?? Env::getGlobal()->database();
+
         $rv = [];
-        $stmt = qdb("SELECT `a`.`id` AS `id`, `a`.`name` AS `name` FROM `PREFIX_groups` `a` INNER JOIN `PREFIX_group_members` `b` ON `a`.`id` = `b`.`group` WHERE `b`.`user` = ?", $this->id);
+        $stmt = $db->query(
+            "SELECT
+                `a`.`id` AS `id`,
+                `a`.`name` AS `name`
+            FROM `PREFIX_groups` `a`
+            INNER JOIN `PREFIX_group_members` `b`
+                ON `a`.`id` = `b`.`group`
+            WHERE `b`.`user` = ?",
+            $this->id
+        );
         while ($sqlrow = $stmt->fetch()) {
             $rv[] = Group::by_sqlrow($sqlrow);
         }
         return $rv;
     }
 
-    /*
-     * Function: member_of
+    /**
      * Checks, if the user is a member of a group.
      *
-     * Parameters:
-     *  $group - A Group object
-     *
-     * Returns:
-     *  True, if the user is a member of $group. False, if not.
+     * @param Group $group
+     * @param Database|null $db
+     * @return bool
      */
-    public function member_of($group)
+    public function member_of(Group $group, ?Database $db = null): bool
     {
-        $stmt = qdb("SELECT COUNT(*) AS `num` FROM `PREFIX_group_members` WHERE `user` = ? AND `group` = ?", $this->id, $group->get_id());
+        $db = $db ?? Env::getGlobal()->database();
+
+        $stmt = $db->query(
+            "SELECT COUNT(*) AS `num` FROM `PREFIX_group_members` WHERE `user` = ? AND `group` = ?",
+            $this->id,
+            $group->get_id()
+        );
         $sqlrow = $stmt->fetch();
-        return ($sqlrow["num"] > 0);
+        return $sqlrow["num"] > 0;
     }
 }
 
