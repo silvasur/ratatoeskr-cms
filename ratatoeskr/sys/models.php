@@ -1182,100 +1182,90 @@ class Comment extends BySQLRowEnabled
     }
 }
 
-/*
- * Class: Style
+/**
  * Represents a Style
  */
 class Style extends BySQLRowEnabled
 {
+    /** @var int */
     private $id;
 
-    /*
-     * Variables: Public class variables.
-     *
-     * $name - The name of the style.
-     * $code - The CSS code.
-     */
+    /** @var string The name of the style */
     public $name;
+
+    /** @var string The CSS code */
     public $code;
 
     protected function populate_by_sqlrow($sqlrow)
     {
-        $this->id   = $sqlrow["id"];
-        $this->name = $sqlrow["name"];
-        $this->code = $sqlrow["code"];
+        $this->id   = (int)$sqlrow["id"];
+        $this->name = (string)$sqlrow["name"];
+        $this->code = (string)$sqlrow["code"];
     }
 
-    /*
-     * Function: test_name
+    /**
      * Test, if a name is a valid Style name.
      *
-     * Parameters:
-     *  $name - The name to test
-     *
-     * Returns:
-     *  True, if the name is a valid style name, False if not.
+     * @param string $name The name to test
+     * @return bool
      */
-    public static function test_name($name)
+    public static function test_name($name): bool
     {
         return preg_match("/^[a-zA-Z0-9\\-_\\.]+$/", $name) == 1;
     }
 
-    /*
-     * Function: get_id
-     */
-    public function get_id()
+    public function get_id(): int
     {
         return $this->id;
     }
 
-    /*
-     * Constructor: create
+    /**
      * Create a new style.
      *
-     * Parameters:
-     *  $name - A name for the new style.
-     *
-     * Throws:
-     *  <AlreadyExistsError>
+     * @param string $name A name for the new style.
+     * @param Database|null $db
+     * @return self
+     * @throws AlreadyExistsError If there is already a style with this name
+     * @throws InvalidDataError If the name is invalid, see <a href='psi_element://Style::test_name()'>Style::test_name()</a>
      */
-    public static function create($name)
+    public static function create($name, ?Database $db = null): self
     {
-        global $db_con;
+        $db = $db ?? Env::getGlobal()->database();
 
         if (!self::test_name($name)) {
             throw new InvalidDataError("invalid_style_name");
         }
 
         try {
-            self::by_name($name);
+            self::by_name($name, $db);
         } catch (DoesNotExistError $e) {
             $obj = new self();
             $obj->name = $name;
             $obj->code = "";
 
-            qdb("INSERT INTO `PREFIX_styles` (`name`, `code`) VALUES (?, '')", $name);
+            $db->query("INSERT INTO `PREFIX_styles` (`name`, `code`) VALUES (?, '')", $name);
 
-            $obj->id = $db_con->lastInsertId();
+            $obj->id = $db->lastInsertId();
             return $obj;
         }
 
         throw new AlreadyExistsError();
     }
 
-    /*
-     * Constructor: by_id
-     * Gets a Style object by ID.
+    /**
+     * Get a style by ID
      *
-     * Parameters:
-     *  $id - The ID
-     *
-     * Throws:
-     *  <DoesNotExistError>
+     * @param int|mixed $id
+     * @param Database|null $db
+     * @return self
+     * @throws DoesNotExistError
      */
-    public static function by_id($id)
+    public static function by_id($id, ?Database $db = null): self
     {
-        $stmt = qdb("SELECT `id`, `name`, `code` FROM `PREFIX_styles` WHERE `id` = ?", $id);
+        $id = (int)$id;
+        $db = $db ?? Env::getGlobal()->database();
+
+        $stmt = $db->query("SELECT `id`, `name`, `code` FROM `PREFIX_styles` WHERE `id` = ?", $id);
         $sqlrow = $stmt->fetch();
         if (!$sqlrow) {
             throw new DoesNotExistError();
@@ -1284,19 +1274,20 @@ class Style extends BySQLRowEnabled
         return self::by_sqlrow($sqlrow);
     }
 
-    /*
-     * Constructor: by_name
+    /**
      * Gets a Style object by name.
      *
-     * Parameters:
-     *  $name - The name.
-     *
-     * Throws:
-     *  <DoesNotExistError>
+     * @param string|mixed $name
+     * @param Database|null $db
+     * @return self
+     * @throws DoesNotExistError
      */
-    public static function by_name($name)
+    public static function by_name($name, ?Database $db = null): self
     {
-        $stmt = qdb("SELECT `id`, `name`, `code` FROM `PREFIX_styles` WHERE `name` = ?", $name);
+        $name = (string)$name;
+        $db = $db ?? Env::getGlobal()->database();
+
+        $stmt = $db->query("SELECT `id`, `name`, `code` FROM `PREFIX_styles` WHERE `name` = ?", $name);
         $sqlrow = $stmt->fetch();
         if (!$sqlrow) {
             throw new DoesNotExistError();
@@ -1305,45 +1296,48 @@ class Style extends BySQLRowEnabled
         return self::by_sqlrow($sqlrow);
     }
 
-    /*
-     * Constructor: all
+    /**
      * Get all styles
      *
-     * Returns:
-     *  Array of Style objects
+     * @param Database|null $db
+     * @return self[]
      */
-    public static function all()
+    public static function all(?Database $db = null): array
     {
+        $db = $db ?? Env::getGlobal()->database();
+
         $rv = [];
-        $stmt = qdb("SELECT `id`, `name`, `code` FROM `PREFIX_styles` WHERE 1");
+        $stmt = $db->query("SELECT `id`, `name`, `code` FROM `PREFIX_styles` WHERE 1");
         while ($sqlrow = $stmt->fetch()) {
             $rv[] = self::by_sqlrow($sqlrow);
         }
         return $rv;
     }
 
-    /*
-     * Function: save
+    /**
      * Save changes to database.
      *
-     * Throws:
-     *  <AlreadyExistsError>
+     * @param Database|null $db
+     * @throws AlreadyExistsError
+     * @throws InvalidDataError
      */
-    public function save()
+    public function save(?Database $db = null): void
     {
+        $db = $db ?? Env::getGlobal()->database();
+
         if (!self::test_name($this->name)) {
             throw new InvalidDataError("invalid_style_name");
         }
 
-        $tx = new Transaction();
+        $tx = new DbTransaction($db);
         try {
-            $stmt = qdb("SELECT COUNT(*) AS `n` FROM `PREFIX_styles` WHERE `name` = ? AND `id` != ?", $this->name, $this->id);
+            $stmt = $db->query("SELECT COUNT(*) AS `n` FROM `PREFIX_styles` WHERE `name` = ? AND `id` != ?", $this->name, $this->id);
             $sqlrow = $stmt->fetch();
             if ($sqlrow["n"] > 0) {
                 throw new AlreadyExistsError();
             }
 
-            qdb(
+            $db->query(
                 "UPDATE `PREFIX_styles` SET `name` = ?, `code` = ? WHERE `id` = ?",
                 $this->name,
                 $this->code,
@@ -1356,15 +1350,14 @@ class Style extends BySQLRowEnabled
         }
     }
 
-    /*
-     * Function: delete
-     */
-    public function delete()
+    public function delete(?Database $db = null): void
     {
-        $tx = new Transaction();
+        $db = $db ?? Env::getGlobal()->database();
+
+        $tx = new DbTransaction($db);
         try {
-            qdb("DELETE FROM `PREFIX_styles` WHERE `id` = ?", $this->id);
-            qdb("DELETE FROM `PREFIX_section_style_relations` WHERE `style` = ?", $this->id);
+            $db->query("DELETE FROM `PREFIX_styles` WHERE `id` = ?", $this->id);
+            $db->query("DELETE FROM `PREFIX_section_style_relations` WHERE `style` = ?", $this->id);
             $tx->commit();
         } catch (Exception $e) {
             $tx->rollback();
