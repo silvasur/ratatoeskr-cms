@@ -1366,102 +1366,107 @@ class Style extends BySQLRowEnabled
     }
 }
 
-/*
- * Class: Plugin
+/**
  * The representation of a plugin in the database.
  */
 class Plugin extends BySQLRowEnabled
 {
+    /** @var int */
     private $id;
 
-    /*
-     * Variables: Public class variables.
-     *
-     * $name              - Plugin name.
-     * $code              - Plugin code.
-     * $classname         - Main class of the plugin.
-     * $active            - Is the plugin activated?
-     * $author            - Author of the plugin.
-     * $versiontext       - Version (text)
-     * $versioncount      - Version (counter)
-     * $short_description - A short description.
-     * $updatepath        - URL for updates.
-     * $web               - Webpage of the plugin.
-     * $help              - Help page.
-     * $license           - License text.
-     * $installed         - Is this plugin installed? Used during the installation process.
-     * $update            - Should the plugin be updated at next start?
-     * $api               - The API version this Plugin needs.
-     */
-
+    /** @var string Plugin name. */
     public $name;
+
+    /** @var string Plugin code. */
     public $code;
+
+    /** @var string Main class of the plugin. */
     public $classname;
+
+    /** @var bool Is the plugin activated? */
     public $active;
+
+    /** @var string Author of the plugin. */
     public $author;
+
+    /** @var string Version (text) */
     public $versiontext;
+
+    /** @var int Version (counter) */
     public $versioncount;
+
+    /** @var string A short description. */
     public $short_description;
+
+    /** @var string URL for updates. */
     public $updatepath;
+
+    /** @var string Webpage of the plugin. */
     public $web;
+
+    /** @var string Help page. */
     public $help;
+
+    /** @var string License text. */
     public $license;
+
+    /** @var bool Is this plugin installed? Used during the installation process. */
     public $installed;
+
+    /** @var bool Should the plugin be updated at next start? */
     public $update;
+
+    /** @var int The API version this Plugin needs. */
     public $api;
 
-    /*
-     * Function: clean_db
+    /**
      * Performs some datadase cleanup jobs on the plugin table.
+     * @param Database|null $db
      */
-    public static function clean_db()
+    public static function clean_db(?Database $db = null): void
     {
-        qdb("DELETE FROM `PREFIX_plugins` WHERE `installed` = 0 AND `added` < ?", (time() - (60*5)));
+        $db = $db ?? Env::getGlobal()->database();
+        $db->query("DELETE FROM `PREFIX_plugins` WHERE `installed` = 0 AND `added` < ?", (time() - (60*5)));
     }
 
-    /*
-     * Function: get_id
-     */
-    public function get_id()
+    public function get_id(): int
     {
         return $this->id;
     }
 
-    /*
-     * Constructor: create
+    /**
      * Creates a new, empty plugin database entry
+     * @param Database|null $db
+     * @return Plugin
      */
-    public static function create()
+    public static function create(?Database $db = null): self
     {
-        global $db_con;
+        $db = $db ?? Env::getGlobal()->database();
 
         $obj = new self();
-        qdb("INSERT INTO `PREFIX_plugins` (`added`) VALUES (?)", time());
-        $obj->id = $db_con->lastInsertId();
+        $db->query("INSERT INTO `PREFIX_plugins` (`added`) VALUES (?)", time());
+        $obj->id = $db->lastInsertId();
         return $obj;
     }
 
-    /*
-     * Function: fill_from_pluginpackage
-     * Fills plugin data from an <PluginPackage> object.
-     *
-     * Parameters:
-     *  $pkg - The <PluginPackage> object.
+    /**
+     * Fills plugin data from an PluginPackage object.
+     * @param PluginPackage $pkg
      */
-    public function fill_from_pluginpackage($pkg)
+    public function fill_from_pluginpackage(PluginPackage $pkg): void
     {
-        $this->name              = $pkg->name;
-        $this->code              = $pkg->code;
-        $this->classname         = $pkg->classname;
-        $this->author            = $pkg->author;
-        $this->versiontext       = $pkg->versiontext;
-        $this->versioncount      = $pkg->versioncount;
-        $this->short_description = $pkg->short_description;
-        $this->updatepath        = $pkg->updatepath;
-        $this->web               = $pkg->web;
-        $this->license           = $pkg->license;
-        $this->help              = $pkg->help;
-        $this->api               = $pkg->api;
+        $this->name              = (string)$pkg->name;
+        $this->code              = (string)$pkg->code;
+        $this->classname         = (string)$pkg->classname;
+        $this->author            = (string)$pkg->author;
+        $this->versiontext       = (string)$pkg->versiontext;
+        $this->versioncount      = (int)$pkg->versioncount;
+        $this->short_description = (string)$pkg->short_description;
+        $this->updatepath        = (string)$pkg->updatepath;
+        $this->web               = (string)$pkg->web;
+        $this->license           = (string)$pkg->license;
+        $this->help              = (string)$pkg->help;
+        $this->api               = (int)$pkg->api;
 
         if (!empty($pkg->custompub)) {
             array2dir($pkg->custompub, dirname(__FILE__) . "/../plugin_extradata/public/" . $this->get_id());
@@ -1474,39 +1479,39 @@ class Plugin extends BySQLRowEnabled
         }
     }
 
-    protected function populate_by_sqlrow($sqlrow)
+    protected function populate_by_sqlrow($sqlrow): void
     {
-        $this->id                = $sqlrow["id"];
-        $this->name              = $sqlrow["name"];
-        $this->code              = $sqlrow["code"];
-        $this->classname         = $sqlrow["classname"];
+        $this->id                = (int)$sqlrow["id"];
+        $this->name              = (string)$sqlrow["name"];
+        $this->code              = (string)$sqlrow["code"];
+        $this->classname         = (string)$sqlrow["classname"];
         $this->active            = ($sqlrow["active"] == 1);
-        $this->author            = $sqlrow["author"];
-        $this->versiontext       = $sqlrow["versiontext"];
-        $this->versioncount      = $sqlrow["versioncount"];
-        $this->short_description = $sqlrow["short_description"];
-        $this->updatepath        = $sqlrow["updatepath"];
-        $this->web               = $sqlrow["web"];
-        $this->help              = $sqlrow["help"];
-        $this->license           = $sqlrow["license"];
+        $this->author            = (string)$sqlrow["author"];
+        $this->versiontext       = (string)$sqlrow["versiontext"];
+        $this->versioncount      = (int)$sqlrow["versioncount"];
+        $this->short_description = (string)$sqlrow["short_description"];
+        $this->updatepath        = (string)$sqlrow["updatepath"];
+        $this->web               = (string)$sqlrow["web"];
+        $this->help              = (string)$sqlrow["help"];
+        $this->license           = (string)$sqlrow["license"];
         $this->installed         = ($sqlrow["installed"] == 1);
         $this->update            = ($sqlrow["update"] == 1);
-        $this->api               = $sqlrow["api"];
+        $this->api               = (string)$sqlrow["api"];
     }
 
-    /*
-     * Constructor: by_id
+    /**
      * Gets plugin by ID.
      *
-     * Parameters:
-     *  $id - The ID
-     *
-     * Throws:
-     *  <DoesNotExistError>
+     * @param int|mixed $id
+     * @param Database|null $db
+     * @return self
+     * @throws DoesNotExistError
      */
-    public static function by_id($id)
+    public static function by_id($id, ?Database $db = null): self
     {
-        $stmt = qdb("SELECT `id`, `name`, `author`, `versiontext`, `versioncount`, `short_description`, `updatepath`, `web`, `help`, `code`, `classname`, `active`, `license`, `installed`, `update`, `api` FROM `PREFIX_plugins` WHERE `id` = ?", $id);
+        $db = $db ?? Env::getGlobal()->database();
+
+        $stmt = $db->query("SELECT `id`, `name`, `author`, `versiontext`, `versioncount`, `short_description`, `updatepath`, `web`, `help`, `code`, `classname`, `active`, `license`, `installed`, `update`, `api` FROM `PREFIX_plugins` WHERE `id` = ?", $id);
         $sqlrow = $stmt->fetch();
         if ($sqlrow === false) {
             throw new DoesNotExistError();
@@ -1515,29 +1520,29 @@ class Plugin extends BySQLRowEnabled
         return self::by_sqlrow($sqlrow);
     }
 
-    /*
-     * Constructor: all
+    /**
      * Gets all Plugins
      *
-     * Returns:
-     *  List of <Plugin> objects.
+     * @param Database|null $db
+     * @return self[]
      */
-    public static function all()
+    public static function all(?Database $db = null): array
     {
+        $db = $db ?? Env::getGlobal()->database();
+
         $rv = [];
-        $stmt = qdb("SELECT `id`, `name`, `author`, `versiontext`, `versioncount`, `short_description`, `updatepath`, `web`, `help`, `code`, `classname`, `active`, `license`, `installed`, `update`, `api` FROM `PREFIX_plugins` WHERE 1");
+        $stmt = $db->query("SELECT `id`, `name`, `author`, `versiontext`, `versioncount`, `short_description`, `updatepath`, `web`, `help`, `code`, `classname`, `active`, `license`, `installed`, `update`, `api` FROM `PREFIX_plugins` WHERE 1");
         while ($sqlrow = $stmt->fetch()) {
             $rv[] = self::by_sqlrow($sqlrow);
         }
         return $rv;
     }
 
-    /*
-     * Function: save
-     */
-    public function save()
+    public function save(?Database $db = null): void
     {
-        qdb(
+        $db = $db ?? Env::getGlobal()->database();
+
+        $db->query(
             "UPDATE `PREFIX_plugins` SET `name` = ?, `author` = ?, `code` = ?, `classname` = ?, `active` = ?, `versiontext` = ?, `versioncount` = ?, `short_description` = ?, `updatepath` = ?, `web` = ?, `help` = ?, `installed` = ?, `update` = ?, `license` = ?, `api` = ? WHERE `id` = ?",
             $this->name,
             $this->author,
@@ -1558,16 +1563,15 @@ class Plugin extends BySQLRowEnabled
         );
     }
 
-    /*
-     * Function: delete
-     */
-    public function delete()
+    public function delete(?Database $db = null): void
     {
-        $tx = new Transaction();
+        $db = $db ?? Env::getGlobal()->database();
+
+        $tx = new DbTransaction($db);
         try {
-            qdb("DELETE FROM `PREFIX_plugins` WHERE `id` = ?", $this->id);
-            qdb("DELETE FROM `PREFIX_plugin_kvstorage` WHERE `plugin` = ?", $this->id);
-            qdb("DELETE FROM `PREFIX_article_extradata` WHERE `plugin` = ?", $this->id);
+            $db->query("DELETE FROM `PREFIX_plugins` WHERE `id` = ?", $this->id);
+            $db->query("DELETE FROM `PREFIX_plugin_kvstorage` WHERE `plugin` = ?", $this->id);
+            $db->query("DELETE FROM `PREFIX_article_extradata` WHERE `plugin` = ?", $this->id);
             $tx->commit();
         } catch (Exception $e) {
             $tx->rollback();
@@ -1585,16 +1589,15 @@ class Plugin extends BySQLRowEnabled
         }
     }
 
-    /*
-     * Function get_kvstorage
+    /**
      * Get the KeyValue Storage for the plugin.
      *
-     * Returns:
-     *  An <PluginKVStorage> object.
+     * @param Database|null $db
+     * @return PluginKVStorage
      */
-    public function get_kvstorage()
+    public function get_kvstorage(?Database $db = null): PluginKVStorage
     {
-        return new PluginKVStorage($this->id);
+        return new PluginKVStorage($this->id, $db);
     }
 }
 
