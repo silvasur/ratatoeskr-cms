@@ -2103,24 +2103,21 @@ WHERE `b`.`tag` = ?",
     }
 }
 
-/*
- * Class: UnknownFileFormat
+/**
  * Exception that will be thrown, if a input file has an unsupported file format.
  */
 class UnknownFileFormat extends Exception
 {
 }
 
-/*
- * Class: IOError
+/**
  * This Exception is thrown, if a IO-Error occurs (file not available, no read/write acccess...).
  */
 class IOError extends Exception
 {
 }
 
-/*
- * Class: Image
+/**
  * Representation of an image entry.
  */
 class Image extends BySQLRowEnabled
@@ -2128,62 +2125,58 @@ class Image extends BySQLRowEnabled
     private const PRE_MAXW = 150;
     private const PRE_MAXH = 100;
 
+    /** @var int */
     private $id;
+
+    /** @var string */
     private $filename;
 
-    /*
-     * Variables: Public class variables
-     *
-     * $name - The image name
-     */
+    /** @var string The image name */
     public $name;
 
     protected function populate_by_sqlrow($sqlrow)
     {
-        $this->id   = $sqlrow["id"];
-        $this->name = $sqlrow["name"];
-        $this->filename = $sqlrow["file"];
+        $this->id   = (int)$sqlrow["id"];
+        $this->name = (string)$sqlrow["name"];
+        $this->filename = (string)$sqlrow["file"];
     }
 
-    /*
-     * Functions: Getters
-     *
-     * get_id - Get the ID
-     * get_filename - Get the filename
-     */
-    public function get_id()
+    public function get_id(): int
     {
         return $this->id;
     }
-    public function get_filename()
+
+    public function get_filename(): string
     {
         return $this->filename;
     }
 
-    /*
-     * Constructor: create
+    /**
      * Create a new image
      *
-     * Parameters:
-     *  $name - The name for the image
-     *  $file - An uploaded image file (move_uploaded_file must be able to move the file!).
-     *
-     * Throws:
-     *  <IOError>, <UnknownFileFormat>
+     * @param string|mixed $name - The name for the image
+     * @param string|mixed $file - An uploaded image file (move_uploaded_file must be able to move the file!).
+     * @param Database|null $db
+     * @return self
+     * @throws IOError
+     * @throws UnknownFileFormat
      */
-    public static function create($name, $file)
+    public static function create($name, $file, ?Database $db = null): self
     {
+        $name = (string)$name;
+        $file = (string)$file;
+
+        $db = $db ?? Env::getGlobal()->database();
+
         $obj = new self();
         $obj->name = $name;
         $obj->filename = "0";
 
-        $tx = new Transaction();
+        $tx = new DbTransaction($db);
         try {
-            global $db_con;
-
-            qdb("INSERT INTO `PREFIX_images` (`name`, `file`) VALUES (?, '0')", $name);
-            $obj->id = $db_con->lastInsertId();
-            $obj->exchange_image($file);
+            $db->query("INSERT INTO `PREFIX_images` (`name`, `file`) VALUES (?, '0')", $name);
+            $obj->id = $db->lastInsertId();
+            $obj->exchange_image($file, $db);
             $tx->commit();
         } catch (Exception $e) {
             $tx->rollback();
@@ -2192,19 +2185,20 @@ class Image extends BySQLRowEnabled
         return $obj;
     }
 
-    /*
-     * Constructor: by_id
+    /**
      * Get image by ID.
      *
-     * Parameters:
-     *  $id - The ID
-     *
-     * Throws:
-     *  <DoesNotExistError>
+     * @param int|mixed $id
+     * @param Database|null $db
+     * @return Image
+     * @throws DoesNotExistError
      */
-    public static function by_id($id)
+    public static function by_id($id, ?Database $db = null): self
     {
-        $stmt = qdb("SELECT `id`, `name`, `file` FROM `PREFIX_images` WHERE `id` = ?", $id);
+        $id = (int)$id;
+        $db = $db ?? Env::getGlobal()->database();
+
+        $stmt = $db->query("SELECT `id`, `name`, `file` FROM `PREFIX_images` WHERE `id` = ?", $id);
         $sqlrow = $stmt->fetch();
         if ($sqlrow === false) {
             throw new DoesNotExistError();
@@ -2213,36 +2207,38 @@ class Image extends BySQLRowEnabled
         return self::by_sqlrow($sqlrow);
     }
 
-    /*
-     * Constructor: all
+    /**
      * Gets all images.
      *
-     * Returns:
-     *  Array of <Image> objects.
+     * @param Database|null $db
+     * @return self[]
      */
-    public function all()
+    public function all(?Database $db = null): array
     {
+        $db = $db ?? Env::getGlobal()->database();
+
         $rv = [];
-        $stmt = qdb("SELECT `id`, `name`, `file` FROM `PREFIX_images` WHERE 1");
+        $stmt = $db->query("SELECT `id`, `name`, `file` FROM `PREFIX_images` WHERE 1");
         while ($sqlrow = $stmt->fetch()) {
             $rv[] = self::by_sqlrow($sqlrow);
         }
         return $rv;
     }
 
-    /*
-     * Function: exchange_image
+    /**
      * Exchanges image file. Also saves object to database.
      *
-     * Parameters:
-     *  $file - Location of new image.(move_uploaded_file must be able to move the file!)
-     *
-     * Throws:
-     *  <IOError>, <UnknownFileFormat>
+     * @param string|mixed $file - Location of new image (move_uploaded_file must be able to move the file!)
+     * @param Database|null $db
+     * @throws IOError
+     * @throws UnknownFileFormat
      */
-    public function exchange_image($file)
+    public function exchange_image($file, ?Database $db = null): void
     {
         global $imagetype_file_extensions;
+
+        $file = (string)$file;
+
         if (!is_file($file)) {
             throw new IOError("\"$file\" is not available");
         }
@@ -2261,7 +2257,7 @@ class Image extends BySQLRowEnabled
             throw new IOError("Can not move file.");
         }
         $this->filename = $new_fn;
-        $this->save();
+        $this->save($db);
 
         /* make preview image */
         switch ($imageinfo[2]) {
@@ -2289,12 +2285,11 @@ class Image extends BySQLRowEnabled
         }
     }
 
-    /*
-     * Function: save
-     */
-    public function save()
+    public function save(?Database $db = null): void
     {
-        qdb(
+        $db = $db ?? Env::getGlobal()->database();
+
+        $db->query(
             "UPDATE `PREFIX_images` SET `name` = ?, `file` = ? WHERE `id` = ?",
             $this->name,
             $this->filename,
@@ -2302,12 +2297,11 @@ class Image extends BySQLRowEnabled
         );
     }
 
-    /*
-     * Function: delete
-     */
-    public function delete()
+    public function delete(?Database $db = null): void
     {
-        qdb("DELETE FROM `PREFIX_images` WHERE `id` = ?", $this->id);
+        $db = $db ?? Env::getGlobal()->database();
+
+        $db->query("DELETE FROM `PREFIX_images` WHERE `id` = ?", $this->id);
         if (is_file(SITE_BASE_PATH . "/images/" . $this->filename)) {
             unlink(SITE_BASE_PATH . "/images/" . $this->filename);
         }
