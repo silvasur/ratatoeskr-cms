@@ -1871,42 +1871,33 @@ class Section extends BySQLRowEnabled
     }
 }
 
-/*
- * Class: Tag
+/**
  * Representation of a tag
  */
 class Tag extends BySQLRowEnabled
 {
+    /** @var int */
     private $id;
 
-    /*
-     * Variables: Public class variables
-     *
-     * $name - The name of the tag
-     * $title - The title (an <Multilingual> object)
-     */
+    /** @var string The name of the tag */
     public $name;
+
+    /** @var Multilingual The title */
     public $title;
 
-    /*
-     * Function: test_name
+    /**
      * Test, if a name is a valid tag name.
-     *
-     * Parameters:
-     *  $name - Name to test.
-     *
-     * Returns:
-     *  True, if the name is valid, False otherwise.
+     * @param string|mixed $name
+     * @return bool
      */
-    public static function test_name($name)
+    public static function test_name($name): bool
     {
+        $name = (string)$name;
+
         return (strpos($name, ",") === false) and (strpos($name, " ") === false);
     }
 
-    /*
-     * Function: get_id
-     */
-    public function get_id()
+    public function get_id(): int
     {
         return $this->id;
     }
@@ -1918,56 +1909,58 @@ class Tag extends BySQLRowEnabled
         $this->title = Multilingual::by_id($sqlrow["title"]);
     }
 
-    /*
-     * Constructor: create
+    /**
      * Create a new tag.
      *
-     * Parameters:
-     *  $name - The name
-     *
-     * Throws:
-     *  <AlreadyExistsError>, <InvalidDataError>
+     * @param string|null $name
+     * @param Database|null $db
+     * @return self
+     * @throws AlreadyExistsError
+     * @throws InvalidDataError
      */
-    public static function create($name)
+    public static function create($name, ?Database $db = null): self
     {
-        global $db_con;
+        $name = (string)$name;
+        $db = $db ?? Env::getGlobal()->database();
+
         if (!self::test_name($name)) {
             throw new InvalidDataError("invalid_tag_name");
         }
 
         try {
-            self::by_name($name);
+            self::by_name($name, $db);
         } catch (DoesNotExistError $e) {
             $obj = new self();
 
             $obj->name  = $name;
-            $obj->title = Multilingual::create();
+            $obj->title = Multilingual::create($db);
 
-            qdb(
+            $db->query(
                 "INSERT INTO `PREFIX_tags` (`name`, `title`) VALUES (?, ?)",
                 $name,
                 $obj->title->get_id()
             );
-            $obj->id = $db_con->lastInsertId();
+            $obj->id = $db->lastInsertId();
 
             return $obj;
         }
         throw new AlreadyExistsError();
     }
 
-    /*
-     * Constructor: by_id
+    /**
      * Get tag by ID
      *
-     * Parameters:
-     *  $id - The ID
-     *
-     * Throws:
-     *  <DoesNotExistError>
+     * @param int|null $id
+     * @param Database|null $db
+     * @return self
+     * @throws DoesNotExistError
      */
-    public static function by_id($id)
+    public static function by_id($id, ?Database $db = null): self
     {
-        $stmt = qdb("SELECT `id`, `name`, `title` FROM `PREFIX_tags` WHERE `id` = ?", $id);
+        $id = (int)$id;
+        $db = $db ?? Env::getGlobal()->database();
+
+        $stmt = $db->query("SELECT `id`, `name`, `title` FROM `PREFIX_tags` WHERE `id` = ?", $id);
         $sqlrow = $stmt->fetch();
         if ($sqlrow === false) {
             throw new DoesNotExistError();
@@ -1976,19 +1969,20 @@ class Tag extends BySQLRowEnabled
         return self::by_sqlrow($sqlrow);
     }
 
-    /*
-     * Constructor: by_name
+    /**
      * Get tag by name
      *
-     * Parameters:
-     *  $name - The name
-     *
-     * Throws:
-     *  <DoesNotExistError>
+     * @param string|mixed $name
+     * @param Database|null $db
+     * @return self
+     * @throws DoesNotExistError
      */
-    public static function by_name($name)
+    public static function by_name($name, ?Database $db = null): self
     {
-        $stmt = qdb("SELECT `id`, `name`, `title` FROM `PREFIX_tags` WHERE `name` = ?", $name);
+        $name = (string)$name;
+        $db = $db ?? Env::getGlobal()->database();
+
+        $stmt = $db->query("SELECT `id`, `name`, `title` FROM `PREFIX_tags` WHERE `name` = ?", $name);
         $sqlrow = $stmt->fetch();
         if ($sqlrow === false) {
             throw new DoesNotExistError();
@@ -1997,34 +1991,36 @@ class Tag extends BySQLRowEnabled
         return self::by_sqlrow($sqlrow);
     }
 
-    /*
-     * Constructor: all
+    /**
      * Get all tags
      *
-     * Returns:
-     *  Array of Tag objects.
+     * @param Database|null $db
+     * @return self[]
      */
-    public static function all()
+    public static function all(?Database $db = null): array
     {
+        $db = $db ?? Env::getGlobal()->database();
+
         $rv = [];
-        $stmt = qdb("SELECT `id`, `name`, `title` FROM `PREFIX_tags` WHERE 1");
+        $stmt = $db->query("SELECT `id`, `name`, `title` FROM `PREFIX_tags` WHERE 1");
         while ($sqlrow = $stmt->fetch()) {
             $rv[] = self::by_sqlrow($sqlrow);
         }
         return $rv;
     }
 
-    /*
-     * Function: get_articles
+    /**
      * Get all articles that are tagged with this tag
      *
-     * Returns:
-     *  Array of <Article> objects
+     * @param Database|null $db
+     * @return Article[]
      */
-    public function get_articles()
+    public function get_articles(?Database $db = null): array
     {
+        $db = $db ?? Env::getGlobal()->database();
+
         $rv = [];
-        $stmt = qdb(
+        $stmt = $db->query(
             "SELECT `a`.`id` AS `id`, `a`.`urlname` AS `urlname`, `a`.`title` AS `title`, `a`.`text` AS `text`, `a`.`excerpt` AS `excerpt`, `a`.`meta` AS `meta`, `a`.`custom` AS `custom`, `a`.`article_image` AS `article_image`, `a`.`status` AS `status`, `a`.`section` AS `section`, `a`.`timestamp` AS `timestamp`, `a`.`allow_comments` AS `allow_comments`
 FROM `PREFIX_articles` `a`
 INNER JOIN `PREFIX_article_tag_relations` `b` ON `a`.`id` = `b`.`article`
@@ -2037,41 +2033,44 @@ WHERE `b`.`tag` = ?",
         return $rv;
     }
 
-    /*
-     * Function: count_articles
+    /**
+     * Count the articles that are tagged with this tag.
      *
-     * Returns:
-     *  The number of articles that are tagged with this tag.
+     * @param Database|null $db
+     * @return int
      */
-    public function count_articles()
+    public function count_articles(?Database $db = null): int
     {
-        $stmt = qdb("SELECT COUNT(*) AS `num` FROM `PREFIX_article_tag_relations` WHERE `tag` = ?", $this->id);
+        $db = $db ?? Env::getGlobal()->database();
+
+        $stmt = $db->query("SELECT COUNT(*) AS `num` FROM `PREFIX_article_tag_relations` WHERE `tag` = ?", $this->id);
         $sqlrow = $stmt->fetch();
-        return $sqlrow["num"];
+        return (int)$sqlrow["num"];
     }
 
-    /*
-     * Function: save
-     *
-     * Throws:
-     *  <AlreadyExistsError>, <InvalidDataError>
+    /**
+     * @param Database|null $db
+     * @throws AlreadyExistsError
+     * @throws InvalidDataError
      */
-    public function save()
+    public function save(?Database $db = null): void
     {
+        $db = $db ?? Env::getGlobal()->database();
+
         if (!self::test_name($this->name)) {
             throw new InvalidDataError("invalid_tag_name");
         }
 
-        $tx = new Transaction();
+        $tx = new DbTransaction($db);
         try {
-            $stmt = qdb("SELECT COUNT(*) AS `n` FROM `PREFIX_tags` WHERE `name` = ? AND `id` != ?", $this->name, $this->id);
+            $stmt = $db->query("SELECT COUNT(*) AS `n` FROM `PREFIX_tags` WHERE `name` = ? AND `id` != ?", $this->name, $this->id);
             $sqlrow = $stmt->fetch();
             if ($sqlrow["n"] > 0) {
                 throw new AlreadyExistsError();
             }
 
             $this->title->save();
-            qdb(
+            $db->query(
                 "UPDATE `PREFIX_tags` SET `name` = ?, `title` = ? WHERE `id` = ?",
                 $this->name,
                 $this->title->get_id(),
@@ -2084,16 +2083,18 @@ WHERE `b`.`tag` = ?",
         }
     }
 
-    /*
-     * Function: delete
+    /**
+     * @param Database|null $db
      */
-    public function delete()
+    public function delete(?Database $db = null): void
     {
-        $tx = new Transaction();
+        $db = $db ?? Env::getGlobal()->database();
+
+        $tx = new DbTransaction($db);
         try {
             $this->title->delete();
-            qdb("DELETE FROM `PREFIX_article_tag_relations` WHERE `tag` = ?", $this->id);
-            qdb("DELETE FROM `PREFIX_tags` WHERE `id` = ?", $this->id);
+            $db->query("DELETE FROM `PREFIX_article_tag_relations` WHERE `tag` = ?", $this->id);
+            $db->query("DELETE FROM `PREFIX_tags` WHERE `id` = ?", $this->id);
             $tx->commit();
         } catch (Exception $e) {
             $tx->rollback();
