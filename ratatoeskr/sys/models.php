@@ -2311,31 +2311,39 @@ class Image extends BySQLRowEnabled
     }
 }
 
-/*
- * Class: RepositoryUnreachableOrInvalid
- * A Exception that will be thrown, if the repository is unreachable or seems to be an invalid repository.
+/**
+ * An exception that will be thrown, if the repository is unreachable or seems to be an invalid repository.
  */
 class RepositoryUnreachableOrInvalid extends Exception
 {
 }
 
-/*
- * Class: Repository
+/**
  * Representation of an plugin repository.
  */
 class Repository extends BySQLRowEnabled
 {
+    /** @var int */
     private $id;
+
+    /** @var string */
     private $baseurl;
+
+    /** @var string */
     private $name;
+
+    /** @var string */
     private $description;
+
+    /** @var int Unix-timestamp of last refresh */
     private $lastrefresh;
 
+    /** @var resource */
     private $stream_ctx;
 
-    /*
-     * Variables: Public class variables
-     * $packages - Array with all packages from this repository. A entry itself is an array: array(name, versioncounter, description)
+    /**
+     * Array with all packages from this repository. An entry itself is an array: array(name, versioncounter, description)
+     * @var array[]
      */
     public $packages;
 
@@ -2344,42 +2352,59 @@ class Repository extends BySQLRowEnabled
         $this->stream_ctx = stream_context_create(["http" => ["timeout" => 5]]);
     }
 
-    /*
-     * Functions: Getters
-     * get_id          - Get internal ID.
-     * get_baseurl     - Get the baseurl of the repository.
-     * get_name        - Get repository name.
-     * get_description - Get repository description.
+    /**
+     * Get internal ID.
+     *
+     * @return int
      */
-    public function get_id()
+    public function get_id(): int
     {
         return $this->id;
     }
-    public function get_baseurl()
+
+    /**
+     * Get the baseurl of the repository.
+     *
+     * @return string
+     */
+    public function get_baseurl(): string
     {
         return $this->baseurl;
     }
-    public function get_name()
+
+    /**
+     * Get repository name.
+     *
+     * @return string
+     */
+    public function get_name(): string
     {
         return $this->name;
     }
-    public function get_description()
+
+    /**
+     * Get repository description.
+     *
+     * @return string
+     */
+    public function get_description(): string
     {
         return $this->description;
     }
 
-    /*
-     * Constructor: create
+    /**
      * Create a new repository entry from a base url.
      *
-     * Parameters:
-     *  $baseurl - The baseurl of the repository.
-     *
-     * Throws:
-     *  Could throw a <RepositoryUnreachableOrInvalid> exception. In this case, nothing will be written to the database.
+     * @param $baseurl
+     * @param Database|null $db
+     * @return Repository
+     * @throws RepositoryUnreachableOrInvalid In this case, nothing will be written to the database.
      */
-    public static function create($baseurl)
+    public static function create($baseurl, ?Database $db = null): self
     {
+        $baseurl = (string)$baseurl;
+        $db = $db ?? Env::getGlobal()->database();
+
         $obj = new self();
 
         if (preg_match('/^(http[s]?:\\/\\/.*?)[\\/]?$/', $baseurl, $matches) == 0) {
@@ -2387,13 +2412,11 @@ class Repository extends BySQLRowEnabled
         }
 
         $obj->baseurl = $matches[1];
-        $obj->refresh(true);
+        $obj->refresh(true, $db);
 
-        $tx = new Transaction();
+        $tx = new DbTransaction($db);
         try {
-            global $db_con;
-
-            qdb(
+            $db->query(
                 "INSERT INTO PREFIX_repositories (baseurl, name, description, pkgcache, lastrefresh) VALUES (?, ?, ?, ?, ?)",
                 $obj->baseurl,
                 $obj->name,
@@ -2401,8 +2424,8 @@ class Repository extends BySQLRowEnabled
                 base64_encode(serialize($obj->packages)),
                 $obj->lastrefresh
             );
-            $obj->id = $db_con->lastInsertId();
-            $obj->save();
+            $obj->id = $db->lastInsertId();
+            $obj->save($db);
             $tx->commit();
         } catch (Exception $e) {
             $tx->rollback();
@@ -2414,27 +2437,28 @@ class Repository extends BySQLRowEnabled
 
     protected function populate_by_sqlrow($sqlrow)
     {
-        $this->id          = $sqlrow["id"];
-        $this->name        = $sqlrow["name"];
-        $this->description = $sqlrow["description"];
-        $this->baseurl     = $sqlrow["baseurl"];
+        $this->id          = (int)$sqlrow["id"];
+        $this->name        = (string)$sqlrow["name"];
+        $this->description = (string)$sqlrow["description"];
+        $this->baseurl     = (string)$sqlrow["baseurl"];
         $this->packages    = unserialize(base64_decode($sqlrow["pkgcache"]));
-        $this->lastrefresh = $sqlrow["lastrefresh"];
+        $this->lastrefresh = (int)$sqlrow["lastrefresh"];
     }
 
-    /*
-     * Constructor: by_id
+    /**
      * Get a repository entry by ID.
      *
-     * Parameters:
-     *  $id - ID.
-     *
-     * Throws:
-     *  <DoesNotExistError>
+     * @param int|mixed $id
+     * @param Database|null $db
+     * @return self
+     * @throws DoesNotExistError
      */
-    public static function by_id($id)
+    public static function by_id($id, ?Database $db = null): self
     {
-        $stmt = qdb("SELECT `id`, `name`, `description`, `baseurl`, `pkgcache`, `lastrefresh` FROM `PREFIX_repositories` WHERE `id` = ?", $id);
+        $id = (int)$id;
+        $db = $db ?? Env::getGlobal()->database();
+
+        $stmt = $db->query("SELECT `id`, `name`, `description`, `baseurl`, `pkgcache`, `lastrefresh` FROM `PREFIX_repositories` WHERE `id` = ?", $id);
         $sqlrow = $stmt->fetch();
         if (!$sqlrow) {
             throw new DoesNotExistError();
@@ -2443,26 +2467,29 @@ class Repository extends BySQLRowEnabled
         return self::by_sqlrow($sqlrow);
     }
 
-    /*
-     * Constructor: all
+    /**
      * Gets all available repositories.
      *
-     * Returns:
-     *  Array of <Repository> objects.
+     * @param Database|null $db
+     * @return self[]
      */
-    public static function all()
+    public static function all(?Database $db = null): array
     {
+        $db = $db ?? Env::getGlobal()->database();
+
         $rv = [];
-        $stmt = qdb("SELECT `id`, `name`, `description`, `baseurl`, `pkgcache`, `lastrefresh` FROM `PREFIX_repositories` WHERE 1");
+        $stmt = $db->query("SELECT `id`, `name`, `description`, `baseurl`, `pkgcache`, `lastrefresh` FROM `PREFIX_repositories` WHERE 1");
         while ($sqlrow = $stmt->fetch()) {
             $rv[] = self::by_sqlrow($sqlrow);
         }
         return $rv;
     }
 
-    private function save()
+    private function save(?Database $db = null): void
     {
-        qdb(
+        $db = $db ?? Env::getGlobal()->database();
+
+        $db->query(
             "UPDATE `PREFIX_repositories` SET `baseurl` = ?, `name` = ?, `description` = ?, `pkgcache` = ?, `lastrefresh` = ? WHERE `id` = ?",
             $this->baseurl,
             $this->name,
@@ -2473,26 +2500,25 @@ class Repository extends BySQLRowEnabled
         );
     }
 
-    /*
-     * Function: delete
+    /**
      * Delete the repository entry from the database.
+     * @param Database|null $db
      */
-    public function delete()
+    public function delete(?Database $db = null): void
     {
-        qdb("DELETE FROM `PREFIX_repositories` WHERE `id` = ?", $this->id);
+        $db = $db ?? Env::getGlobal()->database();
+
+        $db->query("DELETE FROM `PREFIX_repositories` WHERE `id` = ?", $this->id);
     }
 
-    /*
-     * Function: refresh
+    /**
      * Refresh the package cache and the name and description.
      *
-     * Parameters:
-     *  $force - Force a refresh, even if the data was already fetched in the last 6 hours (default: False).
-     *
-     * Throws:
-     *  <RepositoryUnreachableOrInvalid>
+     * @param bool $force Force a refresh, even if the data was already fetched in the last 6 hours (default: false)
+     * @param Database|null $db
+     * @throws RepositoryUnreachableOrInvalid
      */
-    public function refresh($force = false)
+    public function refresh($force = false, ?Database $db = null): void
     {
         if (($this->lastrefresh > (time() - (60*60*4))) and (!$force)) {
             return;
@@ -2513,23 +2539,17 @@ class Repository extends BySQLRowEnabled
 
         $this->lastrefresh = time();
 
-        $this->save();
+        $this->save($db);
     }
 
-    /*
-     * Function: get_package_meta
+    /**
      * Get metadata of a plugin package from this repository.
      *
-     * Parameters:
-     *  $pkgname - The name of the package.
-     *
-     * Throws:
-     *  A <DoesNotExistError> Exception, if the package was not found.
-     *
-     * Returns:
-     *  A <PluginPackageMeta> object
+     * @param string $pkgname The name of the package.
+     * @return PluginPackageMeta
+     * @throws DoesNotExistError If the package was not found
      */
-    public function get_package_meta($pkgname)
+    public function get_package_meta($pkgname): PluginPackageMeta
     {
         $found = false;
         foreach ($this->packages as $p) {
@@ -2551,22 +2571,16 @@ class Repository extends BySQLRowEnabled
         return $pkgmeta;
     }
 
-    /*
-     * Function: download_package
+    /**
      * Download a package from the repository
      *
-     * Parameters:
-     *  $pkgname - Name of the package.
-     *  $version - The version to download (defaults to "current").
-     *
-     * Throws:
-     *  * A <DoesNotExistError> Exception, if the package was not found.
-     *  * A <InvalidPackage> Exception, if the package was malformed.
-     *
-     * Returns:
-     *  A <PluginPackage> object.
+     * @param string $pkgname Name of the package.
+     * @param string $version The version to download (defaults to "current").
+     * @return PluginPackage
+     * @throws DoesNotExistError If the package was not found.
+     * @throws InvalidPackage If the package was malformed.
      */
-    public function download_package($pkgname, $version = "current")
+    public function download_package($pkgname, $version = "current"): PluginPackage
     {
         $found = false;
         foreach ($this->packages as $p) {
