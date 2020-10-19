@@ -2142,7 +2142,7 @@ class Image extends BySQLRowEnabled
     {
         $this->id   = $sqlrow["id"];
         $this->name = $sqlrow["name"];
-        $this->file = $sqlrow["file"];
+        $this->filename = $sqlrow["file"];
     }
 
     /*
@@ -2157,7 +2157,7 @@ class Image extends BySQLRowEnabled
     }
     public function get_filename()
     {
-        return $this->file;
+        return $this->filename;
     }
 
     /*
@@ -2175,7 +2175,7 @@ class Image extends BySQLRowEnabled
     {
         $obj = new self();
         $obj->name = $name;
-        $obj->file = "0";
+        $obj->filename = "0";
 
         $tx = new Transaction();
         try {
@@ -2253,14 +2253,14 @@ class Image extends BySQLRowEnabled
         if (!isset($imagetype_file_extensions[$imageinfo[2]])) {
             throw new UnknownFileFormat();
         }
-        if (is_file(SITE_BASE_PATH . "/images/" . $this->file)) {
-            unlink(SITE_BASE_PATH . "/images/" . $this->file);
+        if (is_file(SITE_BASE_PATH . "/images/" . $this->filename)) {
+            unlink(SITE_BASE_PATH . "/images/" . $this->filename);
         }
         $new_fn = $this->id . "." . $imagetype_file_extensions[$imageinfo[2]];
         if (!move_uploaded_file($file, SITE_BASE_PATH . "/images/" . $new_fn)) {
             throw new IOError("Can not move file.");
         }
-        $this->file = $new_fn;
+        $this->filename = $new_fn;
         $this->save();
 
         /* make preview image */
@@ -2297,7 +2297,7 @@ class Image extends BySQLRowEnabled
         qdb(
             "UPDATE `PREFIX_images` SET `name` = ?, `file` = ? WHERE `id` = ?",
             $this->name,
-            $this->file,
+            $this->filename,
             $this->id
         );
     }
@@ -2308,8 +2308,8 @@ class Image extends BySQLRowEnabled
     public function delete()
     {
         qdb("DELETE FROM `PREFIX_images` WHERE `id` = ?", $this->id);
-        if (is_file(SITE_BASE_PATH . "/images/" . $this->file)) {
-            unlink(SITE_BASE_PATH . "/images/" . $this->file);
+        if (is_file(SITE_BASE_PATH . "/images/" . $this->filename)) {
+            unlink(SITE_BASE_PATH . "/images/" . $this->filename);
         }
         if (is_file(SITE_BASE_PATH . "/images/previews/{$this->id}.png")) {
             unlink(SITE_BASE_PATH . "/images/previews/{$this->id}.png");
