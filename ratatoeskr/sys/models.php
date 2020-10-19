@@ -1601,85 +1601,76 @@ class Plugin extends BySQLRowEnabled
     }
 }
 
-/*
- * Class: Section
+/**
  * Representing a section
  */
 class Section extends BySQLRowEnabled
 {
+    /** @var int */
     private $id;
 
-    /*
-     * Variables: Public class variables
-     *
-     * $name     - The name of the section.
-     * $title    - The title of the section (a <Multilingual> object).
-     * $template - Name of the template.
-     */
+    /** @var string The name of the section. */
     public $name;
+
+    /** @var Multilingual The title of the section. */
     public $title;
+
+    /** @var string Name of the template. */
     public $template;
 
     protected function populate_by_sqlrow($sqlrow)
     {
-        $this->id       = $sqlrow["id"];
-        $this->name     = $sqlrow["name"];
-        $this->title    = Multilingual::by_id($sqlrow["title"]);
-        $this->template = $sqlrow["template"];
+        $this->id       = (int)$sqlrow["id"];
+        $this->name     = (string)$sqlrow["name"];
+        $this->title    = Multilingual::by_id($sqlrow["title"]); // FIXME: Right now, we can't pass a $db to Multilingual::by_id here, as this violates the populate_by_sqlrow function signature :(
+        $this->template = (string)$sqlrow["template"];
     }
 
-    /*
-     * Function: test_name
+    /**
      * Tests, if a name is a valid section name.
      *
-     * Parameters:
-     *  $name - The name to test.
-     *
-     * Returns:
-     *  True, if the name is a valid section name, False otherwise.
+     * @param string|mixed $name The name to test.
+     * @return bool
      */
-    public static function test_name($name)
+    public static function test_name($name): bool
     {
-        return preg_match("/^[a-zA-Z0-9\\-_]+$/", $name) != 0;
+        return preg_match("/^[a-zA-Z0-9\\-_]+$/", (string)$name) != 0;
     }
 
-    /*
-     * Function: get_id
-     */
-    public function get_id()
+    public function get_id(): int
     {
         return $this->id;
     }
 
-    /*
-     * Constructor: create
+    /**
      * Creates a new section.
      *
-     * Parameters:
-     *  $name - The name of the new section.
-     *
-     * Throws:
-     *  <AlreadyExistsError>, <InvalidDataError>
+     * @param string|mixed $name The name of the new section.
+     * @param Database|null $db
+     * @return Section
+     * @throws AlreadyExistsError
+     * @throws InvalidDataError
      */
-    public static function create($name)
+    public static function create($name, ?Database $db = null): self
     {
-        global $db_con;
+        $name = (string)$name;
+        $db = $db ?? Env::getGlobal()->database();
 
         if (!self::test_name($name)) {
             throw new InvalidDataError("invalid_section_name");
         }
 
         try {
-            self::by_name($name);
+            self::by_name($name, $db);
         } catch (DoesNotExistError $e) {
             $obj           = new self();
             $obj->name     = $name;
-            $obj->title    = Multilingual::create();
+            $obj->title    = Multilingual::create($db);
             $obj->template = "";
 
-            qdb("INSERT INTO `PREFIX_sections` (`name`, `title`, `template`) VALUES (?, ?, '')", $name, $obj->title->get_id());
+            $db->query("INSERT INTO `PREFIX_sections` (`name`, `title`, `template`) VALUES (?, ?, '')", $name, $obj->title->get_id());
 
-            $obj->id = $db_con->lastInsertId();
+            $obj->id = $db->lastInsertId();
 
             return $obj;
         }
@@ -1687,22 +1678,20 @@ class Section extends BySQLRowEnabled
         throw new AlreadyExistsError();
     }
 
-    /*
-     * Constructor: by_id
+    /**
      * Gets section by ID.
      *
-     * Parameters:
-     *  $id - The ID.
-     *
-     * Returns:
-     *  A <Section> object.
-     *
-     * Throws:
-     *  <DoesNotExistError>
+     * @param int|mixed $id
+     * @param Database|null $db
+     * @return self
+     * @throws DoesNotExistError
      */
-    public static function by_id($id)
+    public static function by_id($id, ?Database $db = null): self
     {
-        $stmt = qdb("SELECT `id`, `name`, `title`, `template` FROM `PREFIX_sections` WHERE `id` = ?", $id);
+        $id = (int)$id;
+        $db = $db ?? Env::getGlobal()->database();
+
+        $stmt = $db->query("SELECT `id`, `name`, `title`, `template` FROM `PREFIX_sections` WHERE `id` = ?", $id);
         $sqlrow = $stmt->fetch();
         if ($sqlrow === false) {
             throw new DoesNotExistError();
@@ -1711,22 +1700,20 @@ class Section extends BySQLRowEnabled
         return self::by_sqlrow($sqlrow);
     }
 
-    /*
-     * Constructor: by_name
+    /**
      * Gets section by name.
      *
-     * Parameters:
-     *  $name - The name.
-     *
-     * Returns:
-     *  A <Section> object.
-     *
-     * Throws:
-     *  <DoesNotExistError>
+     * @param string|mixed $name
+     * @param Database|null $db
+     * @return self
+     * @throws DoesNotExistError
      */
-    public static function by_name($name)
+    public static function by_name($name, ?Database $db = null): self
     {
-        $stmt = qdb("SELECT `id`, `name`, `title`, `template` FROM `PREFIX_sections` WHERE `name` = ?", $name);
+        $name = (string)$name;
+        $db = $db ?? Env::getGlobal()->database();
+
+        $stmt = $db->query("SELECT `id`, `name`, `title`, `template` FROM `PREFIX_sections` WHERE `name` = ?", $name);
         $sqlrow = $stmt->fetch();
         if ($sqlrow === false) {
             throw new DoesNotExistError();
@@ -1735,55 +1722,58 @@ class Section extends BySQLRowEnabled
         return self::by_sqlrow($sqlrow);
     }
 
-    /*
-     * Constructor: all
+    /**
      * Gets all sections.
      *
-     * Returns:
-     *  Array of Section objects.
+     * @param Database|null $db
+     * @return self[]
      */
-    public static function all()
+    public static function all(?Database $db = null): array
     {
+        $db = $db ?? Env::getGlobal()->database();
+
         $rv = [];
-        $stmt = qdb("SELECT `id`, `name`, `title`, `template` FROM `PREFIX_sections` WHERE 1");
+        $stmt = $db->query("SELECT `id`, `name`, `title`, `template` FROM `PREFIX_sections` WHERE 1");
         while ($sqlrow = $stmt->fetch()) {
             $rv[] = self::by_sqlrow($sqlrow);
         }
         return $rv;
     }
 
-    /*
-     * Function: get_styles
+    /**
      * Get all styles associated with this section.
      *
-     * Returns:
-     *  List of <Style> objects.
+     * @param Database|null $db
+     * @return Style[]
      */
-    public function get_styles()
+    public function get_styles(?Database $db = null): array
     {
+        $db = $db ?? Env::getGlobal()->database();
+
         $rv = [];
-        $stmt = qdb("SELECT `a`.`id` AS `id`, `a`.`name` AS `name`, `a`.`code` AS `code` FROM `PREFIX_styles` `a` INNER JOIN `PREFIX_section_style_relations` `b` ON `a`.`id` = `b`.`style` WHERE `b`.`section` = ?", $this->id);
+        $stmt = $db->query("SELECT `a`.`id` AS `id`, `a`.`name` AS `name`, `a`.`code` AS `code` FROM `PREFIX_styles` `a` INNER JOIN `PREFIX_section_style_relations` `b` ON `a`.`id` = `b`.`style` WHERE `b`.`section` = ?", $this->id);
         while ($sqlrow = $stmt->fetch()) {
             $rv[] = Style::by_sqlrow($sqlrow);
         }
         return $rv;
     }
 
-    /*
-     * Function: add_style
+    /**
      * Add a style to this section.
      *
-     * Parameters:
-     *  $style - A <Style> object.
+     * @param Style $style
+     * @param Database|null $db
      */
-    public function add_style($style)
+    public function add_style(Style $style, ?Database $db = null): void
     {
-        $tx = new Transaction();
+        $db = $db ?? Env::getGlobal()->database();
+
+        $tx = new DbTransaction($db);
         try {
-            $stmt = qdb("SELECT COUNT(*) AS `n` FROM `PREFIX_section_style_relations` WHERE `style` = ? AND `section` = ?", $style->get_id(), $this->id);
+            $stmt = $db->query("SELECT COUNT(*) AS `n` FROM `PREFIX_section_style_relations` WHERE `style` = ? AND `section` = ?", $style->get_id(), $this->id);
             $sqlrow = $stmt->fetch();
             if ($sqlrow["n"] == 0) {
-                qdb("INSERT INTO `PREFIX_section_style_relations` (`section`, `style`) VALUES (?, ?)", $this->id, $style->get_id());
+                $db->query("INSERT INTO `PREFIX_section_style_relations` (`section`, `style`) VALUES (?, ?)", $this->id, $style->get_id());
             }
             $tx->commit();
         } catch (Exception $e) {
@@ -1792,40 +1782,44 @@ class Section extends BySQLRowEnabled
         }
     }
 
-    /*
-     * Function: remove_style
+    /**
      * Remove a style from this section.
      *
-     * Parameters:
-     *  $style - A <Style> object.
+     * @param Style $style
+     * @param Database|null $db
      */
-    public function remove_style($style)
+    public function remove_style(Style $style, ?Database $db = null): void
     {
-        qdb("DELETE FROM `PREFIX_section_style_relations` WHERE `section` = ? AND `style` = ?", $this->id, $style->get_id());
+        $db = $db ?? Env::getGlobal()->database();
+
+        $db->query("DELETE FROM `PREFIX_section_style_relations` WHERE `section` = ? AND `style` = ?", $this->id, $style->get_id());
     }
 
-    /*
-     * Function: save
+    /**
+     * Save the object to database.
      *
-     * Throws:
-     *  <AlreadyExistsError>, <InvalidDataError>
+     * @param Database|null $db
+     * @throws AlreadyExistsError
+     * @throws InvalidDataError
      */
-    public function save()
+    public function save(?Database $db = null): void
     {
+        $db = $db ?? Env::getGlobal()->database();
+
         if (!self::test_name($this->name)) {
             throw new InvalidDataError("invalid_section_name");
         }
 
-        $tx = new Transaction();
+        $tx = new DbTransaction($db);
         try {
-            $stmt = qdb("SELECT COUNT(*) AS `n` FROM `PREFIX_sections` WHERE `name` = ? AND `id` != ?", $this->name, $this->id);
+            $stmt = $db->query("SELECT COUNT(*) AS `n` FROM `PREFIX_sections` WHERE `name` = ? AND `id` != ?", $this->name, $this->id);
             $sqlrow = $stmt->fetch();
             if ($sqlrow["n"] > 0) {
                 throw new AlreadyExistsError();
             }
 
             $this->title->save();
-            qdb(
+            $db->query(
                 "UPDATE `PREFIX_sections` SET `name` = ?, `title` = ?, `template` = ? WHERE `id` = ?",
                 $this->name,
                 $this->title->get_id(),
@@ -1839,16 +1833,18 @@ class Section extends BySQLRowEnabled
         }
     }
 
-    /*
-     * Function: delete
+    /**
+     * @param Database|null $db
      */
-    public function delete()
+    public function delete(?Database $db = null): void
     {
-        $tx = new Transaction();
+        $db = $db ?? Env::getGlobal()->database();
+
+        $tx = new DbTransaction($db);
         try {
             $this->title->delete();
-            qdb("DELETE FROM `PREFIX_sections` WHERE `id` = ?", $this->id);
-            qdb("DELETE FROM `PREFIX_section_style_relations` WHERE `section` = ?", $this->id);
+            $db->query("DELETE FROM `PREFIX_sections` WHERE `id` = ?", $this->id);
+            $db->query("DELETE FROM `PREFIX_section_style_relations` WHERE `section` = ?", $this->id);
             $tx->commit();
         } catch (Exception $e) {
             $tx->rollback();
@@ -1856,17 +1852,18 @@ class Section extends BySQLRowEnabled
         }
     }
 
-    /*
-     * Function: get_articles
+    /**
      * Get all articles in this section.
-     *
-     * Returns:
-     *  Array of <Article> objects
+
+     * @param Database|null $db
+     * @return Article[]
      */
-    public function get_articles()
+    public function get_articles(?Database $db = null): array
     {
+        $db = $db ?? Env::getGlobal()->database();
+
         $rv = [];
-        $stmt = qdb("SELECT `id`, `urlname`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments` FROM `PREFIX_articles` WHERE `section` = ?", $this->id);
+        $stmt = $db->query("SELECT `id`, `urlname`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments` FROM `PREFIX_articles` WHERE `section` = ?", $this->id);
         while ($sqlrow = $stmt->fetch()) {
             $rv[] = Article::by_sqlrow($sqlrow);
         }
