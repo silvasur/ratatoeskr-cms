@@ -2125,11 +2125,11 @@ class IOError extends Exception
  */
 class Image extends BySQLRowEnabled
 {
+    private const PRE_MAXW = 150;
+    private const PRE_MAXH = 100;
+
     private $id;
     private $filename;
-
-    private static $pre_maxw = 150;
-    private static $pre_maxh = 100;
 
     /*
      * Variables: Public class variables
@@ -2272,14 +2272,14 @@ class Image extends BySQLRowEnabled
         }
         $w_orig = imagesx($img);
         $h_orig = imagesy($img);
-        if (($w_orig > self::$pre_maxw) or ($h_orig > self::$pre_maxh)) {
+        if (($w_orig > self::PRE_MAXW) || ($h_orig > self::PRE_MAXH)) {
             $ratio = $w_orig / $h_orig;
             if ($ratio > 1) {
-                $w_new = round(self::$pre_maxw);
-                $h_new = round(self::$pre_maxw / $ratio);
+                $w_new = round(self::PRE_MAXW);
+                $h_new = round(self::PRE_MAXW / $ratio);
             } else {
-                $h_new = round(self::$pre_maxh);
-                $w_new = round(self::$pre_maxh * $ratio);
+                $h_new = round(self::PRE_MAXH);
+                $w_new = round(self::PRE_MAXH * $ratio);
             }
             $preview = imagecreatetruecolor($w_new, $h_new);
             imagecopyresized($preview, $img, 0, 0, 0, 0, $w_new, $h_new, $w_orig, $h_orig);
