@@ -2602,8 +2602,7 @@ class Repository extends BySQLRowEnabled
     }
 }
 
-/*
- * Class: Article
+/**
  * Representation of an article
  */
 class Article extends BySQLRowEnabled
@@ -2611,120 +2610,114 @@ class Article extends BySQLRowEnabled
     /** @var int */
     private $id;
 
+    /** @var int */
     private $section_id;
-    private $section_obj;
 
-    /*
-     * Variables: Public class variables
-     *
-     * $urlname        - URL name
-     * $title          - Title (an <Multilingual> object)
-     * $text           - The text (an <Multilingual> object)
-     * $excerpt        - Excerpt (an <Multilingual> object)
-     * $meta           - Keywords, comma seperated
-     * $custom         - Custom fields, is an array
-     * $article_image  - The article <Image>. If none: NULL
-     * $status         - One of the ARTICLE_STATUS_* constants
-     * $timestamp      - Timestamp
-     * $allow_comments - Are comments allowed?
-     */
+    /** @var null|Section */
+    private $section_obj = null;
+
+    /** @var string URL name */
     public $urlname;
-    public $title;
-    public $text;
-    public $excerpt;
-    public $meta;
-    public $custom;
-    public $article_image;
-    public $status;
-    public $timestamp;
-    public $allow_comments;
 
-    protected function __construct()
-    {
-        $this->section_obj = null;
-    }
+    /** @var Multilingual Title */
+    public $title;
+
+    /** @var Multilingual The text */
+    public $text;
+
+    /** @var Multilingual Excerpt */
+    public $excerpt;
+
+    /** @var string Keywords, comma separated */
+    public $meta;// TODO: Seems to be unused
+
+    /** @var array Custom fields */
+    public $custom;
+
+    /** @var Image|null The article image. If none: null */
+    public $article_image = null;
+
+    /** @var int One of the ARTICLE_STATUS_* constants */
+    public $status;
+
+    /** @var int Timestamp */
+    public $timestamp;
+
+    /** @var bool Are comments allowed? */
+    public $allow_comments;
 
     protected function populate_by_sqlrow($sqlrow)
     {
         $this->id             = (int)$sqlrow["id"];
-        $this->urlname        = $sqlrow["urlname"];
+        $this->urlname        = (string)$sqlrow["urlname"];
         $this->title          = Multilingual::by_id($sqlrow["title"]);
         $this->text           = Multilingual::by_id($sqlrow["text"]);
         $this->excerpt        = Multilingual::by_id($sqlrow["excerpt"]);
-        $this->meta           = $sqlrow["meta"];
+        $this->meta           = (string)$sqlrow["meta"];
         $this->custom         = unserialize(base64_decode($sqlrow["custom"]));
         $this->article_image  = $sqlrow["article_image"] == 0 ? null : Image::by_id($sqlrow["article_image"]);
-        $this->status         = $sqlrow["status"];
-        $this->section_id     = $sqlrow["section"];
-        $this->timestamp      = $sqlrow["timestamp"];
+        $this->status         = (int)$sqlrow["status"];
+        $this->section_id     = (int)$sqlrow["section"];
+        $this->timestamp      = (int)$sqlrow["timestamp"];
         $this->allow_comments = $sqlrow["allow_comments"] == 1;
     }
 
-    /*
-     * Function: get_id
-     */
     public function get_id(): int
     {
         return $this->id;
     }
 
-    /*
-     * Function: test_urlname
+    /**
      * Test, if a urlname is a valid urlname.
      *
-     * Parameters:
-     *  $urlname - Urlname to test
-     *
-     * Returns:
-     *  True, if the urlname is valid, False otherwise.
+     * @param string|mixed $urlname
+     * @return bool
      */
-    public static function test_urlname($urlname)
+    public static function test_urlname($urlname): bool
     {
+        $urlname = (string)$urlname;
         return (bool) preg_match('/^[a-zA-Z0-9-_]+$/', $urlname);
     }
 
-    /*
-     * Function: test_status
+    /**
      * Test, if a status is valid.
      *
-     * Parameters:
-     *  $status - Status value to test.
-     *
-     * Returns:
-     *  True, if the status is a valid status value, False otherwise.
+     * @param mixed $status Status value to test.
+     * @return bool
      */
-    public static function test_status($status)
+    public static function test_status($status): bool
     {
-        return is_numeric($status) and ($status >= 0) and ($status <= 3);
+        return is_numeric($status) && ($status >= 0) && ($status <= 3);
     }
 
-    /*
-     * Constructor: create
+    /**
      * Create a new Article object.
      *
-     * Parameters:
-     *  urlname - A unique URL name
-     *
-     * Throws:
-     *  <AlreadyExistsError>, <InvalidDataError>
+     * @param string|mixed $urlname
+     * @param Database|null $db
+     * @return self
+     * @throws AlreadyExistsError
+     * @throws InvalidDataError
      */
-    public static function create($urlname)
+    public static function create($urlname, ?Database $db = null): self
     {
         global $ratatoeskr_settings;
-        global $db_con;
+
+        $urlname = (string)$urlname;
+        $db = $db ?? Env::getGlobal()->database();
 
         if (!self::test_urlname($urlname)) {
             throw new InvalidDataError("invalid_urlname");
         }
 
         try {
-            self::by_urlname($urlname);
+            self::by_urlname($urlname, $db);
         } catch (DoesNotExistError $e) {
             $obj = new self();
             $obj->urlname        = $urlname;
-            $obj->title          = Multilingual::create();
-            $obj->text           = Multilingual::create();
-            $obj->excerpt        = Multilingual::create();
+            $obj->title          = Multilingual::create($db);
+            $obj->text           = Multilingual::create($db);
+            $obj->excerpt        = Multilingual::create($db);
             $obj->meta           = "";
             $obj->custom         = [];
             $obj->article_image  = null;
@@ -2733,7 +2726,7 @@ class Article extends BySQLRowEnabled
             $obj->timestamp      = time();
             $obj->allow_comments = $ratatoeskr_settings["allow_comments_default"];
 
-            qdb(
+            $db->query(
                 "INSERT INTO `PREFIX_articles` (`urlname`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments`) VALUES ('', ?, ?, ?, '', ?, 0, ?, ?, ?, ?)",
                 $obj->title->get_id(),
                 $obj->text->get_id(),
@@ -2744,26 +2737,27 @@ class Article extends BySQLRowEnabled
                 $obj->timestamp,
                 $obj->allow_comments ? 1 : 0
             );
-            $obj->id = $db_con->lastInsertId();
+            $obj->id = $db->lastInsertId();
             return $obj;
         }
 
         throw new AlreadyExistsError();
     }
 
-    /*
-     * Constructor: by_id
+    /**
      * Get by ID.
      *
-     * Parameters:
-     *  $id - The ID.
-     *
-     * Throws:
-     *  <DoesNotExistError>
+     * @param int|mixed $id
+     * @param Database|null $db
+     * @return self
+     * @throws DoesNotExistError
      */
-    public static function by_id($id)
+    public static function by_id($id, ?Database $db = null): self
     {
-        $stmt = qdb("SELECT `id`, `urlname`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments` FROM `PREFIX_articles` WHERE `id` = ?", $id);
+        $id = (int)$id;
+        $db = $db ?? Env::getGlobal()->database();
+
+        $stmt = $db->query("SELECT `id`, `urlname`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments` FROM `PREFIX_articles` WHERE `id` = ?", $id);
         $sqlrow = $stmt->fetch();
         if ($sqlrow === false) {
             throw new DoesNotExistError();
@@ -2772,19 +2766,20 @@ class Article extends BySQLRowEnabled
         return self::by_sqlrow($sqlrow);
     }
 
-    /*
-     * Constructor: by_urlname
+    /**
      * Get by urlname
      *
-     * Parameters:
-     *  $urlname - The urlname
-     *
-     * Throws:
-     *  <DoesNotExistError>
+     * @param string|mixed $urlname
+     * @param Database|null $db
+     * @return self
+     * @throws DoesNotExistError
      */
-    public static function by_urlname($urlname)
+    public static function by_urlname($urlname, ?Database $db = null): self
     {
-        $stmt = qdb("SELECT `id`, `urlname`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments` FROM `PREFIX_articles` WHERE `urlname` = ?", $urlname);
+        $urlname = (string)$urlname;
+        $db = $db ?? Env::getGlobal()->database();
+
+        $stmt = $db->query("SELECT `id`, `urlname`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments` FROM `PREFIX_articles` WHERE `urlname` = ?", $urlname);
         $sqlrow = $stmt->fetch();
         if ($sqlrow === false) {
             throw new DoesNotExistError();
@@ -2793,60 +2788,67 @@ class Article extends BySQLRowEnabled
         return self::by_sqlrow($sqlrow);
     }
 
-    /*
-     * Constructor: by_multi
+    /**
      * Get Articles by multiple criterias
      *
-     * Parameters:
-     *  $criterias - Array that can have these keys: id (int) , urlname (string), section (<Section> object), status (int), onlyvisible, langavail(string), tag (<Tag> object)
-     *  $sortby    - Sort by this field (id, urlname, timestamp or title)
-     *  $sortdir   - Sorting directory (ASC or DESC)
-     *  $count     - How many entries (NULL for unlimited)
-     *  $offset    - How many entries should be skipped (NULL for none)
-     *  $perpage   - How many entries per page (NULL for no paging)
-     *  $page      - Page number (starting at 1, NULL for no paging)
-     *  &$maxpage  - Number of pages will be written here, if paging is activated.
-     *
-     * Returns:
-     *  Array of Article objects
+     * @param array|mixed $criterias Array that can have these keys: id (int) , urlname (string), section (<Section> object), status (int), onlyvisible, langavail(string), tag (<Tag> object)
+     * @param string|mixed $sortby Sort by this field (id, urlname, timestamp or title)
+     * @param string|mixed $sortdir Sorting directory (ASC or DESC)
+     * @param int|null|mixed $count How many entries (NULL for unlimited)
+     * @param int|null|mixed $offset How many entries should be skipped (NULL for none)
+     * @param int|null|mixed $perpage How many entries per page (NULL for no paging)
+     * @param int|null|mixed $page Page number (starting at 1, NULL for no paging)
+     * @param int $maxpage Number of pages will be written here, if paging is activated.
+     * @param Database|null $db
+     * @return self[]
      */
-    public static function by_multi($criterias, $sortby, $sortdir, $count, $offset, $perpage, $page, &$maxpage)
+    public static function by_multi($criterias, $sortby, $sortdir, $count, $offset, $perpage, $page, &$maxpage, ?Database $db = null): array
     {
+        $db = $db ?? Env::getGlobal()->database();
+
         $subqueries = [];
         $subparams = [];
         foreach ($criterias as $k => $v) {
             switch ($k) {
                 case "id":
                     $subqueries[] = "`a`.`id` = ?";
-                    $subparams[] = $v;
+                    $subparams[] = (int)$v;
                     break;
                 case "urlname":
                     $subqueries[] = "`a`.`urlname` = ?";
-                    $subparams[] = $v;
+                    $subparams[] = (string)$v;
                     break;
                 case "section":
+                    if (!($v instanceof Section)) {
+                        throw new InvalidArgumentException("criterias[section] must be a  " . Section::class);
+                    }
+
                     $subqueries[] = "`a`.`section` = ?";
                     $subparams[] = $v->get_id();
                     break;
                 case "status":
                     $subqueries[] = "`a`.`status` = ?";
-                    $subparams[] = $v;
+                    $subparams[] = (int)$v;
                     break;
                 case "onlyvisible":
                     $subqueries[] = "`a`.`status` != 0";
                     break;
                 case "langavail":
                     $subqueries[] = "`b`.`language` = ?";
-                    $subparams[] = $v;
+                    $subparams[] = (string)$v;
                     break;
                 case "tag":
+                    if (!($v instanceof Tag)) {
+                        throw new InvalidArgumentException("criterias[tag] must be a  " . Tag::class);
+                    }
+
                     $subqueries[] = "`c`.`tag` = ?";
                     $subparams[] = $v->get_id();
                     break;
             }
         }
 
-        if (($sortdir != "ASC") and ($sortdir != "DESC")) {
+        if (($sortdir != "ASC") && ($sortdir != "DESC")) {
             $sortdir = "ASC";
         }
         $sorting = "";
@@ -2857,7 +2859,7 @@ class Article extends BySQLRowEnabled
             case "title":     $sorting = "ORDER BY `b`.`text` $sortdir";      break;
         }
 
-        $stmt = prep_stmt("SELECT `a`.`id` AS `id`, `a`.`urlname` AS `urlname`, `a`.`title` AS `title`, `a`.`text` AS `text`, `a`.`excerpt` AS `excerpt`, `a`.`meta` AS `meta`, `a`.`custom` AS `custom`, `a`.`article_image` AS `article_image`, `a`.`status` AS `status`, `a`.`section` AS `section`, `a`.`timestamp` AS `timestamp`, `a`.`allow_comments` AS `allow_comments` FROM `PREFIX_articles` `a`
+        $stmt = $db->prepStmt("SELECT `a`.`id` AS `id`, `a`.`urlname` AS `urlname`, `a`.`title` AS `title`, `a`.`text` AS `text`, `a`.`excerpt` AS `excerpt`, `a`.`meta` AS `meta`, `a`.`custom` AS `custom`, `a`.`article_image` AS `article_image`, `a`.`status` AS `status`, `a`.`section` AS `section`, `a`.`timestamp` AS `timestamp`, `a`.`allow_comments` AS `allow_comments` FROM `PREFIX_articles` `a`
 INNER JOIN `PREFIX_translations` `b` ON `a`.`title` = `b`.`multilingual`
 LEFT OUTER JOIN `PREFIX_article_tag_relations` `c` ON `a`.`id` = `c`.`article`
 WHERE " . implode(" AND ", $subqueries) . " $sorting");
@@ -2891,36 +2893,37 @@ WHERE " . implode(" AND ", $subqueries) . " $sorting");
         return $rv;
     }
 
-    /*
-     * Constructor: all
+    /**
      * Get all articles
      *
-     * Returns:
-     *  Array of Article objects
+     * @param Database|null $db
+     * @return self[]
      */
-    public static function all()
+    public static function all(?Database $db = null): array
     {
+        $db = $db ?? Env::getGlobal()->database();
+
         $rv = [];
-        $stmt = qdb("SELECT `id`, `urlname`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments` FROM `PREFIX_articles` WHERE 1");
+        $stmt = $db->query("SELECT `id`, `urlname`, `title`, `text`, `excerpt`, `meta`, `custom`, `article_image`, `status`, `section`, `timestamp`, `allow_comments` FROM `PREFIX_articles` WHERE 1");
         while ($sqlrow = $stmt->fetch()) {
             $rv[] = self::by_sqlrow($sqlrow);
         }
         return $rv;
     }
 
-    /*
-     * Function: get_comments
+    /**
      * Getting comments for this article.
      *
      * Parameters:
-     *  $limit_lang   - Get only comments in a language (empty string for no limitation, this is the default).
-     *  $only_visible - Do you only want the visible comments? (Default: False)
-     *
-     * Returns:
-     *  Array of <Comment> objects.
+     * @param string $limit_lang Get only comments in a language (empty string for no limitation, this is the default).
+     * @param bool $only_visible Do you only want the visible comments? (Default: False)
+     * @param Database|null $db
+     * @return Comment[]
      */
-    public function get_comments($limit_lang = "", $only_visible = false)
+    public function get_comments($limit_lang = "", $only_visible = false, ?Database $db = null): array
     {
+        $db = $db ?? Env::getGlobal()->database();
+
         $rv = [];
 
         $conditions = ["`article` = ?"];
@@ -2933,7 +2936,7 @@ WHERE " . implode(" AND ", $subqueries) . " $sorting");
             $conditions[] = "`visible` = 1";
         }
 
-        $stmt = prep_stmt("SELECT `id`, `article`, `language`, `author_name`, `author_mail`, `text`, `timestamp`, `visible`, `read_by_admin` FROM `PREFIX_comments` WHERE " . implode(" AND ", $conditions));
+        $stmt = $db->prepStmt("SELECT `id`, `article`, `language`, `author_name`, `author_mail`, `text`, `timestamp`, `visible`, `read_by_admin` FROM `PREFIX_comments` WHERE " . implode(" AND ", $conditions));
         $stmt->execute($arguments);
         while ($sqlrow = $stmt->fetch()) {
             $rv[] = Comment::by_sqlrow($sqlrow);
@@ -2941,43 +2944,44 @@ WHERE " . implode(" AND ", $subqueries) . " $sorting");
         return $rv;
     }
 
-    /*
-     * Function: get_tags
+    /**
      * Get all Tags of this Article.
      *
-     * Returns:
-     *  Array of <Tag> objects.
+     * @return Tag[]
      */
-    public function get_tags()
+    public function get_tags(?Database $db = null): array
     {
+        $db = $db ?? Env::getGlobal()->database();
+
         $rv = [];
-        $stmt = qdb("SELECT `a`.`id` AS `id`, `a`.`name` AS `name`, `a`.`title` AS `title` FROM `PREFIX_tags` `a` INNER JOIN `PREFIX_article_tag_relations` `b` ON `a`.`id` = `b`.`tag` WHERE `b`.`article` = ?", $this->id);
+        $stmt = $db->query("SELECT `a`.`id` AS `id`, `a`.`name` AS `name`, `a`.`title` AS `title` FROM `PREFIX_tags` `a` INNER JOIN `PREFIX_article_tag_relations` `b` ON `a`.`id` = `b`.`tag` WHERE `b`.`article` = ?", $this->id);
         while ($sqlrow = $stmt->fetch()) {
             $rv[] = Tag::by_sqlrow($sqlrow);
         }
         return $rv;
     }
 
-    /*
-     * Function: set_tags
+    /**
      * Set the Tags that should be associated with this Article.
      *
-     * Parameters:
-     *  $tags - Array of <Tag> objects.
+     * @param Tag[] $tags
+     * @param Database|null $db
      */
-    public function set_tags($tags)
+    public function set_tags($tags, ?Database $db = null): void
     {
-        $tx = new Transaction();
+        $db = $db ?? Env::getGlobal()->database();
+
+        $tx = new DbTransaction($db);
         try {
             foreach ($tags as $tag) {
-                $tag->save();
+                $tag->save($db);
             }
 
-            qdb("DELETE FROM `PREFIX_article_tag_relations` WHERE `article`= ?", $this->id);
+            $db->query("DELETE FROM `PREFIX_article_tag_relations` WHERE `article`= ?", $this->id);
 
             $articleid = $this->id;
             if (!empty($tags)) {
-                $stmt = prep_stmt(
+                $stmt = $db->prepStmt(
                     "INSERT INTO `PREFIX_article_tag_relations` (`article`, `tag`) VALUES " .
                     implode(",", array_fill(0, count($tags), "(?,?)"))
                 );
@@ -2995,57 +2999,52 @@ WHERE " . implode(" AND ", $subqueries) . " $sorting");
         }
     }
 
-    /*
-     * Function: get_section
+    /**
      * Get the section of this article.
      *
-     * Returns:
-     *  A <Section> object.
+     * @param Database|null $db
+     * @return Section
      */
-    public function get_section()
+    public function get_section(?Database $db = null): Section
     {
         if ($this->section_obj === null) {
-            $this->section_obj = Section::by_id($this->section_id);
+            $this->section_obj = Section::by_id($this->section_id, $db);
         }
         return $this->section_obj;
     }
 
-    /*
-     * Function: set_section
+    /**
      * Set the section of this article.
      *
-     * Parameters:
-     *  $section - A <Section> object.
+     * @param Section $section
      */
-    public function set_section($section)
+    public function set_section(Section $section): void
     {
         $this->section_id  = $section->get_id();
         $this->section_obj = $section;
     }
 
-    /*
-     * Function: get_extradata
+    /**
      * Get the extradata for this article and the given plugin.
      *
-     * Parameters:
-     *  $plugin_id - The ID of the plugin.
-     *
-     * Returns:
-     *  An <ArticleExtradata> object.
+     * @param int|mixed $plugin_id The ID of the plugin.
+     * @param Database|null $db
+     * @return ArticleExtradata
      */
-    public function get_extradata($plugin_id)
+    public function get_extradata($plugin_id, ?Database $db = null): ArticleExtradata
     {
-        return new ArticleExtradata($this->id, $plugin_id);
+        return new ArticleExtradata($this->id, (int)$plugin_id, $db);
     }
 
-    /*
-     * Function: save
-     *
-     * Throws:
-     *  <AlreadyExistsError>, <InvalidDataError>
+    /**
+     * @param Database|null $db
+     * @throws AlreadyExistsError
+     * @throws InvalidDataError
      */
-    public function save()
+    public function save(?Database $db = null): void
     {
+        $db = $db ?? Env::getGlobal()->database();
+
         if (!self::test_urlname($this->urlname)) {
             throw new InvalidDataError("invalid_urlname");
         }
@@ -3054,19 +3053,19 @@ WHERE " . implode(" AND ", $subqueries) . " $sorting");
             throw new InvalidDataError("invalid_article_status");
         }
 
-        $tx = new Transaction();
+        $tx = new DbTransaction($db);
         try {
-            $stmt = qdb("SELECT COUNT(*) AS `n` FROM `PREFIX_articles` WHERE `urlname` = ? AND `id` != ?", $this->urlname, $this->id);
+            $stmt = $db->query("SELECT COUNT(*) AS `n` FROM `PREFIX_articles` WHERE `urlname` = ? AND `id` != ?", $this->urlname, $this->id);
             $sqlrow = $stmt->fetch();
             if ($sqlrow["n"] > 0) {
                 throw new AlreadyExistsError();
             }
 
-            $this->title->save();
-            $this->text->save();
-            $this->excerpt->save();
+            $this->title->save($db);
+            $this->text->save($db);
+            $this->excerpt->save($db);
 
-            qdb(
+            $db->query(
                 "UPDATE `PREFIX_articles` SET `urlname` = ?, `title` = ?, `text` = ?, `excerpt` = ?, `meta` = ?, `custom` = ?, `article_image` = ?, `status` = ?, `section` = ?, `timestamp` = ?, `allow_comments` = ? WHERE `id` = ?",
                 $this->urlname,
                 $this->title->get_id(),
@@ -3088,24 +3087,26 @@ WHERE " . implode(" AND ", $subqueries) . " $sorting");
         }
     }
 
-    /*
-     * Function: delete
+    /**
+     * @param Database|null $db
      */
-    public function delete()
+    public function delete(?Database $db = null): void
     {
-        $tx = new Transaction();
+        $db = $db ?? Env::getGlobal()->database();
+
+        $tx = new DbTransaction($db);
         try {
-            $this->title->delete();
-            $this->text->delete();
-            $this->excerpt->delete();
+            $this->title->delete($db);
+            $this->text->delete($db);
+            $this->excerpt->delete($db);
 
             foreach ($this->get_comments() as $comment) {
-                $comment->delete();
+                $comment->delete($db);
             }
 
-            qdb("DELETE FROM `PREFIX_article_tag_relations` WHERE `article` = ?", $this->id);
-            qdb("DELETE FROM `PREFIX_article_extradata` WHERE `article` = ?", $this->id);
-            qdb("DELETE FROM `PREFIX_articles` WHERE `id` = ?", $this->id);
+            $db->query("DELETE FROM `PREFIX_article_tag_relations` WHERE `article` = ?", $this->id);
+            $db->query("DELETE FROM `PREFIX_article_extradata` WHERE `article` = ?", $this->id);
+            $db->query("DELETE FROM `PREFIX_articles` WHERE `id` = ?", $this->id);
             $tx->commit();
         } catch (Exception $e) {
             $tx->rollback();
