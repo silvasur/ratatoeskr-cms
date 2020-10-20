@@ -48,7 +48,6 @@ function _ratatoeskr()
     global $backend_subactions, $ste, $url_handlers, $ratatoeskr_settings, $plugin_objs, $api_compat;
 
     session_start();
-    db_connect();
     clean_database();
 
     if (isset($ratatoeskr_settings["debugmode"]) and $ratatoeskr_settings["debugmode"]) {

@@ -47,7 +47,6 @@ if (isset($_POST["apply_setup"])) {
         $config["mysql"]["prefix"] = $_POST["table_prefix"];
 
         try {
-            db_connect();
             create_mysql_tables();
 
             /* Writing some demo data to database */

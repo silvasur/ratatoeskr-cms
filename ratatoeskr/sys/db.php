@@ -20,24 +20,6 @@ if (!defined("SETUP")) {
 
 require_once(dirname(__FILE__) . "/utils.php");
 
-// The global database connection.
-// It's usage is deprecated, use the Database object supplied by Env::database() instead.
-/** @var PDO|null $db_con */
-$db_con = null;
-
-/**
- * Establish the global connection to the MySQL database.
- * This sets the global {@see $db_con}.
- *
- * @deprecated Use the {@see Database} object supplied by {@see Env::database()} instead.
- */
-function db_connect(): void
-{
-    global $db_con;
-
-    $db_con = Env::getGlobal()->database()->getPdo();
-}
-
 /**
  * Substitutes "PREFIX_" in the input string with the prefix from the config.
  *
@@ -51,21 +33,7 @@ function sub_prefix($q): string
 }
 
 /**
- * Prepares a SQL statement using the global DB connection.
- * This will also replace "PREFIX_" with the prefix defined in 'config.php'.
- *
- * @param mixed|string $q The query / statement to prepare.
- * @return PDOStatement
- *
- * @deprecated Use {@see Database::prepStmt()} instead.
- */
-function prep_stmt($q): PDOStatement
-{
-    return Env::getGlobal()->database()->prepStmt((string)$q);
-}
-
-/**
- * Prepares statement (1st argument) with {@see prep_stmt()} and executes it with the remaining arguments.
+ * Prepares statement (1st argument) like {@see Database::prepStmt()} and executes it with the remaining arguments.
  *
  * @param mixed ...$args
  * @return PDOStatement

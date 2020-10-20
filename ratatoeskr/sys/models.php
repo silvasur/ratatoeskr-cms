@@ -20,8 +20,6 @@ require_once(dirname(__FILE__) . "/utils.php");
 require_once(dirname(__FILE__) . "/textprocessors.php");
 require_once(dirname(__FILE__) . "/pluginpackage.php");
 
-db_connect();
-
 /*
  * Array: $imagetype_file_extensions
  * Array of default file extensions for most IMAGETYPE_* constants
