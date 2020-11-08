@@ -110,4 +110,24 @@ class Database
     {
         return (int)$this->pdo->lastInsertId();
     }
+
+    /**
+     * Get the version of the database structure currently used.
+     * @return int
+     */
+    public function dbversion(): int
+    {
+        $tableName = $this->subPrefix("PREFIX_meta");
+
+        /* Is the meta table present? If no, the version is 0. */
+        $stmt = $this->query("SHOW TABLES LIKE ?", $tableName);
+        list($table) = $stmt->fetch();
+        if ($table != $tableName) {
+            return 0;
+        }
+
+        $stmt = $this->query("SELECT `value` FROM `PREFIX_meta` WHERE `key` = 'dbversion'");
+        $sqlrow = $stmt->fetch();
+        return (int)unserialize(base64_decode($sqlrow["value"]));
+    }
 }

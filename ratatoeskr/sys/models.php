@@ -3173,33 +3173,6 @@ class ArticleExtradata extends KVStorage
 }
 
 /*
- * Function: dbversion
- * Get the version of the database structure currently used.
- *
- * Returns:
- *  The numerical version of the current database structure.
- */
-function dbversion()
-{
-    global $config;
-
-    /* Is the meta table present? If no, the version is 0. */
-    $stmt = qdb(
-        "SELECT COUNT(*) FROM `information_schema`.`tables` WHERE `table_schema` = ? AND `table_name` = ?",
-        $config["mysql"]["db"],
-        sub_prefix("PREFIX_meta")
-    );
-    list($n) = $stmt->fetch();
-    if ($n == 0) {
-        return 0;
-    }
-
-    $stmt = qdb("SELECT `value` FROM `PREFIX_meta` WHERE `key` = 'dbversion'");
-    $sqlrow = $stmt->fetch();
-    return unserialize(base64_decode($sqlrow["value"]));
-}
-
-/*
  * Function: clean_database
  * Clean up the database
  */
