@@ -1586,17 +1586,6 @@ class Plugin extends BySQLRowEnabled
             delete_directory(SITE_BASE_PATH . "/ratatoeskr/templates/src/plugintemplates/" . $this->id);
         }
     }
-
-    /**
-     * Get the KeyValue Storage for the plugin.
-     *
-     * @param Database|null $db
-     * @return PluginKVStorage
-     */
-    public function get_kvstorage(?Database $db = null): PluginKVStorage
-    {
-        return new PluginKVStorage($this->id, $db);
-    }
 }
 
 /**
