@@ -762,8 +762,7 @@ class SettingsIterator implements Iterator
     }
 }
 
-/*
- * Class: Settings
+/**
  * A class that holds the Settings of Ratatöskr.
  * You can access settings like an array.
  */
@@ -774,29 +773,39 @@ class Settings implements ArrayAccess, IteratorAggregate, Countable
     {
     }
     private static $instance = null;
-    /*
-     * Constructor: get_instance
+
+    /**
      * Get an instance of this class.
      * All instances are equal (ie. this is a singleton), so you can also use
-     * the global <$ratatoeskr_settings> instance.
+     * the global $ratatoeskr_settings instance.
+     *
+     * @param Database|null $db
+     * @return self
      */
-    public static function get_instance()
+    public static function get_instance(?Database $db = null): self
     {
+        $db = $db ?? Env::getGlobal()->database();
+
         if (self::$instance === null) {
-            self::$instance = new self;
+            self::$instance = new self($db);
         }
         return self::$instance;
     }
+
+    /** @var Database */
+    private $db;
 
     private $buffer;
     private $to_be_deleted;
     private $to_be_created;
     private $to_be_updated;
 
-    private function __construct()
+    private function __construct(Database $db)
     {
+        $this->db = $db;
+
         $this->buffer = [];
-        $stmt = qdb("SELECT `key`, `value` FROM `PREFIX_settings_kvstorage` WHERE 1");
+        $stmt = $this->db->query("SELECT `key`, `value` FROM `PREFIX_settings_kvstorage` WHERE 1");
         while ($sqlrow = $stmt->fetch()) {
             $this->buffer[$sqlrow["key"]] = unserialize(base64_decode($sqlrow["value"]));
         }
@@ -808,16 +817,16 @@ class Settings implements ArrayAccess, IteratorAggregate, Countable
 
     public function save()
     {
-        $tx = new Transaction();
+        $tx = new DbTransaction($this->db);
         try {
             foreach ($this->to_be_deleted as $k) {
-                qdb("DELETE FROM `PREFIX_settings_kvstorage` WHERE `key` = ?", $k);
+                $this->db->query("DELETE FROM `PREFIX_settings_kvstorage` WHERE `key` = ?", $k);
             }
             foreach ($this->to_be_updated as $k) {
-                qdb("UPDATE `PREFIX_settings_kvstorage` SET `value` = ? WHERE `key` = ?", base64_encode(serialize($this->buffer[$k])), $k);
+                $this->db->query("UPDATE `PREFIX_settings_kvstorage` SET `value` = ? WHERE `key` = ?", base64_encode(serialize($this->buffer[$k])), $k);
             }
             foreach ($this->to_be_created as $k) {
-                qdb("INSERT INTO `PREFIX_settings_kvstorage` (`key`, `value`) VALUES (?, ?)", $k, base64_encode(serialize($this->buffer[$k])));
+                $this->db->query("INSERT INTO `PREFIX_settings_kvstorage` (`key`, `value`) VALUES (?, ?)", $k, base64_encode(serialize($this->buffer[$k])));
             }
 
             $this->to_be_created = [];
