@@ -10,26 +10,6 @@
  * See "ratatoeskr/licenses/ratatoeskr" for more information.
  */
 
-/*
- * Function: array_repeat
- *
- * Parameters:
- *
- *  $val -
- *  $n   -
- *
- * Returns:
- *
- *  An array with $val $n-times repeated.
- */
-function array_repeat($val, $n)
-{
-    $rv = [];
-    for ($i = 0; $i < $n; ++$i) {
-        array_push($rv, $val);
-    }
-    return $rv;
-}
 
 /*
  * Function: intcmp

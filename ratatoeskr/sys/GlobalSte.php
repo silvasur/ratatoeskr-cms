@@ -49,7 +49,9 @@ class GlobalSte
         $repeats = empty($params["repeat"]) ? 1 : $params["repeat"] + 0;
         return implode(
             "\n\n",
-            array_repeat(
+            array_fill(
+                0,
+                $repeats,
                 "<p>Lorem ipsum dolor sit amet, consectetur adipisici elit, "
                 . "sed eiusmod tempor incidunt ut labore et dolore magna "
                 . "aliqua. Ut enim ad minim veniam, quis nostrud exercitation "
@@ -112,8 +114,7 @@ class GlobalSte
                 . "dolore magna aliquyam erat, sed diam voluptua. At vero eos "
                 . "et accusam et justo duo dolores et ea rebum. Stet clita "
                 . "kasd gubergren, no sea takimata sanctus est Lorem ipsum "
-                . "dolor sit amet.</p>",
-                $repeats
+                . "dolor sit amet.</p>"
             )
         );
     }

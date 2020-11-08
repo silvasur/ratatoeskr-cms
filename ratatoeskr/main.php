@@ -94,7 +94,7 @@ function _ratatoeskr()
     }));
 
     $urlpath = explode("/", @$_GET["action"]);
-    $rel_path_to_root = implode("/", array_merge(["."], array_repeat("..", count($urlpath) - 1)));
+    $rel_path_to_root = implode("/", array_merge(["."], array_fill(0, count($urlpath) - 1, "..")));
     $GLOBALS["rel_path_to_root"] = $rel_path_to_root;
     $data = ["rel_path_to_root" => $rel_path_to_root];
     $ste->vars["rel_path_to_root"] = $rel_path_to_root;
