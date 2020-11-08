@@ -381,7 +381,7 @@ $ste->register_tag("article_comments", function ($ste, $params, $sub) {
 
     $sortdir = (@$params["sort"] == "desc") ? -1 : 1;
     usort($comments, function ($a, $b) use ($sortdir) {
-        return intcmp($a->get_timestamp(), $b->get_timestamp()) * $sortdir;
+        return ($a->get_timestamp() <=> $b->get_timestamp()) * $sortdir;
     });
 
     $comments = array_map("comment_transform_ste", $comments);

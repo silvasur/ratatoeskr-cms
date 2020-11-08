@@ -10,15 +10,6 @@
  * See "ratatoeskr/licenses/ratatoeskr" for more information.
  */
 
-
-/*
- * Function: intcmp
- * Compare integers (equavilent to strcmp)
- */
-function intcmp($a, $b)
-{
-    return ($a == $b) ? 0 : (($a < $b) ? -1 : 1);
-}
 /*
  * Function: delete_directory
  * Delete a directory and all of its content.

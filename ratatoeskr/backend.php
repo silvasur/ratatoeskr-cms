@@ -602,7 +602,7 @@ function build_backend_subactions()
                         $ste->vars["sort_asc_date"] = true;
                         $ste->vars["sorting"] = ["dir" => "asc", "by" => "date"];
                         usort($articles, function ($a, $b) {
-                            return intcmp($a->timestamp, $b->timestamp);
+                            return $a->timestamp <=> $b->timestamp;
                         });
                         break;
                     case "section":
@@ -631,7 +631,7 @@ function build_backend_subactions()
                         $ste->vars["sort_desc_date"] = true;
                         $ste->vars["sorting"] = ["dir" => "desc", "by" => "date"];
                         usort($articles, function ($a, $b) {
-                            return intcmp($b->timestamp, $a->timestamp);
+                            return $b->timestamp <=> $a->timestamp;
                         });
                         break;
                     case "section":
@@ -914,13 +914,13 @@ function build_backend_subactions()
                     break;
                 case "date":
                     usort($comments, function ($a, $b) use ($sort_dir) {
-                        return intcmp($a->get_timestamp(), $b->get_timestamp()) * $sort_dir;
+                        return ($a->get_timestamp() <=> $b->get_timestamp()) * $sort_dir;
                     });
                     break;
                 case "was_read":
                 default:
                     usort($comments, function ($a, $b) use ($sort_dir) {
-                        return intcmp((int) $a->read_by_admin, (int) $b->read_by_admin) * $sort_dir;
+                        return ((int)$a->read_by_admin <=> (int)$b->read_by_admin) * $sort_dir;
                     });
                     $sort_by = "was_read";
                     break;
