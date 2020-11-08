@@ -22,9 +22,6 @@
  *
  *  An array with $val $n-times repeated.
  */
-
-use r7r\cms\sys\Esc;
-
 function array_repeat($val, $n)
 {
     $rv = [];
@@ -42,19 +39,6 @@ function intcmp($a, $b)
 {
     return ($a == $b) ? 0 : (($a < $b) ? -1 : 1);
 }
-
-/**
- * Escape HTML (shorter than htmlspecialchars)
- *
- * @param mixed $text Input text
- * @return string HTML
- * @deprecated Use {@see Esc::esc()} instead.
- */
-function htmlesc($text): string
-{
-    return Esc::esc($text);
-}
-
 /*
  * Function: delete_directory
  * Delete a directory and all of its content.
