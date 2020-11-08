@@ -50,7 +50,7 @@ function dir2array($dir)
 function array2dir($a, $dir)
 {
     if (!is_dir($dir)) {
-        mkdir($dir);
+        mkdir($dir, 0777, true);
     }
 
     foreach ($a as $k => $v) {
