@@ -1,12 +1,17 @@
 <?php
 
+use r7r\cms\sys\Database;
+use r7r\cms\sys\Env;
+
 if (!defined("SETUP")) {
     die();
 }
 
 require_once(dirname(__FILE__) . "/../sys/db.php");
 
-$sql_tables = <<<SQL
+function create_mysql_tables(?Database $db = null): void
+{
+    $sql_tables = <<<SQL
 CREATE TABLE IF NOT EXISTS `PREFIX_articles` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `urlname` text COLLATE utf8_unicode_ci NOT NULL,
@@ -164,16 +169,14 @@ CREATE TABLE IF NOT EXISTS `PREFIX_article_extradata` (
 ) DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 SQL;
 
-function create_mysql_tables()
-{
-    global $sql_tables;
+    $db = $db ?? Env::getGlobal()->database();
 
     $queries = explode(";", $sql_tables);
     foreach ($queries as $q) {
         if (!empty($q)) {
-            qdb($q);
+            $db->query($q);
         }
     }
 
-    qdb("INSERT INTO `PREFIX_meta` (`key`, `value`) VALUES ('dbversion', ?)", base64_encode(serialize(1)));
+    $db->query("INSERT INTO `PREFIX_meta` (`key`, `value`) VALUES ('dbversion', ?)", base64_encode(serialize(1)));
 }
