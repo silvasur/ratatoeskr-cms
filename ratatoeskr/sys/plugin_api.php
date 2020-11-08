@@ -96,7 +96,7 @@ abstract class RatatoeskrPlugin
      */
     final protected function get_custompriv_dir()
     {
-        return SITE_BASE_PATH . "/ratatoeskr/plugin_extradata/private/" . $this->id;
+        return $this->env->siteBasePath() . "/ratatoeskr/plugin_extradata/private/" . $this->id;
     }
 
     /**
@@ -105,7 +105,7 @@ abstract class RatatoeskrPlugin
      */
     final protected function get_custompub_dir()
     {
-        return SITE_BASE_PATH . "/ratatoeskr/plugin_extradata/public/" . $this->id;
+        return $this->env->siteBasePath() . "/ratatoeskr/plugin_extradata/public/" . $this->id;
     }
 
     /**

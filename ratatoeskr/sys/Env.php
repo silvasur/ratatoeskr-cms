@@ -43,4 +43,15 @@ class Env
             return Database::fromConfig($config);
         });
     }
+
+    /**
+     * The Base path of this ratatoeskr site.
+     * @return string
+     */
+    public function siteBasePath(): string
+    {
+        return $this->lazy("siteBasePath", static function () {
+            return dirname(dirname(dirname(__FILE__)));
+        });
+    }
 }

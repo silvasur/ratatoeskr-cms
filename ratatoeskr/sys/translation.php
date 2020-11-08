@@ -12,7 +12,6 @@
 use r7r\ste;
 use r7r\cms\sys\Esc;
 
-require_once(dirname(__FILE__) . "/utils.php");
 require_once(dirname(__FILE__) . "/init_ste.php");
 
 /** @var ste\STECore $ste */

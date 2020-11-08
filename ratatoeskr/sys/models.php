@@ -16,7 +16,6 @@ use r7r\cms\sys\Database;
 use r7r\cms\sys\DbTransaction;
 
 require_once(dirname(__FILE__) . "/db.php");
-require_once(dirname(__FILE__) . "/utils.php");
 require_once(dirname(__FILE__) . "/textprocessors.php");
 require_once(dirname(__FILE__) . "/pluginpackage.php");
 
@@ -1613,9 +1612,10 @@ class Plugin
         rmdir($dir);
     }
 
-    public function delete(?Database $db = null): void
+    public function delete(?Database $db = null, ?Env $env = null): void
     {
-        $db = $db ?? Env::getGlobal()->database();
+        $env = $env ?? Env::getGlobal();
+        $db = $db ?? $env->database();
 
         $tx = new DbTransaction($db);
         try {
@@ -1628,14 +1628,14 @@ class Plugin
             throw $e;
         }
 
-        if (is_dir(SITE_BASE_PATH . "/ratatoeskr/plugin_extradata/private/" . $this->id)) {
-            self::delete_directory(SITE_BASE_PATH . "/ratatoeskr/plugin_extradata/private/" . $this->id);
+        if (is_dir($env->siteBasePath() . "/ratatoeskr/plugin_extradata/private/" . $this->id)) {
+            self::delete_directory($env->siteBasePath() . "/ratatoeskr/plugin_extradata/private/" . $this->id);
         }
-        if (is_dir(SITE_BASE_PATH . "/ratatoeskr/plugin_extradata/public/" . $this->id)) {
-            self::delete_directory(SITE_BASE_PATH . "/ratatoeskr/plugin_extradata/public/" . $this->id);
+        if (is_dir($env->siteBasePath() . "/ratatoeskr/plugin_extradata/public/" . $this->id)) {
+            self::delete_directory($env->siteBasePath() . "/ratatoeskr/plugin_extradata/public/" . $this->id);
         }
-        if (is_dir(SITE_BASE_PATH . "/ratatoeskr/templates/src/plugintemplates/" . $this->id)) {
-            self::delete_directory(SITE_BASE_PATH . "/ratatoeskr/templates/src/plugintemplates/" . $this->id);
+        if (is_dir($env->siteBasePath() . "/ratatoeskr/templates/src/plugintemplates/" . $this->id)) {
+            self::delete_directory($env->siteBasePath() . "/ratatoeskr/templates/src/plugintemplates/" . $this->id);
         }
     }
 }
@@ -2281,11 +2281,15 @@ class Image extends BySQLRowEnabled
      *
      * @param string|mixed $file - Location of new image (move_uploaded_file must be able to move the file!)
      * @param Database|null $db
+     * @param Env|null $env
      * @throws IOError
      * @throws UnknownFileFormat
      */
-    public function exchange_image($file, ?Database $db = null): void
+    public function exchange_image($file, ?Database $db = null, ?Env $env = null): void
     {
+        $env = $env ?? Env::getGlobal();
+        $db = $db ?? $env->database();
+
         $file = (string)$file;
 
         if (!is_file($file)) {
@@ -2298,11 +2302,11 @@ class Image extends BySQLRowEnabled
         if (!isset(self::IMAGETYPE_FILE_EXTENSIONS[$imageinfo[2]])) {
             throw new UnknownFileFormat();
         }
-        if (is_file(SITE_BASE_PATH . "/images/" . $this->filename)) {
-            unlink(SITE_BASE_PATH . "/images/" . $this->filename);
+        if (is_file($env->siteBasePath() . "/images/" . $this->filename)) {
+            unlink($env->siteBasePath() . "/images/" . $this->filename);
         }
         $new_fn = $this->id . "." . self::IMAGETYPE_FILE_EXTENSIONS[$imageinfo[2]];
-        if (!move_uploaded_file($file, SITE_BASE_PATH . "/images/" . $new_fn)) {
+        if (!move_uploaded_file($file, $env->siteBasePath() . "/images/" . $new_fn)) {
             throw new IOError("Can not move file.");
         }
         $this->filename = $new_fn;
@@ -2310,9 +2314,9 @@ class Image extends BySQLRowEnabled
 
         /* make preview image */
         switch ($imageinfo[2]) {
-            case IMAGETYPE_GIF:  $img = imagecreatefromgif(SITE_BASE_PATH . "/images/" . $new_fn); break;
-            case IMAGETYPE_JPEG: $img = imagecreatefromjpeg(SITE_BASE_PATH . "/images/" . $new_fn); break;
-            case IMAGETYPE_PNG:  $img = imagecreatefrompng(SITE_BASE_PATH . "/images/" . $new_fn); break;
+            case IMAGETYPE_GIF:  $img = imagecreatefromgif($env->siteBasePath() . "/images/" . $new_fn); break;
+            case IMAGETYPE_JPEG: $img = imagecreatefromjpeg($env->siteBasePath() . "/images/" . $new_fn); break;
+            case IMAGETYPE_PNG:  $img = imagecreatefrompng($env->siteBasePath() . "/images/" . $new_fn); break;
             default: $img = imagecreatetruecolor(40, 40); imagefill($img, 1, 1, imagecolorallocate($img, 127, 127, 127)); break;
         }
         $w_orig = imagesx($img);
@@ -2328,9 +2332,9 @@ class Image extends BySQLRowEnabled
             }
             $preview = imagecreatetruecolor($w_new, $h_new);
             imagecopyresized($preview, $img, 0, 0, 0, 0, $w_new, $h_new, $w_orig, $h_orig);
-            imagepng($preview, SITE_BASE_PATH . "/images/previews/{$this->id}.png");
+            imagepng($preview, $env->siteBasePath() . "/images/previews/{$this->id}.png");
         } else {
-            imagepng($img, SITE_BASE_PATH . "/images/previews/{$this->id}.png");
+            imagepng($img, $env->siteBasePath() . "/images/previews/{$this->id}.png");
         }
     }
 
@@ -2346,16 +2350,17 @@ class Image extends BySQLRowEnabled
         );
     }
 
-    public function delete(?Database $db = null): void
+    public function delete(?Database $db = null, ?Env $env = null): void
     {
-        $db = $db ?? Env::getGlobal()->database();
+        $env = $env ?? Env::getGlobal();
+        $db = $db ?? $env->database();
 
         $db->query("DELETE FROM `PREFIX_images` WHERE `id` = ?", $this->id);
-        if (is_file(SITE_BASE_PATH . "/images/" . $this->filename)) {
-            unlink(SITE_BASE_PATH . "/images/" . $this->filename);
+        if (is_file($env->siteBasePath() . "/images/" . $this->filename)) {
+            unlink($env->siteBasePath() . "/images/" . $this->filename);
         }
-        if (is_file(SITE_BASE_PATH . "/images/previews/{$this->id}.png")) {
-            unlink(SITE_BASE_PATH . "/images/previews/{$this->id}.png");
+        if (is_file($env->siteBasePath() . "/images/previews/{$this->id}.png")) {
+            unlink($env->siteBasePath() . "/images/previews/{$this->id}.png");
         }
     }
 }

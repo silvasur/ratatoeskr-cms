@@ -949,6 +949,8 @@ function build_backend_subactions()
         "templates" => function (&$data, $url_now, &$url_next) {
             global $ste, $translation;
 
+            $env = Env::getGlobal();
+
             list($template) = $url_next;
 
             $url_next = [];
@@ -961,11 +963,11 @@ function build_backend_subactions()
                 if (preg_match("/^[a-zA-Z0-9\\-_\\.]+$/", $template) == 0) { /* Prevent a possible LFI attack. */
                     throw new NotFoundError();
                 }
-                if (!is_file(SITE_BASE_PATH . "/ratatoeskr/templates/src/usertemplates/$template")) {
+                if (!is_file($env->siteBasePath() . "/ratatoeskr/templates/src/usertemplates/$template")) {
                     throw new NotFoundError();
                 }
                 $ste->vars["template_name"] = $template;
-                $ste->vars["template_code"] = file_get_contents(SITE_BASE_PATH . "/ratatoeskr/templates/src/usertemplates/$template");
+                $ste->vars["template_code"] = file_get_contents($env->siteBasePath() . "/ratatoeskr/templates/src/usertemplates/$template");
             }
 
             /* Was there a delete request? */
@@ -974,8 +976,8 @@ function build_backend_subactions()
                     if (preg_match("/^[a-zA-Z0-9\\-_\\.]+$/", $tplname) == 0) { /* Prevent a possible LFI attack. */
                         continue;
                     }
-                    if (is_file(SITE_BASE_PATH . "/ratatoeskr/templates/src/usertemplates/$tplname")) {
-                        @unlink(SITE_BASE_PATH . "/ratatoeskr/templates/src/usertemplates/$tplname");
+                    if (is_file($env->siteBasePath() . "/ratatoeskr/templates/src/usertemplates/$tplname")) {
+                        @unlink($env->siteBasePath() . "/ratatoeskr/templates/src/usertemplates/$tplname");
                     }
                 }
                 $ste->vars["success"] = $translation["templates_successfully_deleted"];
@@ -989,7 +991,7 @@ function build_backend_subactions()
 
                     try {
                         Transcompiler::transcompile(Parser::parse($_POST["template_code"], $_POST["template_name"]));
-                        file_put_contents(SITE_BASE_PATH . "/ratatoeskr/templates/src/usertemplates/" . $_POST["template_name"], $_POST["template_code"]);
+                        file_put_contents($env->siteBasePath() . "/ratatoeskr/templates/src/usertemplates/" . $_POST["template_name"], $_POST["template_code"]);
                         $ste->vars["success"] = $translation["template_successfully_saved"];
                     } catch (ParseCompileError $e) {
                         $e->rewrite($_POST["template_code"]);
@@ -1002,7 +1004,7 @@ function build_backend_subactions()
 
             /* Get all templates */
             $ste->vars["templates"] = [];
-            $tpldir = new DirectoryIterator(SITE_BASE_PATH . "/ratatoeskr/templates/src/usertemplates");
+            $tpldir = new DirectoryIterator($env->siteBasePath() . "/ratatoeskr/templates/src/usertemplates");
             foreach ($tpldir as $fo) {
                 if ($fo->isFile()) {
                     $ste->vars["templates"][] = $fo->getFilename();
@@ -1078,6 +1080,8 @@ function build_backend_subactions()
         "sections" => function (&$data, $url_now, &$url_next) {
             global $ste, $translation, $languages, $ratatoeskr_settings;
 
+            $env = Env::getGlobal();
+
             $url_next = [];
 
             $ste->vars["section"]   = "design";
@@ -1090,7 +1094,7 @@ function build_backend_subactions()
                     Section::by_name($_POST["section_name"]);
                     $ste->vars["error"] = $translation["section_already_exists"];
                 } catch (DoesNotExistError $e) {
-                    if ((preg_match("/^[a-zA-Z0-9\\-_\\.]+$/", $_POST["template"]) == 0) or (!is_file(SITE_BASE_PATH . "/ratatoeskr/templates/src/usertemplates/{$_POST['template']}"))) {
+                    if ((preg_match("/^[a-zA-Z0-9\\-_\\.]+$/", $_POST["template"]) == 0) or (!is_file($env->siteBasePath() . "/ratatoeskr/templates/src/usertemplates/{$_POST['template']}"))) {
                         $ste->vars["error"] = $translation["unknown_template"];
                     } elseif (!Section::test_name($_POST["section_name"])) {
                         $ste->vars["error"] = $translation["invalid_section_name"];
@@ -1149,7 +1153,7 @@ function build_backend_subactions()
             if (isset($_POST["set_template"]) and isset($_POST["section_select"])) {
                 try {
                     $section = Section::by_name($_POST["section_select"]);
-                    if ((preg_match("/^[a-zA-Z0-9\\-_\\.]+$/", $_POST["set_template_to"]) == 0) or (!is_file(SITE_BASE_PATH . "/ratatoeskr/templates/src/usertemplates/{$_POST['set_template_to']}"))) {
+                    if ((preg_match("/^[a-zA-Z0-9\\-_\\.]+$/", $_POST["set_template_to"]) == 0) or (!is_file($env->siteBasePath() . "/ratatoeskr/templates/src/usertemplates/{$_POST['set_template_to']}"))) {
                         $ste->vars["error"] = $translation["unknown_template"];
                     } else {
                         $section->template = $_POST["set_template_to"];
@@ -1192,7 +1196,7 @@ function build_backend_subactions()
 
             /* Get all templates */
             $ste->vars["templates"] = [];
-            $tpldir = new DirectoryIterator(SITE_BASE_PATH . "/ratatoeskr/templates/src/usertemplates");
+            $tpldir = new DirectoryIterator($env->siteBasePath() . "/ratatoeskr/templates/src/usertemplates");
             foreach ($tpldir as $fo) {
                 if ($fo->isFile()) {
                     $ste->vars["templates"][] = $fo->getFilename();
