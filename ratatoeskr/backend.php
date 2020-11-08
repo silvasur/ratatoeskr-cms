@@ -379,7 +379,7 @@ function build_backend_subactions()
                 $inputs["date"] = time();
             }
             if (!isset($inputs["article_status"])) {
-                $inputs["article_status"] = ARTICLE_STATUS_LIVE;
+                $inputs["article_status"] = Article::STATUS_LIVE;
             }
 
             /* Push data back to template */

@@ -169,7 +169,7 @@ function comment_transform_ste($comment)
  *  urlname    - (optional)  Filter by urlname.
  *  section    - (optional)  Filter by section (section name).
  *  sectionvar - (optional)  Filter by section (Name of variable that contains a section).
- *  status     - (optional)  Filter by status (numeric, <ARTICLE_STATUS_>).
+ *  status     - (optional)  Filter by status (numeric, <Article::STATUS_>).
  *  tag        - (optional)  Filter by tag (tag name).
  *  tagvar     - (optional)  Filter by tag (Name of variable that contains a tag).
  *  sort       - (optional)  How to sort. Format: "fieldname direction" where fieldname is one of [id, urlname, title, timestamp] and direction is one of [asc, desc].

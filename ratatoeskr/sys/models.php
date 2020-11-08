@@ -36,18 +36,6 @@ require_once(dirname(__FILE__) . "/pluginpackage.php");
 $ratatoeskr_settings = null;
 
 /*
- * Constants: ARTICLE_STATUS_
- * Possible <Article>::$status values.
- *
- * ARTICLE_STATUS_HIDDEN - Article is hidden (Numeric: 0)
- * ARTICLE_STATUS_LIVE   - Article is visible / live (Numeric: 1)
- * ARTICLE_STATUS_STICKY - Article is sticky (Numeric: 2)
- */
-define("ARTICLE_STATUS_HIDDEN", 0);
-define("ARTICLE_STATUS_LIVE", 1);
-define("ARTICLE_STATUS_STICKY", 2);
-
-/*
  * Class: DoesNotExistError
  * This Exception is thrown by an ::by_*-constructor or any array-like object if the desired object is not present in the database.
  */
@@ -2636,6 +2624,15 @@ class Repository extends BySQLRowEnabled
  */
 class Article extends BySQLRowEnabled
 {
+    /** @var int Article is hidden (Numeric: 0) */
+    public const STATUS_HIDDEN = 0;
+
+    /** @var int Article is visible / live (Numeric: 1) */
+    public const STATUS_LIVE = 1;
+
+    /** @var int Article is sticky (Numeric: 2) */
+    public const STATUS_STICKY = 2;
+
     /** @var int */
     private $id;
 
@@ -2666,7 +2663,7 @@ class Article extends BySQLRowEnabled
     /** @var Image|null The article image. If none: null */
     public $article_image = null;
 
-    /** @var int One of the ARTICLE_STATUS_* constants */
+    /** @var int One of the self::STATUS_* constants */
     public $status;
 
     /** @var int Timestamp */
@@ -2750,7 +2747,7 @@ class Article extends BySQLRowEnabled
             $obj->meta           = "";
             $obj->custom         = [];
             $obj->article_image  = null;
-            $obj->status         = ARTICLE_STATUS_HIDDEN;
+            $obj->status         = self::STATUS_HIDDEN;
             $obj->section_id     = $ratatoeskr_settings["default_section"];
             $obj->timestamp      = time();
             $obj->allow_comments = $ratatoeskr_settings["allow_comments_default"];

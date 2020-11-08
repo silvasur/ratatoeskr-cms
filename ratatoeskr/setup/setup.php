@@ -228,7 +228,7 @@ STYLE;
             $article->title["en"] = new Translation("Congratulations! You have just installed Ratatöskr!", "");
             $article->text["en"] = new Translation("Congratulations! You have just installed Ratatöskr!", "Markdown");
             $article->excerpt["en"] = new Translation("Congratulations! You have just installed Ratatöskr!", "Markdown");
-            $article->status = ARTICLE_STATUS_LIVE;
+            $article->status = Article::STATUS_LIVE;
             $article->timestamp = time();
             $article->allow_comments = true;
             $article->set_section($section);
