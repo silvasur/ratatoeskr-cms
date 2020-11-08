@@ -12,7 +12,6 @@ $dirs = [
     "/ratatoeskr/templates/src/systemtemplates" => false,
     "/ratatoeskr/translations"                  => false,
     "/ratatoeskr/licenses"                      => false,
-    "/ratatoeskr/libs"                          => false,
     "/ratatoeskr/sys"                           => false,
     "/ratatoeskr/setup"                         => false,
     "/ratatoeskr/cms_style"                     => false,
