@@ -1367,7 +1367,7 @@ class Style extends BySQLRowEnabled
 /**
  * The representation of a plugin in the database.
  */
-class Plugin extends BySQLRowEnabled
+class Plugin
 {
     /** @var int */
     private $id;
@@ -1417,6 +1417,11 @@ class Plugin extends BySQLRowEnabled
     /** @var int The API version this Plugin needs. */
     public $api;
 
+    private function __construct(int $id)
+    {
+        $this->id = $id;
+    }
+
     /**
      * Performs some datadase cleanup jobs on the plugin table.
      * @param Database|null $db
@@ -1434,16 +1439,54 @@ class Plugin extends BySQLRowEnabled
 
     /**
      * Creates a new, empty plugin database entry
+     * @param PluginPackage $pkg Must be a valid package, see {@see PluginPackage::validate()}.
      * @param Database|null $db
-     * @return Plugin
+     * @return self
+     * @throws InvalidPackage
      */
-    public static function create(?Database $db = null): self
+    public static function create(PluginPackage $pkg, ?Database $db = null): self
     {
+        $pkg->validate();
+
         $db = $db ?? Env::getGlobal()->database();
 
-        $obj = new self();
-        $db->query("INSERT INTO `PREFIX_plugins` (`added`) VALUES (?)", time());
-        $obj->id = $db->lastInsertId();
+        $db->query(
+            "INSERT INTO `PREFIX_plugins` SET
+                `name` = ?,
+                `author` = ?,
+                `versiontext` = ?,
+                `versioncount` = ?,
+                `short_description` = ?,
+                `updatepath` = ?,
+                `web` = ?,
+                `license` = ?,
+                `help` = ?,
+                `code` = ?,
+                `classname` = ?,
+                `active` = 0,
+                `installed` = 0,
+                `added` = ?,
+                `update` = ?,
+                `api` = ?
+            ",
+            $pkg->name,
+            $pkg->author,
+            $pkg->versiontext,
+            $pkg->versioncount,
+            $pkg->short_description,
+            $pkg->updatepath ?? '',
+            $pkg->web ?? '',
+            $pkg->license ?? '',
+            $pkg->help ?? '',
+            $pkg->code,
+            $pkg->classname,
+            time(),
+            0,
+            $pkg->api
+        );
+
+        $obj = new self($db->lastInsertId());
+        $obj->fill_from_pluginpackage($pkg);
         return $obj;
     }
 
@@ -1477,24 +1520,26 @@ class Plugin extends BySQLRowEnabled
         }
     }
 
-    protected function populate_by_sqlrow($sqlrow): void
+    private static function by_sqlrow(array $row): self
     {
-        $this->id                = (int)$sqlrow["id"];
-        $this->name              = (string)$sqlrow["name"];
-        $this->code              = (string)$sqlrow["code"];
-        $this->classname         = (string)$sqlrow["classname"];
-        $this->active            = ($sqlrow["active"] == 1);
-        $this->author            = (string)$sqlrow["author"];
-        $this->versiontext       = (string)$sqlrow["versiontext"];
-        $this->versioncount      = (int)$sqlrow["versioncount"];
-        $this->short_description = (string)$sqlrow["short_description"];
-        $this->updatepath        = (string)$sqlrow["updatepath"];
-        $this->web               = (string)$sqlrow["web"];
-        $this->help              = (string)$sqlrow["help"];
-        $this->license           = (string)$sqlrow["license"];
-        $this->installed         = ($sqlrow["installed"] == 1);
-        $this->update            = ($sqlrow["update"] == 1);
-        $this->api               = (string)$sqlrow["api"];
+        $obj = new self((int)$row["id"]);
+        $obj->name              = (string)$row["name"];
+        $obj->code              = (string)$row["code"];
+        $obj->classname         = (string)$row["classname"];
+        $obj->active            = ($row["active"] == 1);
+        $obj->author            = (string)$row["author"];
+        $obj->versiontext       = (string)$row["versiontext"];
+        $obj->versioncount      = (int)$row["versioncount"];
+        $obj->short_description = (string)$row["short_description"];
+        $obj->updatepath        = (string)$row["updatepath"];
+        $obj->web               = (string)$row["web"];
+        $obj->help              = (string)$row["help"];
+        $obj->license           = (string)$row["license"];
+        $obj->installed         = ($row["installed"] == 1);
+        $obj->update            = ($row["update"] == 1);
+        $obj->api               = (string)$row["api"];
+
+        return $obj;
     }
 
     /**

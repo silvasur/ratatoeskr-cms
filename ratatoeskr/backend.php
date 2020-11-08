@@ -1746,8 +1746,7 @@ function build_backend_subactions()
                         $package = PluginPackage::load(file_get_contents($_FILES["pluginpackage"]["tmp_name"]));
                         unlink($_FILES["pluginpackage"]["tmp_name"]);
                         if (in_array($package->api, $api_compat)) {
-                            $plugin = Plugin::create();
-                            $plugin->fill_from_pluginpackage($package);
+                            $plugin = Plugin::create($package);
                             $plugin->installed = false;
                             $plugin->active = false;
                             $plugin->save();
@@ -1798,8 +1797,7 @@ function build_backend_subactions()
             try {
                 $repo = Repository::by_id($_GET["repo"]);
                 $pkg = $repo->download_package($_GET["pkg"]);
-                $plugin = Plugin::create();
-                $plugin->fill_from_pluginpackage($pkg);
+                $plugin = Plugin::create($pkg);
                 $plugin->installed = false;
                 $plugin->active = false;
                 $plugin->save();
