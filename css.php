@@ -10,6 +10,7 @@
  */
 
 require_once(dirname(__FILE__) . "/ratatoeskr/vendor/autoload.php");
+require_once(dirname(__FILE__) . "/ratatoeskr/config.php");
 require_once(dirname(__FILE__) . "/ratatoeskr/sys/models.php");
 
 if (!isset($_GET["name"])) {

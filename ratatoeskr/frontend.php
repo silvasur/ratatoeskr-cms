@@ -14,6 +14,7 @@ use r7r\cms\sys\Env;
 use r7r\cms\sys\Esc;
 
 require_once(dirname(__FILE__) . "/languages.php");
+require_once(dirname(__FILE__) . "/config.php");
 require_once(dirname(__FILE__) . "/sys/models.php");
 require_once(dirname(__FILE__) . "/sys/textprocessors.php");
 

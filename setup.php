@@ -67,7 +67,6 @@ $files = [
     "/ratatoeskr/sys/translation.php",
     "/ratatoeskr/sys/urlprocess.php",
     "/ratatoeskr/sys/pluginpackage.php",
-    "/ratatoeskr/sys/db.php",
     "/ratatoeskr/sys/init_ste.php",
     "/ratatoeskr/sys/models.php",
     "/ratatoeskr/sys/textprocessors.php",

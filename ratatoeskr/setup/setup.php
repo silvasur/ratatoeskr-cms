@@ -8,7 +8,6 @@ define("SETUP", true);
 require_once(dirname(__FILE__) . "/../vendor/autoload.php");
 require_once(dirname(__FILE__) . "/../sys/init_ste.php");
 require_once(dirname(__FILE__) . "/../sys/translation.php");
-require_once(dirname(__FILE__) . "/../sys/db.php");
 require_once(dirname(__FILE__) . "/../languages.php");
 require_once(dirname(__FILE__) . "/create_tables.php");
 

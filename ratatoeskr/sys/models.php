@@ -15,7 +15,6 @@ use r7r\cms\sys\models\KVStorage;
 use r7r\cms\sys\Database;
 use r7r\cms\sys\DbTransaction;
 
-require_once(dirname(__FILE__) . "/db.php");
 require_once(dirname(__FILE__) . "/textprocessors.php");
 require_once(dirname(__FILE__) . "/pluginpackage.php");
 

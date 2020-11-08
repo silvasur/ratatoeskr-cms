@@ -7,8 +7,6 @@ if (!defined("SETUP")) {
     die();
 }
 
-require_once(dirname(__FILE__) . "/../sys/db.php");
-
 function create_mysql_tables(?Database $db = null): void
 {
     $sql_tables = <<<SQL
