@@ -1590,6 +1590,29 @@ class Plugin
         );
     }
 
+    /**
+     * Delete a directory and all of its content.
+     * @param string $dir
+     */
+    private static function delete_directory(string $dir): void
+    {
+        $dir_content = scandir($dir);
+        foreach ($dir_content as $f) {
+            if (($f == "..") or ($f == ".")) {
+                continue;
+            }
+
+            $f = "$dir/$f";
+
+            if (is_dir($f)) {
+                self::delete_directory($f);
+            } else {
+                unlink($f);
+            }
+        }
+        rmdir($dir);
+    }
+
     public function delete(?Database $db = null): void
     {
         $db = $db ?? Env::getGlobal()->database();
@@ -1606,13 +1629,13 @@ class Plugin
         }
 
         if (is_dir(SITE_BASE_PATH . "/ratatoeskr/plugin_extradata/private/" . $this->id)) {
-            delete_directory(SITE_BASE_PATH . "/ratatoeskr/plugin_extradata/private/" . $this->id);
+            self::delete_directory(SITE_BASE_PATH . "/ratatoeskr/plugin_extradata/private/" . $this->id);
         }
         if (is_dir(SITE_BASE_PATH . "/ratatoeskr/plugin_extradata/public/" . $this->id)) {
-            delete_directory(SITE_BASE_PATH . "/ratatoeskr/plugin_extradata/public/" . $this->id);
+            self::delete_directory(SITE_BASE_PATH . "/ratatoeskr/plugin_extradata/public/" . $this->id);
         }
         if (is_dir(SITE_BASE_PATH . "/ratatoeskr/templates/src/plugintemplates/" . $this->id)) {
-            delete_directory(SITE_BASE_PATH . "/ratatoeskr/templates/src/plugintemplates/" . $this->id);
+            self::delete_directory(SITE_BASE_PATH . "/ratatoeskr/templates/src/plugintemplates/" . $this->id);
         }
     }
 }
