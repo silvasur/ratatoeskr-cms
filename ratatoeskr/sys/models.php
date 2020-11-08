@@ -21,19 +21,6 @@ require_once(dirname(__FILE__) . "/textprocessors.php");
 require_once(dirname(__FILE__) . "/pluginpackage.php");
 
 /*
- * Array: $imagetype_file_extensions
- * Array of default file extensions for most IMAGETYPE_* constants
- */
-$imagetype_file_extensions = [
-    IMAGETYPE_GIF     => "gif",
-    IMAGETYPE_JPEG    => "jpg",
-    IMAGETYPE_PNG     => "png",
-    IMAGETYPE_BMP     => "bmp",
-    IMAGETYPE_TIFF_II => "tif",
-    IMAGETYPE_TIFF_MM => "tif",
-];
-
-/*
  * Variable: $ratatoeskr_settings
  * The global <Settings> object. Can be accessed like an array.
  * Has these fields:
@@ -2157,6 +2144,18 @@ class Image extends BySQLRowEnabled
     private const PRE_MAXW = 150;
     private const PRE_MAXH = 100;
 
+    /**
+     * Array of default file extensions for most IMAGETYPE_* constants
+     */
+    private const IMAGETYPE_FILE_EXTENSIONS = [
+        IMAGETYPE_GIF     => "gif",
+        IMAGETYPE_JPEG    => "jpg",
+        IMAGETYPE_PNG     => "png",
+        IMAGETYPE_BMP     => "bmp",
+        IMAGETYPE_TIFF_II => "tif",
+        IMAGETYPE_TIFF_MM => "tif",
+    ];
+
     /** @var int */
     private $id;
 
@@ -2267,8 +2266,6 @@ class Image extends BySQLRowEnabled
      */
     public function exchange_image($file, ?Database $db = null): void
     {
-        global $imagetype_file_extensions;
-
         $file = (string)$file;
 
         if (!is_file($file)) {
@@ -2278,13 +2275,13 @@ class Image extends BySQLRowEnabled
         if ($imageinfo === false) {
             throw new UnknownFileFormat();
         }
-        if (!isset($imagetype_file_extensions[$imageinfo[2]])) {
+        if (!isset(self::IMAGETYPE_FILE_EXTENSIONS[$imageinfo[2]])) {
             throw new UnknownFileFormat();
         }
         if (is_file(SITE_BASE_PATH . "/images/" . $this->filename)) {
             unlink(SITE_BASE_PATH . "/images/" . $this->filename);
         }
-        $new_fn = $this->id . "." . $imagetype_file_extensions[$imageinfo[2]];
+        $new_fn = $this->id . "." . self::IMAGETYPE_FILE_EXTENSIONS[$imageinfo[2]];
         if (!move_uploaded_file($file, SITE_BASE_PATH . "/images/" . $new_fn)) {
             throw new IOError("Can not move file.");
         }
