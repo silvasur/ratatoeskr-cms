@@ -760,7 +760,7 @@ function frontend_url_handler(&$data, $url_now, &$url_next)
 
     /* If no language or an invalid language was given, fix it. */
     if ((count($path) == 0) or (!isset($languages[$path[0]]))) {
-        if (count($path > 0)) {
+        if (count($path) > 0) {
             array_shift($path);
         }
         array_unshift($path, $ratatoeskr_settings["default_language"]);
