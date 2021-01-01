@@ -13,6 +13,8 @@ use r7r\cms\sys\Env;
 use r7r\cms\sys\textprocessors\LegacyTextprocessor;
 use r7r\cms\sys\textprocessors\TextprocessorRepository;
 
+require_once(dirname(__FILE__) . "/utils.php");
+
 /**
  * Register a textprocessor.
  *

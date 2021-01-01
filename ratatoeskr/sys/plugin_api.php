@@ -14,6 +14,7 @@ use r7r\cms\sys\Env;
 use r7r\cms\sys\textprocessors\LegacyTextprocessor;
 
 require_once(dirname(__FILE__) . "/../config.php");
+require_once(dirname(__FILE__) . "/utils.php");
 require_once(dirname(__FILE__) . "/models.php");
 require_once(dirname(__FILE__) . "/textprocessors.php");
 require_once(dirname(__FILE__) . "/../frontend.php");

@@ -17,6 +17,7 @@ if (!defined("CONFIG_FILLED_OUT") || !CONFIG_FILLED_OUT) {
 }
 
 require_once(dirname(__FILE__) . "/vendor/autoload.php");
+require_once(dirname(__FILE__) . "/sys/utils.php");
 require_once(dirname(__FILE__) . "/config.php");
 require_once(dirname(__FILE__) . "/sys/models.php");
 require_once(dirname(__FILE__) . "/sys/init_ste.php");
