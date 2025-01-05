@@ -233,12 +233,12 @@ STYLE;
             $article->set_section($section);
             $article->save();
 
-            try {
+            /*try {
                 Repository::create("http://r7r-repo-community.silvasur.net/");
                 Repository::create("http://r7r-repo-official.silvasur.net/");
             } catch (RepositoryUnreachableOrInvalid $e) {
                 $ste->vars["notice"] = $translation["could_not_initialize_repos"];
-            }
+	    }*/
 
             /* Almost done. Give the user the config file. */
             $ste->vars["config"] = "<?php\n"
